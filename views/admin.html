@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>NgoXi — Admin</title>
+    <link rel="icon" href="/assets/logo.png" />
+    <link
+      rel="preload"
+      href="/assets/fonts/TempusSansITC.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+    <link rel="stylesheet" href="/assets/admin.css" />
+  </head>
+  <body>
+    <!-- Floating Topbar (T1) -->
+    <header class="topbar">
+      <button
+        id="mobileMenuBtn"
+        class="icon-btn"
+        aria-label="Open menu"
+        title="Menu"
+      >
+        <!-- hamburger -->
+        <svg
+          width="22"
+          height="22"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <line x1="3" y1="6" x2="21" y2="6" />
+          <line x1="3" y1="12" x2="21" y2="12" />
+          <line x1="3" y1="18" x2="21" y2="18" />
+        </svg>
+      </button>
+
+      <div class="brand">
+        <img src="/assets/logo.png" class="logo" alt="NgoXi" />
+        <div>
+          <div class="name tempus">NgoXi</div>
+          <div class="slogan"><em>You deserve better</em></div>
+        </div>
+      </div>
+
+      <div class="top-actions">
+        <span id="adminName" class="muted"></span>
+        <button id="logoutBtn" class="btn-ghost">Logout</button>
+      </div>
+    </header>
+
+    <!-- Sidebar (S1) — fixed + scrollable, slide-over on mobile (MB1) -->
+    <aside id="sidebar" class="sidebar">
+      <div class="sidebar-inner">
+        <nav class="nav">
+          <button class="nav-btn active" data-view="overview" title="Overview">
+            <span class="ico">📊</span><span class="lbl">Overview</span>
+          </button>
+          <button class="nav-btn" data-view="sellers" title="Sellers">
+            <span class="ico">🏪</span><span class="lbl">Sellers</span>
+          </button>
+          <button class="nav-btn" data-view="buyers" title="Buyers">
+            <span class="ico">🛍</span><span class="lbl">Buyers</span>
+          </button>
+          <button class="nav-btn" data-view="revenue" title="Revenue">
+            <span class="ico">💰</span><span class="lbl">Revenue</span>
+          </button>
+          <button class="nav-btn" data-view="info" title="Info & Settings">
+            <span class="ico">⚙</span><span class="lbl">Info & Settings</span>
+          </button>
+        </nav>
+      </div>
+      <button id="sidebarClose" class="sidebar-close" aria-label="Close menu">
+        ✖
+      </button>
+    </aside>
+
+    <!-- Main content area (fills full screen) -->
+    <main id="content" class="content">
+      <!-- VIEW: OVERVIEW (Home dashboard with mini-tabs B+D) -->
+      <section id="view-overview" class="view active">
+        <div class="panel glass">
+          <div class="panel-head">
+            <h2>Admin Dashboard</h2>
+            <div class="mini-tabs" id="miniTabs">
+              <button class="mini-tab active" data-tab="ovr-stats">
+                📊 <span>Overview</span>
+              </button>
+              <button class="mini-tab" data-tab="ovr-sellers">
+                🏪 <span>Sellers</span>
+              </button>
+              <button class="mini-tab" data-tab="ovr-buyers">
+                🛍 <span>Buyers</span>
+              </button>
+              <button class="mini-tab" data-tab="ovr-revenue">
+                💰 <span>Revenue</span>
+              </button>
+              <button class="mini-tab" data-tab="ovr-info">
+                ⚙ <span>Info</span>
+              </button>
+              <div class="mini-indicator" id="miniIndicator"></div>
+            </div>
+          </div>
+
+          <!-- mini-tab: Overview -->
+          <div id="ovr-stats" class="mini-panel active">
+            <div class="kpi-grid">
+              <div class="kpi glass">
+                <div class="kpi-top">👥 Total Users</div>
+                <div id="kpiUsers" class="kpi-num">—</div>
+              </div>
+              <div class="kpi glass">
+                <div class="kpi-top">🏪 Total Sellers</div>
+                <div id="kpiSellers" class="kpi-num">—</div>
+              </div>
+              <div class="kpi glass">
+                <div class="kpi-top">🛍 Total Buyers</div>
+                <div id="kpiBuyers" class="kpi-num">—</div>
+              </div>
+              <div class="kpi glass">
+                <div class="kpi-top">📦 Total Products</div>
+                <div id="kpiProducts" class="kpi-num">—</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- mini-tab: Sellers -->
+          <div id="ovr-sellers" class="mini-panel">
+            <div class="subgrid">
+              <section class="subcard glass">
+                <h3>✅ Active Paid</h3>
+                <div id="listPaid" class="list"></div>
+              </section>
+              <section class="subcard glass">
+                <h3>⏳ Unpaid (Upgrade)</h3>
+                <div id="listUnpaid" class="list"></div>
+              </section>
+              <section class="subcard glass">
+                <h3>🟢 Online Sellers</h3>
+                <div id="listSellersOnline" class="list"></div>
+              </section>
+            </div>
+          </div>
+
+          <!-- mini-tab: Buyers -->
+          <div id="ovr-buyers" class="mini-panel">
+            <div class="subgrid">
+              <section class="subcard glass">
+                <h3>🟢 Online Buyers</h3>
+                <div id="listBuyersOnline" class="list"></div>
+              </section>
+              <section class="subcard glass">
+                <h3>👥 All Buyers</h3>
+                <div id="listAllBuyers" class="list"></div>
+              </section>
+            </div>
+          </div>
+
+          <!-- mini-tab: Revenue -->
+          <div id="ovr-revenue" class="mini-panel">
+            <section class="subcard glass">
+              <h3>💳 Revenue</h3>
+              <div class="rev-box">
+                <div class="rev-num" id="revTotal">TSh —</div>
+                <div class="muted">
+                  Connect Lemon Squeezy to enable live revenue.
+                </div>
+                <button id="connectLS" class="btn-primary">
+                  Connect Billing (Soon)
+                </button>
+              </div>
+            </section>
+          </div>
+
+          <!-- mini-tab: Info -->
+          <div id="ovr-info" class="mini-panel">
+            <div class="subgrid">
+              <section class="subcard glass">
+                <h3>🚩 Reports / Flags</h3>
+                <div id="listReports" class="list"></div>
+              </section>
+              <section class="subcard glass">
+                <h3>🆕 Today’s Signups</h3>
+                <div id="listSignups" class="list"></div>
+              </section>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- VIEW: SELLERS (full page) -->
+      <section id="view-sellers" class="view">
+        <div class="panel glass">
+          <div class="panel-head">
+            <h2>Sellers</h2>
+            <div class="muted">
+              Manage seller accounts, upgrades, and activity.
+            </div>
+          </div>
+          <div class="subgrid">
+            <section class="subcard glass">
+              <h3>✅ Active Paid</h3>
+              <div id="pagePaid" class="list"></div>
+            </section>
+            <section class="subcard glass">
+              <h3>⏳ Unpaid (Upgrade)</h3>
+              <div id="pageUnpaid" class="list"></div>
+            </section>
+            <section class="subcard glass">
+              <h3>🟢 Online Sellers</h3>
+              <div id="pageSellersOnline" class="list"></div>
+            </section>
+          </div>
+        </div>
+      </section>
+
+      <!-- VIEW: BUYERS (full page) -->
+      <section id="view-buyers" class="view">
+        <div class="panel glass">
+          <div class="panel-head">
+            <h2>Buyers</h2>
+            <div class="muted">Monitor buyer activity and online presence.</div>
+          </div>
+          <div class="subgrid">
+            <section class="subcard glass">
+              <h3>🟢 Online Buyers</h3>
+              <div id="pageBuyersOnline" class="list"></div>
+            </section>
+            <section class="subcard glass">
+              <h3>👥 All Buyers</h3>
+              <div id="pageAllBuyers" class="list"></div>
+            </section>
+          </div>
+        </div>
+      </section>
+
+      <!-- VIEW: REVENUE -->
+      <section id="view-revenue" class="view">
+        <div class="panel glass">
+          <div class="panel-head">
+            <h2>Revenue</h2>
+            <div class="muted">Connect billing to see live revenue.</div>
+          </div>
+          <section class="subcard glass">
+            <div class="rev-box">
+              <div class="rev-num" id="revTotal2">TSh —</div>
+              <button class="btn-primary">Connect LemonSqueezy (Soon)</button>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <!-- VIEW: INFO & SETTINGS -->
+      <section id="view-info" class="view">
+        <div class="panel glass">
+          <div class="panel-head">
+            <h2>Information & Settings</h2>
+            <div class="muted">
+              Reports, flags, signups, and system preferences.
+            </div>
+          </div>
+          <div class="subgrid">
+            <section class="subcard glass">
+              <h3>🚩 Reports / Flags</h3>
+              <div id="pageReports" class="list"></div>
+            </section>
+            <section class="subcard glass">
+              <h3>🆕 Today’s Signups</h3>
+              <div id="pageSignups" class="list"></div>
+            </section>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Toast -->
+    <div id="toast" class="toast"></div>
+
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script src="/assets/admin.js" defer></script>
+  </body>
+</html>

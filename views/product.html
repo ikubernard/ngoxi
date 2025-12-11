@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Product | NgoXi</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="/assets/product/product.css" />
+  </head>
+  <body>
+    <!-- Sticky mini price ribbon (appears after scroll past price) -->
+    <div id="nx-ribbon" class="nx-ribbon" hidden>
+      <div class="nx-ribbon-title" id="nxRibbonTitle"></div>
+      <div class="nx-ribbon-price" id="nxRibbonPrice"></div>
+    </div>
+
+    <main id="nxRoot" class="nx-wrap">
+      <!-- Top gallery (JS populates) -->
+      <section class="nx-gallery">
+        <div class="nx-slider" id="nxSlider">
+          <!-- slides injected -->
+        </div>
+        <div class="nx-thumbs" id="nxThumbs"></div>
+      </section>
+
+      <!-- Core info -->
+      <section class="nx-info">
+        <h1 id="nxTitle" class="nx-title"></h1>
+
+        <div class="nx-price-row">
+          <div class="nx-price" id="nxPrice"></div>
+          <div class="nx-badges" id="nxBadges"></div>
+        </div>
+
+        <!-- Store panel -->
+        <div class="nx-store" id="nxStore" hidden>
+          <img id="nxStoreLogo" class="nx-store-logo" alt="" />
+          <div class="nx-store-meta">
+            <div id="nxStoreName" class="nx-store-name">Store</div>
+            <div id="nxStoreCaption" class="nx-store-caption">
+              Tap to visit store
+            </div>
+          </div>
+        </div>
+
+        <!-- Variants -->
+        <div class="nx-block" id="nxVariantBlock" hidden>
+          <div class="nx-block-title">Variant</div>
+          <div id="nxVariants" class="nx-variants"></div>
+        </div>
+
+        <!-- Sizes -->
+        <div class="nx-block" id="nxSizeBlock" hidden>
+          <div class="nx-block-title">Size</div>
+          <div id="nxSizes" class="nx-sizes"></div>
+        </div>
+
+        <!-- Total -->
+        <div class="nx-total">
+          <div>
+            <div class="nx-total-label">Total</div>
+            <div class="nx-total-value" id="nxTotal">TSh —</div>
+          </div>
+          <button id="nxBuyTop" class="nx-btn-lime">BUY</button>
+        </div>
+      </section>
+
+      <!-- Details + Description gallery -->
+      <section class="nx-details">
+        <div class="nx-block-title">Details</div>
+        <div id="nxDesc" class="nx-desc"></div>
+        <button id="nxToggleDescGallery" class="nx-link" hidden>
+          View more images
+        </button>
+        <div id="nxDescGallery" class="nx-desc-grid" hidden></div>
+      </section>
+
+      <!-- Reviews preview placeholder (optional expand later) -->
+      <section class="nx-reviews" id="nxReviews" hidden></section>
+    </main>
+
+    <!-- Sticky bottom actions -->
+    <div class="nx-sticky">
+      <div class="nx-actions">
+        <button id="nxFav" class="nx-iconbtn" title="Favorite">❤</button>
+        <button id="nxStoreBtn" class="nx-iconbtn" title="Store">🏬</button>
+        <button id="nxReviewBtn" class="nx-iconbtn" title="Add review">
+          ✍️
+        </button>
+      </div>
+      <div class="nx-sticky-total">
+        <span class="nx-sticky-label">Total</span>
+        <span id="nxStickyTotal" class="nx-sticky-value">TSh —</span>
+      </div>
+      <button id="nxBuySticky" class="nx-btn-lime nx-buy">BUY</button>
+    </div>
+
+    <!-- Bottom BUY sheet (final selections) -->
+    <div id="nxSheet" class="nx-sheet" hidden>
+      <div class="nx-sheet-head">
+        <div class="nx-sheet-title">Confirm Selection</div>
+        <button id="nxSheetClose" class="nx-x">✕</button>
+      </div>
+
+      <div class="nx-sheet-preview">
+        <img id="nxSheetImg" alt="" />
+        <div>
+          <div id="nxSheetName" class="nx-sheet-name"></div>
+          <div id="nxSheetPrice" class="nx-sheet-price"></div>
+        </div>
+      </div>
+
+      <div id="nxSheetVariants" class="nx-sheet-variants"></div>
+      <div id="nxSheetSizes" class="nx-sheet-sizes"></div>
+
+      <div class="nx-sheet-qty">
+        <span>Qty</span>
+        <div class="nx-qty">
+          <button id="nxQminus" class="nx-qtybtn">−</button>
+          <span id="nxQval">1</span>
+          <button id="nxQplus" class="nx-qtybtn">＋</button>
+        </div>
+      </div>
+
+      <div class="nx-sheet-footer">
+        <div>
+          <div class="nx-sticky-label">Total</div>
+          <div id="nxSheetTotal" class="nx-sticky-value">TSh —</div>
+        </div>
+        <button id="nxSheetBuy" class="nx-btn-lime nx-buy">BUY</button>
+      </div>
+    </div>
+
+    <script src="/assets/product/product.js" defer></script>
+  </body>
+</html>

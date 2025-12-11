@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Select Role — NgoXi</title>
+    <style>
+      :root {
+        --cream: #fff6ea;
+        --peach: #ffd9b3;
+        --salmon: #ffb38a;
+        --text: #3c2f22;
+        --muted: #8b7a66;
+        --card: #fffdf8;
+        --gold: #e0b24f;
+        --gold-glow: 0 0 12px rgba(224, 178, 79, 0.55),
+          0 0 22px rgba(224, 178, 79, 0.45);
+        --r: 18px;
+      }
+      * {
+        box-sizing: border-box;
+        -webkit-tap-highlight-color: transparent;
+      }
+      :root {
+        --cream: #fff6ea;
+        --peach: #ffd9b3;
+        --salmon: #ffb38a;
+        --text: #3c2f22;
+        --muted: #8b7a66;
+        --card: #fffdf8;
+        --gold: #e0b24f;
+        --gold-glow: 0 0 12px rgba(224, 178, 79, 0.55),
+          0 0 22px rgba(224, 178, 79, 0.45);
+        --r: 18px;
+
+        --emerald-inner: #065f46; /* NEW: dark emerald for dark mode cards */
+      }
+      :root {
+        --gold: #f5c542; /* main gold */
+        --brown: #3c2f22; /* deep dark brown (your text color) */
+        --gold-glow: rgba(245, 197, 66, 0.55);
+      }
+
+      body {
+        margin: 0;
+        font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu,
+          Helvetica, Arial;
+        background: linear-gradient(
+          90deg,
+          var(--cream),
+          var(--peach) 45%,
+          var(--salmon)
+        );
+        min-height: 100dvh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 22px;
+      }
+      .wrap {
+        width: 420px;
+        max-width: 94vw;
+        text-align: center;
+      }
+      .logo {
+        width: 74px;
+        border-radius: 16px;
+        margin-bottom: 8px;
+      }
+      .brand {
+        font-family: "TempusSansITC", "Papyrus", cursive, system-ui;
+        font-size: 32px;
+        color: #8a5a00;
+      }
+      .tag {
+        color: var(--muted);
+        font-size: 13px;
+        font-style: italic;
+        margin-bottom: 20px;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 14px;
+        margin-bottom: 28px;
+      }
+      .card {
+        background: var(--card);
+        padding: 22px 14px;
+        border-radius: var(--r);
+        font-weight: 600;
+        color: var(--text);
+        cursor: pointer;
+        box-shadow: 0 8px 22px rgba(0, 0, 0, 0.08);
+        transition: transform 0.15s, box-shadow 0.2s;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        justify-content: center;
+        align-items: center;
+      }
+      .card:active {
+        transform: scale(0.97);
+      }
+      .role-icon {
+        width: 32px;
+        height: 32px;
+        display: block;
+      }
+      /* ADMIN CARD (VIP BLACK + GOLD GLOW) */
+      .admin-card {
+        background: #000;
+        color: var(--gold);
+        box-shadow: var(--gold-glow);
+        width: 70%;
+        margin: 0 auto;
+      }
+      .admin-card .role-icon {
+        filter: drop-shadow(0 0 6px rgba(255, 215, 0, 0.75));
+      }
+
+      /* ===== DARK THEME (follows auth) ============================= */
+      body[data-theme="dark"] {
+        background: radial-gradient(
+          circle at top,
+          #b2ec5d 0%,
+          /* inchworm */ #6ee7b7 25%,
+          #34d399 50%,
+          #16a34a 75%,
+          #065f46 100%
+        );
+        color: #ecfdf5;
+      }
+
+      body[data-theme="dark"] .card {
+        background: var(--emerald-inner);
+        color: #ecfdf5;
+        box-shadow: 0 20px 45px rgba(0, 0, 0, 0.65);
+      }
+
+      body[data-theme="dark"] .brand {
+        color: #facc15;
+      }
+
+      body[data-theme="dark"] .tag {
+        color: #a7f3d0;
+      }
+
+      /* === Role icons (gold + brown handled inside SVG) ============== */
+      .sf-icon {
+        width: 32px;
+        height: 32px;
+        display: block;
+      }
+
+      /* Slight glow in dark mode */
+      body[data-theme="dark"] .sf-icon {
+        filter: drop-shadow(0 0 6px rgba(0, 0, 0, 0.45));
+      }
+
+      /* Admin card a bit more glow */
+      .admin-card .sf-icon {
+        filter: drop-shadow(0 0 8px rgba(245, 197, 66, 0.7));
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <img src="/assets/logo.png" class="logo" alt="NgoXi" />
+      <div class="brand">NgoXi</div>
+      <div class="tag">Select how you want to continue</div>
+
+      <div id="roleGrid" class="grid"></div>
+      <div id="adminSlot"></div>
+    </div>
+
+    <script>
+      // Sync dark/light from auth page
+      const THEME_KEY = "ngoxi_theme";
+      (function syncTheme() {
+        try {
+          const t = localStorage.getItem(THEME_KEY);
+          if (t === "dark" || t === "light") {
+            document.body.setAttribute("data-theme", t);
+          }
+        } catch (e) {}
+      })();
+      const roles =
+        JSON.parse(localStorage.getItem("user") || "{}")?.roles || [];
+      const grid = document.getElementById("roleGrid");
+      const adminSlot = document.getElementById("adminSlot");
+
+      const routes = {
+        buyer: "/home.html",
+        seller: "/seller.html",
+        admin: "/admin.html",
+      };
+      const svgBuyer = `
+<svg class="sf-icon" viewBox="0 0 24 24">
+  <!-- Bag body -->
+  <path
+    d="M6 8h12l-1.2 12H7.2L6 8z"
+    fill="#F5C542"
+    stroke="#3C2F22"
+    stroke-width="1.8"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+  <!-- Handle -->
+  <path
+    d="M9 8V6a3 3 0 0 1 6 0v2"
+    fill="none"
+    stroke="#3C2F22"
+    stroke-width="1.8"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+</svg>`;
+      const svgSeller = `
+<svg class="sf-icon" viewBox="0 0 24 24">
+  <!-- Roof -->
+  <path
+    d="M3 10l2-5h14l2 5"
+    fill="none"
+    stroke="#3C2F22"
+    stroke-width="1.8"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+  <!-- Building -->
+  <path
+    d="M4 10h16v11H4z"
+    fill="#F5C542"
+    stroke="#3C2F22"
+    stroke-width="1.8"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+</svg>`;
+      const svgAdmin = `
+<svg class="sf-icon" viewBox="0 0 24 24">
+  <path
+    d="M3 18l2-8 5 4 2-6 2 6 5-4 2 8H3z"
+    fill="#F5C542"
+    stroke="#3C2F22"
+    stroke-width="1.8"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+</svg>`;
+
+      function makeCard(role, svg, label) {
+        const div = document.createElement("div");
+        div.className = "card";
+        div.innerHTML = `
+    <div class="role-icon">${svg}</div>
+    <span>${label}</span>
+  `;
+        div.onclick = () => (window.location.href = routes[role]);
+        grid.appendChild(div);
+      }
+
+      /* ---------- Generate role cards ---------- */
+
+      if (roles.includes("buyer")) makeCard("buyer", svgBuyer, "Buyer");
+
+      if (roles.includes("seller")) makeCard("seller", svgSeller, "Seller");
+      if (roles.includes("admin")) {
+        const a = document.createElement("div");
+        a.className = "card admin-card";
+        a.innerHTML = `
+    <div class="role-icon">${svgAdmin}</div>
+    <span>Admin</span>
+  `;
+        a.onclick = () => (window.location.href = routes.admin);
+        adminSlot.appendChild(a);
+      }
+    </script>
+  </body>
+</html>

@@ -1,0 +1,86 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
+
+body {
+  font-family: 'Poppins', sans-serif;
+  background: linear-gradient(135deg, #fff7c2, #f9c90f);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  margin: 0;
+}
+
+.auth-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
+.auth-box {
+  background: #fff;
+  padding: 2rem 2.5rem;
+  border-radius: 16px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+  width: 100%;
+  max-width: 380px;
+  text-align: center;
+}
+
+.auth-logo {
+  width: 80px;
+  margin-bottom: 10px;
+}
+
+h2 { color: #222; margin-bottom: 5px; }
+.subtitle { color: #555; font-size: 14px; margin-bottom: 20px; }
+
+input {
+  width: 100%;
+  padding: 0.7rem;
+  margin: 0.4rem 0;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  font-size: 15px;
+  outline: none;
+}
+input:focus {
+  border-color: #f9c90f;
+  box-shadow: 0 0 6px rgba(249,201,15,0.4);
+}
+
+.btn-primary {
+  background: #f9c90f;
+  border: none;
+  color: #222;
+  font-weight: 600;
+  width: 100%;
+  padding: 0.8rem;
+  border-radius: 10px;
+  cursor: pointer;
+  margin-top: 10px;
+  transition: all 0.3s ease;
+}
+.btn-primary:hover {
+  background: #222;
+  color: #f9c90f;
+}
+
+.switch {
+  margin-top: 18px;
+  font-size: 14px;
+}
+.switch a {
+  color: #f9c90f;
+  font-weight: 600;
+  text-decoration: none;
+}
+.switch a:hover { text-decoration: underline; }
+
+.fade-in {
+  animation: fadeIn 1s ease forwards;
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(15px); }
+  to { opacity: 1; transform: translateY(0); }
+}

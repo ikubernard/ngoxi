@@ -1,0 +1,1080 @@
+/* --- Fonts (use local system fallbacks if you don’t have the .woff2 files) --- */
+@font-face {
+  font-family: "Tempus Sans ITC";
+  src: local(
+    "Tempus Sans ITC"
+  ); /* add a woff2 in /assets/fonts/ if available */
+  font-display: swap;
+}
+@font-face {
+  font-family: "Jokerman";
+  src: local("Jokerman");
+  font-display: swap;
+}
+
+/* Theme tokens */
+:root {
+  --bg: #fff7ef;
+  --panel: #f8efe7;
+  --text: #1b1b1b;
+  --muted: #6b6b6b;
+  --brand-a: #ffb84d;
+  --brand-b: #ff8b61;
+  --accent: #ff6e5a;
+  --pill: #ffe1bf;
+  --shadow: 0 6px 22px rgba(0, 0, 0, 0.12);
+  --card: #ffffff;
+  --green: #0ea36d;
+}
+html[data-theme="dark"] {
+  --bg: #062a21;
+  --panel: #0b3b2d;
+  --text: #f1fff8;
+  --muted: #98b9ac;
+  --brand-a: #0f5c43;
+  --brand-b: #0b8b5f;
+  --accent: #17b67a;
+  --pill: #0f3f31;
+  --shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
+  --card: #0f2f24;
+}
+
+/* Reset-ish */
+* {
+  box-sizing: border-box;
+}
+html,
+body {
+  height: 100%;
+}
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 14px/1.4 system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+}
+
+/* === FINAL SPLASH FIX (OVERRIDES EVERYTHING) === */
+
+#splash {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  position: fixed !important;
+  inset: 0 !important;
+  background: linear-gradient(145deg, #fff5e6, #fde7d9) !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  gap: 0 !important;
+  text-align: center !important;
+  z-index: 9999 !important;
+}
+
+#splash * {
+  padding: 0 !important;
+  margin: 0 !important;
+  line-height: 1 !important;
+}
+
+.splash-logo {
+  width: 110px !important;
+  height: 110px !important;
+  border-radius: 22% !important;
+  object-fit: contain !important;
+  animation: bip 1.15s ease-in-out infinite !important;
+}
+
+.splash-word {
+  margin-top: 2px !important;
+  font-size: 24px !important;
+  font-weight: 900 !important;
+  font-family: "Tempus Sans ITC" !important;
+}
+
+.splash-slogan {
+  margin-top: 0 !important;
+  font-size: 14px !important;
+  font-family: "Jokerman" !important;
+}
+
+@keyframes bip {
+  0%,
+  60%,
+  100% {
+    transform: scale(1);
+  }
+  30% {
+    transform: scale(1.06);
+  }
+}
+
+/* Top bar */
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: linear-gradient(90deg, var(--brand-a), var(--brand-b));
+  border-bottom-left-radius: 14px;
+  border-bottom-right-radius: 14px;
+  box-shadow: var(--shadow);
+}
+.topbar .left,
+.topbar .right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.brand-logo {
+  width: 36px;
+  height: 36px;
+  border-radius: 9px;
+}
+.brand {
+  display: flex;
+  flex-direction: column;
+  line-height: 1;
+}
+.brand-title {
+  font-size: 20px;
+  letter-spacing: 0.3px;
+}
+.brand-sub {
+  font-size: 11px;
+  opacity: 0.9;
+}
+.tempus {
+  font-family: "Tempus Sans ITC", "Comic Sans MS", cursive;
+}
+.jokerman {
+  font-family: "Jokerman", "Papyrus", fantasy;
+}
+
+/* Search */
+.center {
+  display: flex;
+  justify-content: center;
+}
+.search-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.35);
+  padding: 6px 8px;
+  border-radius: 999px;
+  backdrop-filter: blur(6px);
+}
+.search {
+  width: min(46vw, 520px);
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: #222;
+  padding: 8px 6px;
+  border-radius: 999px;
+  font-size: 14px;
+}
+.icon-btn,
+.icon-pill {
+  border: 0;
+  outline: 0;
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.55);
+  border-radius: 999px;
+  padding: 6px 8px;
+  display: grid;
+  place-items: center;
+}
+.icon-pill.cart {
+  position: relative;
+}
+.badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  background: #ff3b30;
+  color: white;
+  border-radius: 999px;
+  font-size: 10px;
+  padding: 2px 6px;
+}
+
+/* Mini map */
+.mini-map {
+  height: 220px;
+  margin: 10px auto;
+  width: min(1100px, 92%);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+
+/* Panels & headings */
+.panel {
+  width: min(1100px, 92%);
+  margin: 12px auto;
+  background: var(--panel);
+  border-radius: 16px;
+  padding: 14px;
+  box-shadow: var(--shadow);
+}
+.panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.panel-title {
+  font-weight: 700;
+  font-size: 18px;
+}
+.panel-sub {
+  color: var(--muted);
+}
+
+/* Hero slider */
+.hero {
+  width: min(1100px, 92%);
+  margin: 12px auto 6px;
+  overflow: hidden;
+  border-radius: 16px;
+  box-shadow: var(--shadow);
+}
+.slides {
+  display: flex;
+  transition: transform 0.6s ease;
+}
+.slide {
+  min-width: 100%;
+  padding: 26px 22px;
+  color: #2b2b2b;
+}
+.slide h2 {
+  margin: 6px 0 0;
+  font-size: 22px;
+}
+.slide-tag {
+  display: inline-block;
+  background: rgba(255, 255, 255, 0.65);
+  padding: 6px 10px;
+  border-radius: 10px;
+  font-weight: 700;
+}
+.gradient-a {
+  background: linear-gradient(135deg, #ffe39d, #ffb571);
+}
+.gradient-b {
+  background: linear-gradient(135deg, #ffd280, #ffa06d);
+}
+.gradient-c {
+  background: linear-gradient(135deg, #ffe6b4, #ffc49a);
+}
+.dots {
+  display: flex;
+  gap: 8px;
+  padding: 10px;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.04);
+}
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.2);
+}
+.dot.on {
+  background: rgba(0, 0, 0, 0.5);
+}
+/* Countdown pill */
+.countdown {
+  background: #fff;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-weight: 700;
+  box-shadow: var(--shadow);
+}
+
+/* Grid */
+.grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(2, 1fr);
+}
+@media (min-width: 980px) {
+  .grid {
+    grid-template-columns: repeat(5, 1fr);
+  }
+}
+/* ======== Product Card (Unified) ======== */
+.p-card {
+  background: var(--card);
+  border-radius: 14px;
+  overflow: hidden;
+  position: relative;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+  transition: all 0.25s ease;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+}
+
+.p-img {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+}
+.p-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.p-info {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 10px 12px 14px;
+  text-align: left;
+}
+.p-name {
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.p-price {
+  font-weight: 900;
+  font-size: 14px;
+  color: var(--accent);
+}
+.p-info .muted {
+  font-size: 12px;
+  color: var(--muted);
+}
+.p-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  border-bottom: 2px solid var(--accent);
+}
+
+/* Skeleton loader for grid */
+.store-card.skeleton {
+  background: var(--card);
+  border-radius: 16px;
+  padding: 10px;
+}
+.sk-img {
+  height: 140px;
+  border-radius: 12px;
+  background: linear-gradient(90deg, #eee, #f6f6f6, #eee);
+  animation: sk 1.2s infinite;
+}
+.sk-line {
+  height: 10px;
+  margin-top: 10px;
+  border-radius: 6px;
+  background: linear-gradient(90deg, #eee, #f6f6f6, #eee);
+  animation: sk 1.2s infinite;
+}
+.sk-line.w-70 {
+  width: 70%;
+}
+.sk-line.w-40 {
+  width: 40%;
+}
+@keyframes sk {
+  0% {
+    background-position: 0 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+/* Product sheet */
+.sheet {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: none;
+  z-index: 70;
+}
+.sheet.open {
+  display: block;
+}
+.sheet-inner {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: min(460px, 92%);
+  background: var(--bg);
+  padding: 16px;
+  box-shadow: var(--shadow);
+  overflow: auto;
+}
+.sheet-close {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  border: 0;
+  background: transparent;
+  font-size: 28px;
+  cursor: pointer;
+}
+.sheet-top h3 {
+  margin: 4px 0;
+}
+.sheet-sub {
+  color: var(--muted);
+}
+.sheet-price {
+  font-size: 22px;
+  font-weight: 900;
+  margin-top: 6px;
+}
+.sheet-delivery {
+  color: var(--muted);
+}
+.sheet-gallery {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  margin: 10px 0;
+}
+.sheet-gallery img {
+  width: 100%;
+  aspect-ratio: 1/1;
+  object-fit: cover;
+  border-radius: 8px;
+}
+.btn-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.btn,
+.btn.outline,
+.btn.sm {
+  border: 0;
+  cursor: pointer;
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: var(--accent);
+  color: #fff;
+  font-weight: 700;
+}
+.btn.outline {
+  background: transparent;
+  border: 2px solid var(--accent);
+  color: var(--accent);
+}
+.btn.sm {
+  padding: 6px 10px;
+  font-size: 12px;
+}
+.btn.outline.active {
+  background: var(--accent);
+  color: #fff;
+}
+.muted {
+  color: var(--muted);
+}
+.mb8 {
+  margin-bottom: 8px;
+}
+
+/* ===========================================
+   WhatsApp-Style Chat UI (v12 REAL LOOK)
+   =========================================== */
+
+/* Layout container */
+.chat-wrapper {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  height: calc(100vh - 120px);
+  background: var(--bg);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+@media (max-width: 900px) {
+  .chat-wrapper {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Left Sidebar (Chat List) */
+.chat-sidebar {
+  background: var(--panel);
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid rgba(0, 0, 0, 0.1);
+}
+.chat-sidebar-header {
+  padding: 14px;
+  font-weight: 700;
+  font-size: 16px;
+  color: var(--text);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.chat-list {
+  flex: 1;
+  overflow-y: auto;
+  max-height: calc(100vh - 160px);
+}
+.chat-tab {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  cursor: pointer;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  transition: background 0.2s;
+}
+.chat-tab:hover {
+  background: var(--pill);
+}
+.chat-tab.active {
+  background: var(--accent);
+  color: #fff;
+  border-radius: 10px;
+}
+
+.chat-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.chat-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.chat-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+.chat-title {
+  font-weight: 700;
+  font-size: 14px;
+}
+.chat-last {
+  font-size: 12px;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Right Chat Window */
+.chat-window {
+  display: flex;
+  flex-direction: column;
+  background: var(--panel);
+  position: relative;
+}
+
+/* Chat header */
+.chat-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  background: var(--card);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  font-weight: 700;
+}
+
+/* Chat body */
+.chat-body {
+  flex: 1;
+  padding: 20px 24px;
+  overflow-y: auto;
+  background: var(--panel);
+  background-image: url("assets/bg-pattern-light.png");
+  background-repeat: repeat;
+  background-size: 380px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Bubbles */
+.chat-row {
+  max-width: 75%;
+  margin-bottom: 10px;
+  border-radius: 12px;
+  padding: 10px 14px;
+  font-size: 14px;
+  line-height: 1.4;
+  position: relative;
+}
+.chat-row.them {
+  align-self: flex-start;
+  background: #ffffff;
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.05);
+}
+.chat-row.me {
+  align-self: flex-end;
+  background: #dcf8c6;
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.05);
+}
+.chat-row.me::after {
+  content: "";
+  position: absolute;
+  right: -6px;
+  bottom: 0;
+  width: 10px;
+  height: 10px;
+  background: #dcf8c6;
+  clip-path: polygon(100% 0, 0 100%, 100% 100%);
+}
+.chat-row.them::after {
+  content: "";
+  position: absolute;
+  left: -6px;
+  bottom: 0;
+  width: 10px;
+  height: 10px;
+  background: #fff;
+  clip-path: polygon(0 0, 100% 100%, 0 100%);
+}
+
+/* Input area */
+.chat-input {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 20px;
+  background: var(--card);
+  border-top: 1px solid rgba(0, 0, 0, 0.05);
+}
+.chat-input input {
+  flex: 1;
+  border: none;
+  border-radius: 24px;
+  padding: 10px 14px;
+  outline: none;
+  background: var(--panel);
+  color: var(--text);
+}
+.chat-input button {
+  background: var(--green);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 18px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.25s;
+}
+.chat-input button:hover {
+  opacity: 0.85;
+}
+
+/* Packages / Me pills */
+.pills {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.pills.sm .pill {
+  padding: 6px 10px;
+  font-size: 12px;
+}
+.pill {
+  border: 0;
+  background: var(--pill);
+  padding: 8px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+.pill.active {
+  background: var(--accent);
+  color: #fff;
+}
+.pkg-col .pkg-row {
+  background: var(--card);
+  border-radius: 12px;
+  padding: 10px;
+  margin-bottom: 8px;
+}
+
+/* Settings form */
+.form {
+  display: grid;
+  gap: 10px;
+}
+.form .row {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  gap: 8px;
+  align-items: center;
+}
+.form input,
+.form textarea {
+  width: 100%;
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  background: var(--card);
+  color: var(--text);
+}
+.settings-map {
+  height: 260px;
+  margin-top: 12px;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+
+/* Cart list */
+.cart-list {
+  display: grid;
+  gap: 10px;
+}
+.cart-row {
+  display: grid;
+  grid-template-columns: 72px 1fr auto;
+  gap: 10px;
+  background: var(--card);
+  border-radius: 12px;
+  padding: 8px;
+  align-items: center;
+}
+.cart-img {
+  width: 72px;
+  height: 72px;
+  object-fit: cover;
+  border-radius: 10px;
+}
+.cart-controls {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.cart-price {
+  font-weight: 800;
+}
+
+/* Views */
+.view {
+  display: none;
+}
+.view.active {
+  display: block;
+}
+
+/* Layout helpers */
+.mt16 {
+  margin-top: 16px;
+}
+/* ==== Premium Topbar (same gradient, bigger) ==== */
+.topbar.pro {
+  position: sticky;
+  top: 0;
+  z-index: 60;
+  display: grid;
+  grid-template-columns: 1fr minmax(420px, 1.2fr) 1fr;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 20px; /* bigger */
+  height: 88px; /* bigger header */
+  background: linear-gradient(90deg, var(--brand-a), var(--brand-b));
+  border-bottom-left-radius: 18px;
+  border-bottom-right-radius: 18px;
+  box-shadow: var(--shadow);
+}
+.topbar.pro .left,
+.topbar.pro .right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.topbar.pro .right {
+  justify-content: flex-end;
+} /* push to edge */
+.topbar.pro .brand-logo {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+}
+.topbar.pro .brand-title {
+  font-size: 24px;
+}
+.topbar.pro .brand-sub {
+  font-size: 12px;
+}
+
+/* Search bar bigger */
+.search-wrap.xl {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.35);
+  padding: 10px 12px;
+  border-radius: 999px;
+  backdrop-filter: blur(6px);
+}
+.search-wrap.xl .search {
+  width: min(50vw, 620px);
+  padding: 10px 8px;
+  font-size: 15px;
+}
+.search-wrap.xl .search-glass {
+  width: 20px;
+  height: 20px;
+  margin-left: 6px;
+}
+
+/* Ghost buttons (no heavy background) */
+.icon-btn.ghost,
+.icon-pill.ghost {
+  background: rgba(255, 255, 255, 0.25);
+  backdrop-filter: blur(4px);
+}
+.icon-pill.cart {
+  position: relative;
+}
+
+/* Premium SVGs — white fill with thin gold stroke */
+.ic-premium .fill {
+  fill: rgba(255, 255, 255, 0.94);
+  filter: drop-shadow(0 1px 1.2px rgba(0, 0, 0, 0.15));
+}
+.ic-premium .stroke {
+  fill: none;
+  stroke: #d6b886; /* soft gold */
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+#themeToggle svg.ic-premium .stroke,
+#cartBtn svg.ic-premium .stroke {
+  stroke: #a8742e !important; /* darker gold */
+}
+
+.icon-btn svg.ic-premium,
+.icon-pill svg.ic-premium {
+  width: 22px;
+  height: 22px;
+}
+
+/* Fullscreen feel */
+.panel,
+.mini-map {
+  width: 100%;
+  border-radius: 0;
+  box-shadow: none;
+}
+.panel {
+  padding: 18px 20px;
+}
+.panel-head {
+  padding: 0 2px;
+}
+
+/* Utility: screen reader only */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+#meProfile .row input,
+#meProfile .row textarea {
+  width: 100%;
+  padding: 12px;
+  font-size: 14px;
+  border-radius: 10px;
+}
+/* ======== Mini Topbars ======== */
+.topbar.mini {
+  position: sticky;
+  top: 0;
+  z-index: 60;
+  text-align: left;
+  padding: 10px 16px;
+  color: #372b09;
+  font-weight: 800;
+  font-size: 17px;
+  background: linear-gradient(90deg, #fbe8bf, #f3d599, #e8c37a);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+body[data-theme="dark"] .topbar.mini {
+  background: linear-gradient(90deg, #064e3b, #047857, #065f46);
+  color: #ecfdf5;
+}
+
+/* =========================================================
+   BOTTOM NAVIGATION
+   ========================================================= */
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 999;
+  height: 64px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  align-items: center;
+  background: var(--panel);
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.08);
+}
+.nav-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  background: none;
+  border: none;
+  color: var(--muted);
+  transition: all 0.3s ease;
+}
+.nav-ic {
+  width: 22px;
+  height: 22px;
+}
+.nav-ic .ol {
+  fill: none;
+  stroke: var(--brand-b);
+  stroke-width: 1.6;
+}
+.nav-ic .fill {
+  display: none;
+  fill: var(--brand-b);
+}
+.nav-btn.active .ol {
+  display: none;
+}
+.nav-btn.active .fill {
+  display: block;
+}
+.nav-btn.active {
+  color: var(--brand-b);
+}
+
+/* ===== Refined Deep Gold Active Fill (balanced for both themes) ===== */
+
+/* default gold tone variables */
+:root {
+  --gold-base: #d4a73d; /* medium warm gold */
+  --gold-glow: rgba(212, 167, 61, 0.5);
+}
+html[data-theme="dark"] {
+  --gold-base: #c39b36; /* slightly deeper gold for dark bg */
+  --gold-glow: rgba(195, 155, 54, 0.35);
+}
+
+/* Inactive icons */
+.bottom-nav .nav-ic .ol {
+  fill: none;
+  stroke: var(--muted);
+  stroke-width: 1.6;
+}
+.bottom-nav .nav-ic .fill {
+  display: none;
+  fill: var(--muted);
+}
+
+/* Active state */
+.bottom-nav .nav-btn.active .ol {
+  display: none;
+}
+.bottom-nav .nav-btn.active .fill {
+  display: block;
+  fill: var(--gold-base);
+  filter: drop-shadow(0 0 2px var(--gold-glow));
+}
+
+/* Active text styling (slightly deeper and readable) */
+.bottom-nav .nav-btn.active {
+  color: var(--gold-base);
+  text-shadow: 0 0 4px var(--gold-glow);
+  font-weight: 600;
+}
+
+.topbar.mini + .pills,
+.topbar.mini + .panel {
+  margin-top: 16px;
+}
+.profile-photo {
+  display: flex;
+  justify-content: center;
+  margin: 20px auto;
+}
+.photo-frame {
+  position: relative;
+  width: 110px;
+  height: 110px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 3px solid var(--accent);
+}
+.photo-frame img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+.photo-frame button {
+  position: absolute;
+  bottom: 6px;
+  right: 6px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: none;
+  background: var(--accent);
+  color: #fff;
+  font-size: 18px;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+.photo-frame button:hover {
+  background: var(--brand-b);
+}
+
+/* Hide file input */
+#profileUpload {
+  display: none;
+}
+
+/* === Chat bubbles visible in dark mode === */
+html[data-theme="dark"] .chat-row.them {
+  background: #134737; /* deep emerald bubble */
+  color: #e6fff0;
+}
+html[data-theme="dark"] .chat-row.me {
+  background: #0b8b5f; /* neon green bubble */
+  color: #eafff5;
+}
+html[data-theme="dark"] .chat-body {
+  background-color: #062a21;
+  background-image: url("assets/bg-pattern-dark.png");
+}
+
+/* === Subtle breathing space for product grid === */
+#view-home .grid {
+  margin-bottom: 90px; /* space above bottom nav only */
+}

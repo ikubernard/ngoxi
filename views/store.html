@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>NgoXi Store</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="/assets/store.css" />
+</head>
+<body>
+
+  <!-- Sticky mini header (appears on scroll) -->
+  <header id="storeMiniHeader" class="store-mini hidden">
+    <div class="store-mini-left">
+      <img id="miniLogo" class="mini-logo" alt="">
+      <span id="miniName" class="mini-name"></span>
+    </div>
+    <button id="miniChat" class="mini-chat">Chat</button>
+  </header>
+
+  <!-- HERO SECTION -->
+  <section id="storeHero" class="store-hero">
+    <div class="hero-bg" id="heroBg"></div>
+    <div class="hero-overlay"></div>
+    <div class="hero-content">
+      <img id="storeLogo" class="store-logo" alt="">
+      <div class="store-meta">
+        <div id="storeName" class="store-name">Store Name</div>
+        <div id="storeFollowers" class="store-followers">0 followers</div>
+      </div>
+    </div>
+    <div class="hero-actions">
+      <button id="storeChat" class="btn-chat">Chat</button>
+      <button id="storeFollow" class="btn-follow">Follow</button>
+    </div>
+  </section>
+
+  <!-- TAB BAR -->
+  <nav class="store-tabs">
+    <button class="tab active" data-tab="assure">Assurance</button>
+    <button class="tab" data-tab="products">Products</button>
+    <button class="tab" data-tab="reviews">Reviews</button>
+    <button class="tab" data-tab="classify">Classification</button>
+    <div class="tab-indicator"></div>
+  </nav>
+
+  <!-- MAIN CONTENT WRAPPER -->
+  <main class="store-content">
+
+    <!-- ASSURANCE TAB -->
+    <section id="tab-assure" class="tab-pane active">
+      <div class="assure-box">
+        <div class="assure-item">✅ Quality Assured</div>
+        <div class="assure-item">🛒 Buyer Protection</div>
+        <div class="assure-item">📦 Verified Seller</div>
+      </div>
+    </section>
+
+    <!-- PRODUCTS TAB -->
+    <section id="tab-products" class="tab-pane">
+      <div id="storeGrid" class="store-grid"></div>
+    </section>
+
+    <!-- REVIEWS TAB -->
+    <section id="tab-reviews" class="tab-pane">
+      <div class="review-placeholder">Reviews coming soon...</div>
+    </section>
+
+    <!-- CLASSIFICATION TAB -->
+    <section id="tab-classify" class="tab-pane">
+      <div class="classify-placeholder">Categories coming soon...</div>
+    </section>
+
+  </main>
+
+  <script src="/assets/store.js" defer></script>
+</body>
+</html>
+

@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>NgoXi Seller Dashboard</title>
+  <link rel="stylesheet" href="../assets/seller.css" />
+  <link rel="icon" href="../assets/logo.png" type="image/png" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+</head>
+
+<body>
+  <!-- Splash: logo + brand name + slogan -->
+  <div id="splash">
+    <div class="splash-content">
+      <img src="../assets/logo.png" alt="NgoXi" class="splash-logo" />
+      <div class="splash-brand">
+        <div class="splash-name brand-tempus">NgoXi</div>
+        <div class="splash-slogan"><em>You deserve better.</em></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toasts -->
+  <div id="toast-container"></div>
+
+  <!-- Header -->
+  <header class="topbar">
+    <!-- Left: logo + slogan -->
+    <div class="hdr-left brand">
+      <img src="../assets/logo.png" alt="NgoXi Logo" class="hdr-logo" />
+      <div class="brand-text">
+        <div class="brand-name brand-tempus">NgoXi</div>
+        <div class="brand-slogan"><em>You deserve better.</em></div>
+      </div>
+    </div>
+
+    <!-- Center: store name + icon -->
+    <div class="hdr-center">
+      <svg class="shop-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+        <path fill="#3fa36f" d="M4 10v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V10H4zm8-8l8 8H4l8-8z" />
+      </svg>
+      <h2 id="storeNameHeader">Your Store</h2>
+    </div>
+
+    <!-- Right: theme toggle -->
+    <div class="hdr-right">
+      <button id="themeBtn" class="icon-btn" title="Toggle Theme">🌙</button>
+    </div>
+  </header>
+
+  <nav class="bottom-nav">
+    <button data-view="home" class="nav-btn active">
+      <span class="nav-icon">
+        <svg viewBox="0 0 24 24">
+          <path d="M4 11l8-7 8 7v9H4z" fill="#f5c542" stroke="#3c2f22" stroke-width="1.6" />
+        </svg>
+      </span>
+      <span>Home</span>
+    </button>
+
+    <button data-view="products" class="nav-btn">
+      <span class="nav-icon">
+        <svg viewBox="0 0 24 24">
+          <path d="M4 7h16v12H4z" fill="#f5c542" stroke="#3c2f22" stroke-width="1.6" />
+          <path d="M4 7l4-3h8l4 3" fill="none" stroke="#3c2f22" stroke-width="1.6" />
+        </svg>
+      </span>
+      <span>My Products</span>
+    </button>
+
+    <button data-view="chat" class="nav-btn" id="chatTabBtn">
+      <span class="nav-icon">
+        <svg viewBox="0 0 24 24">
+          <path d="M4 5h16v11H7l-3 3z" fill="#f5c542" stroke="#3c2f22" stroke-width="1.6" />
+        </svg>
+      </span>
+      <span>Messages</span>
+      <i id="chatDot" class="dot" hidden></i>
+    </button>
+
+    <button data-view="me" class="nav-btn">
+      <span class="nav-icon">
+        <svg viewBox="0 0 24 24">
+          <path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4z" fill="#f5c542" stroke="#3c2f22" stroke-width="1.6" />
+          <path d="M4 20a8 8 0 0 1 16 0" fill="none" stroke="#3c2f22" stroke-width="1.6" />
+        </svg>
+      </span>
+      <span>Me</span>
+    </button>
+  </nav>
+
+  <!-- Main -->
+  <main class="site">
+    <!-- HOME -->
+    <section id="home" class="tab active">
+      <div class="stats">
+        <div class="stat card" data-stat="revenue">
+          <h3 id="statRevenue">TSh 0</h3>
+          <div>Total Revenue</div>
+        </div>
+        <div class="stat card" data-stat="orders">
+          <h3 id="statOrders">0</h3>
+          <div>Total Orders</div>
+        </div>
+        <div class="stat card" data-stat="products">
+          <h3 id="statProducts">0</h3>
+          <div>Active Products</div>
+        </div>
+      </div>
+
+      <!-- Stats (keep your existing stats cards above) -->
+      <div class="plan-row">
+        <span id="planLine">Plan: —</span>
+        <button id="upgradeBtnHome" class="btn btn-ghost sm" type="button">
+          Upgrade
+        </button>
+      </div>
+      <div class="recent card">
+        <h3>Recently Added</h3>
+        <div id="recentProducts" class="recent-grid"></div>
+      </div>
+    </section>
+
+    <!-- PRODUCTS -->
+    <section id="products" class="tab">
+      <!-- Product tabs -->
+      <div class="prod-tabs">
+        <button class="prod-tab-btn active" data-prodtab="post">
+          Post New Product
+        </button>
+        <button class="prod-tab-btn" data-prodtab="posted">
+          Posted Products
+        </button>
+      </div>
+      <div id="productForm" class="product-form card">
+        <h3>Post New Product</h3>
+        <input id="p_title" type="text" placeholder="Product Name" />
+        <textarea id="p_desc" placeholder="Description"></textarea>
+        <input id="p_price" type="number" placeholder="Price (TSh)" />
+        <label>Delivery Option</label>
+        <select id="deliveryOption">
+          <option value="pickup">Pickup</option>
+          <option value="delivery">Delivery</option>
+          <option value="local_3">Local — 3 Days</option>
+          <option value="overseas_15">Overseas — 15 Days</option>
+        </select>
+        <!-- CATEGORY -->
+        <div class="field-block">
+          <label>Category</label>
+          <select id="p_cat">
+            <option value="">-- Select Category --</option>
+            <option value="phones-tablets">Phones & Tablets</option>
+            <option value="electronics">Electronics & Gadgets</option>
+            <option value="computers">Computers & Laptops</option>
+            <option value="fashion-men">Fashion (Men)</option>
+            <option value="fashion-women">Fashion (Women)</option>
+            <option value="shoes">Shoes</option>
+            <option value="beauty">Beauty & Personal Care</option>
+            <option value="home-living">Home & Living</option>
+            <option value="appliances">Appliances</option>
+            <option value="kids-baby">Kids & Baby</option>
+            <option value="sports">Sports & Outdoors</option>
+            <option value="automotive">Automotive</option>
+            <option value="food">Food & Groceries</option>
+            <option value="accessories">Accessories</option>
+            <option value="others">Others</option>
+          </select>
+        </div>
+
+        <!-- COVER IMAGE -->
+        <div class="images-block">
+          <label>Cover Image</label>
+          <input id="p_cover" type="file" accept="image/*" />
+        </div>
+
+        <div id="variantSection">
+          <div class="flex-row">
+            <h4>Variants</h4>
+            <button id="addVariant" class="btn btn-ghost">
+              + Add Variant
+            </button>
+          </div>
+          <div id="variants"></div>
+        </div>
+        <!-- SIZES (Size + Price Difference) -->
+        <div id="sizeSection" class="sizes-block">
+          <div class="flex-row">
+            <h4>Sizes</h4>
+            <button id="addSizeBtn" type="button" class="btn btn-ghost">
+              + Add Size
+            </button>
+          </div>
+          <div id="sizesList" class="size-chip-list"></div>
+          <small class="muted">Example sizes: 37, 38, 39… or S, M, L, XL… Each can have its own
+            price difference.</small>
+        </div>
+
+        <div class="actions">
+          <button id="postProduct" class="btn btn-primary">
+            Post Product
+          </button>
+          <button id="clearProduct" class="btn btn-ghost">Clear</button>
+        </div>
+      </div>
+      <!-- Posted Products block -->
+      <div id="postedProduct" class="card" style="display: none">
+        <p id="myProductsEmpty" class="muted" style="text-align: center; display: none">
+          No products yet.
+        </p>
+        <div id="postedGrid" class="posted-grid"></div>
+      </div>
+    </section>
+
+    <!-- CHAT -->
+    <section id="chat" class="tab">
+      <div class="chat-layout">
+        <!-- Contacts -->
+        <aside class="contacts card">
+          <div class="contacts-head">
+            <h4>Contacts</h4>
+            <button id="refreshContacts" class="btn btn-ghost sm">↻</button>
+          </div>
+          <div id="contactList" class="contact-list"></div>
+          <div class="notifications">
+            <h5>Notifications</h5>
+            <ul id="notifList" class="notif-list"></ul>
+          </div>
+        </aside>
+
+        <!-- Conversation -->
+        <section class="chat-box card">
+          <div id="chatHeader" class="chat-header">
+            <img id="chatDp" class="chat-dp" />
+            <strong id="chatWith">Select a contact</strong>
+            <div class="chat-tools">
+              <button id="callContact" class="btn btn-ghost" type="button">
+                📞 Call
+              </button>
+              <button id="sendPaymentInfo" class="btn btn-ghost" type="button">
+                💸 Payment Info
+              </button>
+            </div>
+          </div>
+          <div id="paymentCardHost"></div>
+          <div id="chatMessages" class="chat-messages"></div>
+          <div class="chat-input">
+            <input type="text" id="chatInput" placeholder="Type a message..." />
+            <button id="sendChat" class="btn btn-primary">Send</button>
+          </div>
+
+        </section>
+      </div>
+    </section>
+
+    <!-- ME -->
+    <section id="me" class="tab">
+      <div class="card">
+        <div class="me-tabs">
+          <button data-sub="orders" class="me-pill active">📦 Orders</button>
+          <button data-sub="settings" class="me-pill">⚙️ Settings</button>
+          <button data-sub="qr" class="me-pill">🧾 My QR</button>
+          <div class="actions">
+            <button onclick="logoutSeller()" class="btn btn-ghost">Logout</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- SETTINGS -->
+      <div id="sub-settings" class="sub-content">
+        <div class="sub-tabs">
+          <button data-mini="personal" class="mini-pill active">
+            Personal
+          </button>
+          <button data-mini="payment" class="mini-pill">
+            Payment Info
+          </button>
+          <button data-mini="preferences" class="mini-pill">
+            Preferences
+          </button>
+        </div>
+
+        <!-- PERSONAL -->
+        <div id="mini-personal" class="mini-content active">
+          <div class="profile-photo-box">
+            <img id="profilePreview" src="../assets/default-avatar.jpeg" />
+            <input id="profilePhotoInput" type="file" accept="image/*" hidden />
+            <button id="changePhotoBtn" class="btn btn-ghost">
+              Change profile picture
+            </button>
+          </div>
+
+          <input id="storeName" placeholder="Store Name" />
+          <input id="contact" placeholder="Email or Phone" />
+          <input id="address" placeholder="Address" />
+          <button id="setLocationBtn" class="btn btn-ghost sm" type="button" style="margin-bottom: 0.5rem;">
+            Set Location on Map
+          </button>
+          <div class="map-embed" id="mapPreview"></div>
+
+        </div>
+
+        <!-- PAYMENT INFO -->
+        <div id="mini-payment" class="mini-content">
+          <input id="payMethods" placeholder="Payment Channels (M-Pesa, TigoPesa, AirtelMoney, HaloPesa, CRDB, NMB)" />
+
+          <textarea id="payNumber" rows="2" placeholder="Payment number(s) per method
+(e.g. M-Pesa Lipa: 10000, NMB: 02002030203, TigoPesa: 074646446)"></textarea>
+
+          <input id="payPhone" placeholder="Contact Phone (WhatsApp / calls)" />
+
+          <input id="payNote" placeholder="Extra note (optional)" />
+
+          <button id="savePayment" class="btn btn-primary">Save</button>
+        </div>
+
+
+        <!-- PREFERENCES -->
+        <div id="mini-preferences" class="mini-content">
+          <label class="switch">
+            <input type="checkbox" id="darkMode" />
+            <span class="slider"></span>
+          </label>
+          <span>Enable Dark Mode</span>
+        </div>
+      </div>
+
+      <!-- ORDERS -->
+      <div id="sub-orders" class="sub-content active">
+        <div class="order-filters">
+          <button class="pill active" data-order="unfilled">
+            Unfilled
+          </button>
+          <button class="pill" data-order="filled">Filled</button>
+          <button class="pill" data-order="completed">Completed</button>
+        </div>
+        <div id="orders" class="orders-list"></div>
+      </div>
+
+      <!-- QR -->
+      <div id="sub-qr" class="sub-content">
+        <div class="qr-wrap">
+          <img id="qrImage" alt="Store QR" />
+        </div>
+        <div class="actions">
+          <button id="regenQR" class="btn btn-ghost">Regenerate</button>
+          <button id="downloadQR" class="btn btn-primary">Download</button>
+        </div>
+        <small>QR points buyers to your store page.</small>
+      </div>
+      </div>
+    </section>
+    <!-- UPGRADE MODAL (FREE PLAN LIMIT) -->
+    <div id="upgradeModal" class="modal" aria-hidden="true">
+      <div class="modal-sheet">
+        <div class="modal-head">
+          <strong>Upgrade Required</strong>
+          <button class="btn btn-ghost" data-close-upgrade>✖</button>
+        </div>
+        <div class="modal-body">
+          <p>
+            <strong>Free Plan limit reached (8 products).</strong><br />
+            Upgrade to <b>Standard</b> to continue posting.
+          </p>
+        </div>
+        <div class="modal-foot">
+          <button class="btn btn-ghost" data-close-upgrade>Cancel</button>
+          <a href="/upgrade-coming-soon.html" class="btn btn-primary">Upgrade Plan</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- ADD SIZE MODAL -->
+    <div id="sizeModal" class="modal" aria-hidden="true">
+      <div class="modal-sheet">
+        <div class="modal-head">
+          <strong>Add Size</strong>
+          <button class="btn btn-ghost" data-close-size>✖</button>
+        </div>
+        <div class="modal-body">
+          <label class="formline">
+            <span>Size (e.g., 39 or XL)</span>
+            <input id="sizeNameInput" class="input" placeholder="e.g., 39 or XL" />
+          </label>
+          <label class="formline">
+            <span>Price Difference (TSh)</span>
+            <input id="sizeDiffInput" class="input" type="number" value="0" />
+          </label>
+        </div>
+        <div class="modal-foot">
+          <button class="btn btn-ghost" data-close-size>Cancel</button>
+          <button id="sizeSaveBtn" class="btn btn-primary">Add</button>
+        </div>
+      </div>
+    </div>
+  </main>
+  <div id="locationModal" class="modal" aria-hidden="true">
+    <div class="modal-sheet">
+      <div class="modal-head">
+        <strong>Set Store Location</strong>
+        <button type="button" class="btn btn-ghost sm" data-close-location>
+          ✕
+        </button>
+      </div>
+      <div class="modal-body">
+        <div id="locationMap"></div>
+        <small class="muted">
+          Drag the pin to your exact store location. NgoXi will use this later for
+          deliveries and store credibility.
+        </small>
+      </div>
+      <div class="modal-foot">
+        <button type="button" class="btn btn-ghost sm" data-close-location>
+          Cancel
+        </button>
+        <button type="button" id="saveLocationBtn" class="btn btn-primary sm">
+          Save
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+  <script src="../assets/seller.js"></script>
+</body>
+
+</html>

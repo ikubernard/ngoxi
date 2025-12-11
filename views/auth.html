@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>NgoXi — Account</title>
+
+  <!-- Brand font (optional, if you have it in assets) -->
+  <link rel="preload" href="/assets/fonts/TempusSansITC.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/assets/auth.css" />
+</head>
+
+<body>
+  <!-- Splash -->
+  <div id="splash" aria-hidden="true">
+    <div class="splash-card">
+      <img src="/assets/logo.png" alt="NgoXi" />
+      <div class="name tempus">NgoXi</div>
+      <div class="slogan"><em>You deserve better</em></div>
+    </div>
+  </div>
+
+  <main class="center">
+    <!-- Theme toggle -->
+    <button id="themeToggle" class="theme-toggle" type="button" aria-label="Toggle dark mode">
+      <span data-icon="sun">☀️</span>
+      <span data-icon="moon">🌙</span>
+    </button>
+
+    <section class="card" role="dialog" aria-label="Login or Signup">
+      <img class="logo" src="/assets/logo.png" alt="NgoXi" />
+      <div class="brand tempus">NgoXi</div>
+      <!-- Tap 5× to reveal admin key -->
+      <div id="tapSlogan" class="tagline"><em>You deserve better</em></div>
+
+      <!-- Login / Signup switch -->
+      <div id="switch" class="switch" data-mode="login" aria-label="Auth mode">
+        <div class="knob" aria-hidden="true"></div>
+        <button type="button" id="btnLogin" aria-pressed="true">Login</button>
+        <button type="button" id="btnSignup" aria-pressed="false">Signup</button>
+      </div>
+
+      <!-- LOGIN -->
+      <form id="frmLogin" autocomplete="on" novalidate>
+        <input id="loginEmail" class="input" type="email" placeholder="Email" required />
+        <input id="loginPass" class="input" type="password" placeholder="Password" required />
+        <button id="doLogin" class="btn btn-primary" type="submit">Log in</button>
+      </form>
+
+      <!-- SIGNUP -->
+      <form id="frmSignup" style="display:none" autocomplete="on" novalidate>
+        <input id="suName" class="input" placeholder="Full name" required />
+        <input id="suEmail" class="input" type="email" placeholder="Email" required />
+        <input id="suPass" class="input" type="password" placeholder="Password" required />
+        <div class="muted">Choose what you’re creating now (you can add the other later):</div>
+        <select id="suRole" class="input" required>
+          <option value="buyer">Buyer</option>
+          <option value="seller">Seller</option>
+        </select>
+
+        <!-- SECRET admin key (appears under password after 5 taps on slogan) -->
+        <div id="adminBlock" class="admin-wrap hidden">
+          <img class="lock" alt=""
+            src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><rect x='3' y='11' width='18' height='11' rx='2' ry='2'/><path d='M7 11V7a5 5 0 0 1 10 0v4'/></svg>">
+          <input id="adminKey" class="input admin-input" placeholder="Master Key (optional)" />
+        </div>
+
+        <button id="doSignup" class="btn btn-primary" type="submit">Create account</button>
+      </form>
+
+      <div id="msg" class="muted" role="status" aria-live="polite"></div>
+      <div class="foot">© 2025 NgoXi. All rights reserved.</div>
+    </section>
+  </main>
+
+  <script>
+    /* ===== THEME (dark / light) ===== */
+    const THEME_KEY = "ngoxi_theme";
+
+    function getStoredTheme() {
+      const t = localStorage.getItem(THEME_KEY);
+      if (t === "light" || t === "dark") return t;
+      // fallback to system preference
+      if (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) {
+        return "dark";
+      }
+      return "light";
+    }
+
+    function applyTheme(theme) {
+      document.body.setAttribute("data-theme", theme);
+      localStorage.setItem(THEME_KEY, theme);
+    }
+
+    function toggleTheme() {
+      const now = document.body.getAttribute("data-theme") || getStoredTheme();
+      const next = now === "dark" ? "light" : "dark";
+      applyTheme(next);
+    }
+
+    // init right away (script is at end, DOM is ready)
+    applyTheme(getStoredTheme());
+
+    /* ===== CONFIG ===== */
+    const API_BASE = window.location.origin;   // or just ""
+    const routeMap = {
+      buyer: "/home.html",
+      seller: "/seller.html",
+      admin: "/admin.html"
+    };
+    const ADMIN_CODE = "NgoXi_master2025";
+
+    /* ===== Splash pointer-events fix ===== */
+    const _sp = document.getElementById("splash");
+    setTimeout(() => _sp.classList.add("hidden"), 2000);
+
+    /* ===== UI refs ===== */
+    const sw = document.getElementById('switch');
+    const btnLogin = document.getElementById('btnLogin');
+    const btnSignup = document.getElementById('btnSignup');
+    const frmLogin = document.getElementById('frmLogin');
+    const frmSignup = document.getElementById('frmSignup');
+    const msg = document.getElementById('msg');
+
+    const tapSlogan = document.getElementById('tapSlogan');
+    const adminBlock = document.getElementById('adminBlock');
+    const adminKey = document.getElementById('adminKey');
+    const themeToggleBtn = document.getElementById('themeToggle');
+
+    if (themeToggleBtn) {
+      themeToggleBtn.addEventListener('click', toggleTheme);
+    }
+
+    let mode = 'login'; // login | signup
+
+    function setMode(m) {
+      mode = m;
+      sw.dataset.mode = m;
+      btnLogin.setAttribute('aria-pressed', m === 'login');
+      btnSignup.setAttribute('aria-pressed', m === 'signup');
+      frmLogin.style.display = (m === 'login') ? 'block' : 'none';
+      frmSignup.style.display = (m === 'signup') ? 'block' : 'none';
+      msg.textContent = '';
+    }
+    btnLogin.onclick = () => setMode('login');
+    btnSignup.onclick = () => setMode('signup');
+
+    /* ===== Hidden admin unlock by tapping slogan 5× ===== */
+    let tapCount = 0, tapTimer = null;
+    tapSlogan.addEventListener('click', () => {
+      tapCount++;
+      clearTimeout(tapTimer);
+      tapTimer = setTimeout(() => tapCount = 0, 1200);
+      if (tapCount >= 5) {
+        adminBlock.classList.remove('hidden');
+        tapCount = 0;
+        // optional haptic on supported devices
+        if (navigator.vibrate) navigator.vibrate(40);
+      }
+    });
+
+    // Visual validation feedback for admin key (B + C + D)
+    adminKey.addEventListener('input', () => {
+      const val = adminKey.value.trim();
+      adminKey.classList.remove('valid', 'invalid');
+      if (!val) return;
+      if (val === ADMIN_CODE) adminKey.classList.add('valid');
+      else adminKey.classList.add('invalid');
+    });
+
+    /* ===== Helpers ===== */
+    function saveAuth(token, user) {
+      localStorage.setItem('token', token);
+      localStorage.setItem('user', JSON.stringify(user));
+    }
+    function manyRoles(u) { return Array.isArray(u?.roles) && u.roles.length > 1; }
+    function goRoleSelect() { window.location.href = "/role-select.html"; }
+    function goFirst(u) {
+      const r = (u.roles && u.roles[0]) || 'buyer';
+      window.location.href = routeMap[r] || "/home.html";
+    }
+
+    /* ===== LOGIN ===== */
+    frmLogin.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('loginEmail').value.trim();
+      const password = document.getElementById('loginPass').value;
+
+      msg.textContent = "Logging in…";
+      try {
+        const res = await fetch(`${API_BASE}/api/auth/login`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, password })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Login failed");
+
+        saveAuth(data.token, data.user);
+        if (manyRoles(data.user)) goRoleSelect(); else goFirst(data.user);
+      } catch (err) {
+        msg.textContent = err.message;
+      }
+    });
+
+    /* ===== SIGNUP (merges roles; optional adminCode) ===== */
+    frmSignup.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const name = document.getElementById('suName').value.trim();
+      const email = document.getElementById('suEmail').value.trim();
+      const password = document.getElementById('suPass').value;
+      const role = document.getElementById('suRole').value;
+      const adminCode = adminBlock.classList.contains('hidden') ? "" : adminKey.value.trim();
+
+      if (!name || !email || !password) {
+        msg.textContent = "Fill all required fields."; return;
+      }
+
+      msg.textContent = "Creating account…";
+      try {
+        const res = await fetch(`${API_BASE}/api/auth/signup`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name, email, password, role, adminCode })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Signup failed");
+
+        saveAuth(data.token, data.user);
+        if (manyRoles(data.user)) goRoleSelect(); else goFirst(data.user);
+      } catch (err) {
+        msg.textContent = err.message;
+      }
+    });
+
+    // default view
+    setMode('login');
+  </script>
+</body>
+
+</html>

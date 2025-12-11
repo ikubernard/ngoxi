@@ -1,0 +1,489 @@
+/* === NgoXi Auth (light + dark) ===================================== */
+
+/* BASE TOKENS */
+:root {
+  --cream: #fff6ea; /* soft cream */
+  --peach: #ffd9b3; /* peach */
+  --salmon: #ffb38a; /* warm salmon */
+  --brand: #8a5a00; /* brand brown-gold */
+  --muted: #8b7a66;
+  --ctaA: #ffa764; /* button grad A */
+  --ctaB: #ff7a1a; /* button grad B */
+  --danger: #e14e4e;
+  --gold: #e0b24f;
+
+  --r: 18px;
+  --r-sm: 12px;
+  --shadow: 0 12px 28px rgba(0, 0, 0, 0.12);
+
+  /* Theme tokens (light by default) */
+  --bg-main: linear-gradient(
+    90deg,
+    var(--cream),
+    var(--peach) 45%,
+    var(--salmon)
+  );
+  --bg-card: #fffaf3;
+  --text-main: #37352f;
+
+  --theme-toggle-light: #ffffff;
+  --theme-toggle-dark: #047857; /* emerald for dark */
+}
+:root {
+  /* ...your existing vars... */
+  --emerald-inner: #065f46; /* Kuitoke-style emerald for container */
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu,
+    "Helvetica Neue", Arial;
+  color: var(--text-main);
+  background: var(--bg-main);
+  background-attachment: fixed;
+}
+/* DARK THEME COLORS */
+body[data-theme="dark"] {
+  /* Outside background: inchworm → emerald gradient */
+  background: radial-gradient(
+    circle at top,
+    #b2ec5d 0%,
+    /* inchworm */ #6ee7b7 25%,
+    #34d399 50%,
+    #16a34a 75%,
+    #065f46 100%
+  );
+  color: #ecfdf5; /* mint white text */
+}
+
+/* Card in dark mode: we’ll draw the LED + panel with pseudo-elements */
+body[data-theme="dark"] .card {
+  position: relative;
+  background: transparent; /* inner panel will come from ::after */
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.65);
+  border-radius: var(--r); /* same radius as your normal .card */
+  z-index: 0;
+}
+
+/* Brand + footer colors tuned for dark */
+body[data-theme="dark"] .brand {
+  color: #facc15;
+}
+body[data-theme="dark"] .foot {
+  color: #6ee7b7;
+}
+
+/* Tempus Sans ITC for “NgoXi” wordmark */
+@font-face {
+  font-family: "TempusSansITC";
+  src: url("/assets/fonts/TempusSansITC.woff2") format("woff2");
+  font-display: swap;
+}
+.tempus {
+  font-family: "TempusSansITC", "Papyrus", cursive, system-ui;
+}
+
+/* Splash screen */
+#splash {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: var(--bg-main);
+  z-index: 50;
+  animation: fadeSplash 2.2s ease forwards;
+}
+#splash.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+.splash-card {
+  background: #fff8ee;
+  border-radius: 20px;
+  padding: 22px 26px;
+  box-shadow: var(--shadow);
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  text-align: center;
+}
+.splash-card img {
+  width: 74px;
+  height: 74px;
+  border-radius: 16px;
+}
+.splash-card .name {
+  font-size: 28px;
+  color: var(--brand);
+}
+.splash-card .slogan {
+  font-style: italic;
+  color: var(--muted);
+}
+
+@keyframes fadeSplash {
+  0% {
+    opacity: 1;
+  }
+  65% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+
+/* Layout */
+.center {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+.card {
+  width: 420px;
+  max-width: 92vw;
+  background: var(--bg-card);
+  border-radius: var(--r);
+  box-shadow: var(--shadow);
+  padding: 28px 26px 22px;
+  position: relative; /* for LED frame + theme toggle */
+  overflow: visible; /* let the LED line sit just outside */
+  z-index: 0; /* so LED (z:-1) goes behind content */
+  transition: background 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* Logo + brand + tagline */
+.logo {
+  width: 68px;
+  height: 68px;
+  display: block;
+  margin: 0 auto 10px;
+  border-radius: 16px;
+}
+.brand {
+  text-align: center;
+  font-size: 34px;
+  color: var(--brand);
+  line-height: 1;
+}
+body[data-theme="dark"] .brand {
+  color: #facc15;
+}
+.tagline {
+  text-align: center;
+  margin-top: 2px;
+  font-style: italic;
+  color: var(--muted);
+  cursor: pointer;
+  user-select: none;
+}
+
+/* base (light mode) stays the same */
+.switch {
+  position: relative;
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  margin: 16px 0 14px;
+  background: #fff0e0;
+  border-radius: 999px;
+  user-select: none;
+}
+
+/* dark: softer emerald pill, not black, not white */
+body[data-theme="dark"] .switch {
+  background: rgba(15, 118, 110, 0.65); /* teal/emerald */
+}
+
+/* knob */
+.switch .knob {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  width: calc(50% - 4px);
+  height: calc(100% - 8px);
+  background: #ffffff;
+  border-radius: 999px;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+  transition: left 0.25s ease, background 0.2s ease;
+}
+
+/* dark-mode knob: light mint, not pure white */
+body[data-theme="dark"] .switch .knob {
+  background: #bbf7d0; /* light green */
+}
+
+/* buttons text color */
+.switch button {
+  flex: 1;
+  z-index: 1;
+  border: 0;
+  background: transparent;
+  padding: 10px 0;
+  border-radius: 999px;
+  font-weight: 700;
+  color: #805b2c;
+  cursor: pointer;
+}
+body[data-theme="dark"] .switch button {
+  color: #ecfdf5; /* bright mint text */
+}
+
+.switch[data-mode="signup"] .knob {
+  left: calc(50%);
+}
+.switch button {
+  flex: 1;
+  z-index: 1;
+  border: 0;
+  background: transparent;
+  padding: 10px 0;
+  border-radius: 999px;
+  font-weight: 700;
+  color: #805b2c;
+  cursor: pointer;
+}
+body[data-theme="dark"] .switch button {
+  color: #e5e7eb;
+}
+
+/* Inputs */
+.input {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: var(--r-sm);
+  border: 1px solid #e8dbc9;
+  background: #fff;
+  outline: none;
+  margin: 10px 0;
+  font-size: 15px;
+}
+.input:focus {
+  border-color: #e2c78a;
+  box-shadow: 0 0 0 3px rgba(226, 199, 138, 0.25);
+}
+body[data-theme="dark"] .input {
+  background: #020617;
+  border-color: #1e293b;
+  color: var(--text-main);
+}
+body[data-theme="dark"] .input::placeholder {
+  color: #6b7280;
+}
+
+/* Hide helper */
+.hidden {
+  display: none !important;
+}
+
+/* Buttons */
+.btn {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: var(--r-sm);
+  border: 0;
+  font-weight: 800;
+  cursor: pointer;
+}
+.btn-primary {
+  color: #fff;
+  background: linear-gradient(135deg, var(--ctaA), var(--ctaB));
+  box-shadow: 0 10px 24px rgba(255, 122, 26, 0.25);
+}
+.btn:active {
+  transform: translateY(1px);
+}
+
+/* Text */
+.muted {
+  color: var(--muted);
+  font-size: 13px;
+  margin-top: 2px;
+}
+.foot {
+  text-align: center;
+  margin-top: 12px;
+  font-size: 12px;
+  color: #856f54;
+}
+body[data-theme="dark"] .foot {
+  color: #6b7280;
+}
+
+/* Admin Master Key styles */
+.admin-wrap {
+  position: relative;
+}
+.admin-input {
+  padding-left: 40px;
+}
+.admin-wrap .lock {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 18px;
+  height: 18px;
+  opacity: 0.85;
+}
+.admin-input.invalid {
+  border-color: var(--danger) !important;
+}
+.admin-input.valid {
+  border-color: var(--gold) !important;
+  box-shadow: 0 0 0 3px rgba(224, 178, 79, 0.28) !important;
+}
+
+/* Theme toggle pill (top-right) */
+.theme-toggle {
+  position: fixed; /* float on screen */
+  top: 14px;
+  right: 14px;
+  z-index: 60;
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  cursor: pointer;
+  background: var(--theme-toggle-light); /* white in light mode */
+  color: #0f172a;
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.18);
+  outline: none;
+}
+body[data-theme="dark"] .theme-toggle {
+  background: var(--theme-toggle-dark);
+  color: #ecfdf5;
+  border-color: #10b981;
+  box-shadow: 0 0 18px rgba(16, 185, 129, 0.55);
+}
+
+/* Icon swap */
+.theme-toggle span[data-icon="sun"] {
+  display: inline;
+}
+.theme-toggle span[data-icon="moon"] {
+  display: none;
+}
+body[data-theme="dark"] .theme-toggle span[data-icon="sun"] {
+  display: none;
+}
+body[data-theme="dark"] .theme-toggle span[data-icon="moon"] {
+  display: inline;
+}
+
+/* base is fine for light */
+.switch {
+  position: relative;
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  margin: 16px 0 14px;
+  background: #fff0e0;
+  border-radius: 999px;
+  user-select: none;
+}
+
+/* dark: emerald pill, not white */
+body[data-theme="dark"] .switch {
+  background: rgba(15, 118, 110, 0.7);
+}
+
+.switch .knob {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  width: calc(50% - 4px);
+  height: calc(100% - 8px);
+  background: #ffffff;
+  border-radius: 999px;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+  transition: left 0.25s ease, background 0.2s ease;
+}
+
+/* dark knob: soft green so text still pops */
+body[data-theme="dark"] .switch .knob {
+  background: #bbf7d0; /* light green */
+}
+
+.switch button {
+  flex: 1;
+  z-index: 1;
+  border: 0;
+  background: transparent;
+  padding: 10px 0;
+  border-radius: 999px;
+  font-weight: 700;
+  color: #805b2c;
+  cursor: pointer;
+}
+
+body[data-theme="dark"] .switch button {
+  color: #ecfdf5;
+}
+/* ===== RGBV LED STRIP AROUND CARD – DARK MODE ONLY =========== */
+
+/* Base: both pseudo-elements are off by default */
+body[data-theme="dark"] .card::before,
+body[data-theme="dark"] .card::after {
+  content: "";
+  position: absolute;
+  border-radius: inherit;
+  opacity: 0; /* invisible until hover / typing */
+  pointer-events: none;
+  transition: opacity 0.18s ease-out;
+  z-index: -1;
+}
+
+/* ::before = bold LED line (RGBV) wrapped around container */
+body[data-theme="dark"] .card::before {
+  inset: -3px; /* how far OUTSIDE the card the strip sits */
+  /* multicolor LED strip */
+  background: linear-gradient(
+    90deg,
+    #f97373,
+    /* red */ #22c55e,
+    /* green */ #60a5fa,
+    /* blue */ #a855f7,
+    /* violet */ #f97373
+  );
+  background-size: 400% 100%;
+  background-position: 0 0;
+
+  animation: ledBorder 2.8s linear infinite; /* continuous movement */
+}
+
+/* ::after = inner emerald panel (actual container background) */
+body[data-theme="dark"] .card::after {
+  inset: 3px; /* thickness of the LED line = 3px */
+  background: var(--emerald-inner);
+}
+
+/* Turn the LED ON only when hovering or typing inside */
+body[data-theme="dark"] .card:hover::before,
+body[data-theme="dark"] .card:hover::after,
+body[data-theme="dark"] .card:focus-within::before,
+body[data-theme="dark"] .card:focus-within::after {
+  opacity: 1;
+}
+
+/* LED movement – makes the strip slide around the border */
+@keyframes ledBorder {
+  to {
+    background-position: -400% 0;
+  }
+}
