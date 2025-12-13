@@ -32,7 +32,7 @@ app.use(
     origin: [
       "http://127.0.0.1:5000",
       "http://localhost:5000",
-      "http://127.0.0.1:5500"
+      "http://127.0.0.1:5500",
     ],
     credentials: true,
     allowedHeaders: ["Content-Type", "Authorization"],
@@ -53,7 +53,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 // ============================
 app.use("/assets", express.static(path.join(__dirname, "assets")));
 app.use("/public", express.static(path.join(__dirname, "public")));
-app.use("/", express.static(path.join(__dirname, "views")));  
+app.use("/", express.static(path.join(__dirname, "views")));
 // ✅ This means: /home.html, /seller.html, /product.html will load correctly
 
 // ============================
@@ -172,9 +172,13 @@ io.on("connection", (socket) => {
     const seg = (segment || "all").toLowerCase();
 
     if (seg === "buyers") {
-      globalThis.online.buyers.forEach((id) => io.to(id).emit("chat:notice", payload));
+      globalThis.online.buyers.forEach((id) =>
+        io.to(id).emit("chat:notice", payload)
+      );
     } else if (seg === "sellers") {
-      globalThis.online.sellers.forEach((id) => io.to(id).emit("chat:notice", payload));
+      globalThis.online.sellers.forEach((id) =>
+        io.to(id).emit("chat:notice", payload)
+      );
     } else if (seg === "admins") {
       io.to("admin-room").emit("chat:notice", payload);
     } else {
@@ -208,7 +212,8 @@ app.get("/api/chat/history", (req, res) => {
   try {
     const all = JSON.parse(fs.readFileSync(CHAT_LOG, "utf8"));
     const history = all.filter(
-      (m) => (m.fromId === a && m.toId === b) || (m.fromId === b && m.toId === a)
+      (m) =>
+        (m.fromId === a && m.toId === b) || (m.fromId === b && m.toId === a)
     );
     res.json(history);
   } catch {
