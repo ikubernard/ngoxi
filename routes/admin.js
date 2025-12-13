@@ -1,6 +1,6 @@
 import express from "express";
 import User from "../model/User.js";
-import Product from "../model/Product.js";
+import Product from "../model/product.js";
 import jwt from "jsonwebtoken";
 
 const router = express.Router();
@@ -28,9 +28,13 @@ const pickBasic = (u) => ({
   id: u._id.toString(),
   name: u.name,
   email: u.email,
-  role: (u.roles.includes("seller") && u.ngoXiPlan === "standard") ? "standard" :
-        (u.roles.includes("seller") ? "free" : (u.roles[0] || "user")),
-  plan: u.ngoXiPlan
+  role:
+    u.roles.includes("seller") && u.ngoXiPlan === "standard"
+      ? "standard"
+      : u.roles.includes("seller")
+      ? "free"
+      : u.roles[0] || "user",
+  plan: u.ngoXiPlan,
 });
 
 /* ---------------- Overview stats ---------------- */
@@ -41,7 +45,7 @@ router.get("/stats", verifyToken, requireAdmin, async (req, res) => {
       User.countDocuments(),
       User.countDocuments({ roles: "seller" }),
       User.countDocuments({ roles: "buyer" }),
-      Product.countDocuments()
+      Product.countDocuments(),
     ]);
     res.json({ users, sellers, buyers, products });
   } catch (e) {
@@ -56,7 +60,7 @@ router.get("/sellers", verifyToken, requireAdmin, async (req, res) => {
   try {
     const [paid, unpaid] = await Promise.all([
       User.find({ roles: "seller", ngoXiPlan: "standard" }).limit(200),
-      User.find({ roles: "seller", ngoXiPlan: "free" }).limit(200)
+      User.find({ roles: "seller", ngoXiPlan: "free" }).limit(200),
     ]);
 
     // online sets come from server (see server.js patch)
@@ -68,8 +72,8 @@ router.get("/sellers", verifyToken, requireAdmin, async (req, res) => {
 
     res.json({
       paid: paid.map(pickBasic),
-      unpaid: unpaid.map(u => ({ ...pickBasic(u), upgradable: true })),
-      online: onlineDocs.map(pickBasic)
+      unpaid: unpaid.map((u) => ({ ...pickBasic(u), upgradable: true })),
+      online: onlineDocs.map(pickBasic),
     });
   } catch (e) {
     console.error(e);
@@ -83,12 +87,14 @@ router.get("/buyers", verifyToken, requireAdmin, async (req, res) => {
   try {
     const onlineBuyers = Array.from(globalThis.online?.buyers || []);
     const [onlineDocs, allBuyers] = await Promise.all([
-      onlineBuyers.length ? User.find({ _id: { $in: onlineBuyers } }).limit(200) : [],
-      User.find({ roles: "buyer" }).limit(200)
+      onlineBuyers.length
+        ? User.find({ _id: { $in: onlineBuyers } }).limit(200)
+        : [],
+      User.find({ roles: "buyer" }).limit(200),
     ]);
     res.json({
       online: onlineDocs.map(pickBasic),
-      all: allBuyers.map(pickBasic)
+      all: allBuyers.map(pickBasic),
     });
   } catch (e) {
     console.error(e);
@@ -98,20 +104,25 @@ router.get("/buyers", verifyToken, requireAdmin, async (req, res) => {
 
 /* ---------------- Manual upgrade ---------------- */
 // PATCH /api/admin/upgrade/:userId  -> sets ngoXiPlan:"standard"
-router.patch("/upgrade/:userId", verifyToken, requireAdmin, async (req, res) => {
-  try {
-    const u = await User.findByIdAndUpdate(
-      req.params.userId,
-      { $set: { ngoXiPlan: "standard" } },
-      { new: true }
-    );
-    if (!u) return res.status(404).json({ error: "User not found" });
-    res.json({ ok: true, user: pickBasic(u) });
-  } catch (e) {
-    console.error(e);
-    res.status(500).json({ error: "Failed to upgrade" });
+router.patch(
+  "/upgrade/:userId",
+  verifyToken,
+  requireAdmin,
+  async (req, res) => {
+    try {
+      const u = await User.findByIdAndUpdate(
+        req.params.userId,
+        { $set: { ngoXiPlan: "standard" } },
+        { new: true }
+      );
+      if (!u) return res.status(404).json({ error: "User not found" });
+      res.json({ ok: true, user: pickBasic(u) });
+    } catch (e) {
+      console.error(e);
+      res.status(500).json({ error: "Failed to upgrade" });
+    }
   }
-});
+);
 
 /* ---------------- Revenue placeholder ---------------- */
 // GET /api/admin/revenue -> { total }
@@ -124,12 +135,15 @@ router.get("/revenue", verifyToken, requireAdmin, async (req, res) => {
 // GET /api/admin/info -> { reports:[], signups:[] }
 router.get("/info", verifyToken, requireAdmin, async (req, res) => {
   try {
-    const startOfDay = new Date(); startOfDay.setHours(0,0,0,0);
-    const signups = await User.find({ createdAt: { $gte: startOfDay } }).limit(100);
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+    const signups = await User.find({ createdAt: { $gte: startOfDay } }).limit(
+      100
+    );
     // reports not implemented yet; return empty list for now
     res.json({
       reports: [],
-      signups: signups.map(pickBasic)
+      signups: signups.map(pickBasic),
     });
   } catch (e) {
     console.error(e);
