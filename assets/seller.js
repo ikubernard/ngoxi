@@ -795,64 +795,91 @@ function attachProductActions() {
     b.addEventListener("click", () => onEditProduct(b.dataset.edit));
   });
 }
-
 function renderOrders(filter) {
   const box = document.getElementById("orders");
   if (!box) return;
-  const all = JSON.parse(localStorage.getItem(ORDERS_KEY) || "[]");
-  const cur = all.filter((o) =>
-    filter === "unfilled"
-      ? !o.status || o.status === "unfilled"
-      : o.status === filter
-  );
+
+  const all = getAllOrders();
+
+  const cur = all.filter((o) => {
+    const st = o.status || ORDER_STATUS.UNFILLED;
+    if (filter === "unfilled") return st === ORDER_STATUS.UNFILLED;
+    if (filter === "filled") return st === ORDER_STATUS.FILLED;
+    if (filter === "completed")
+      return st === ORDER_STATUS.COMPLETED || st === ORDER_STATUS.DONE;
+    return false;
+  });
+
   box.innerHTML = "";
   if (cur.length === 0) {
     box.innerHTML = "<div class='muted'>No orders here.</div>";
     return;
   }
+
   cur.forEach((o) => {
     const row = document.createElement("div");
     row.className = "order-row card";
+
+    const statusLabel =
+      o.status === ORDER_STATUS.UNFILLED
+        ? "Awaiting payment"
+        : o.status === ORDER_STATUS.FILLED
+        ? "Paid (waiting confirmation)"
+        : o.status === ORDER_STATUS.COMPLETED
+        ? "Active shipping"
+        : "Arrived (Done)";
+
     row.innerHTML = `
       <div class="or-left">
-        <div class="or-title">${sanitize(o.product)}</div>
-        <div class="or-sub">${new Date(o.ts).toLocaleString()}</div>
+        <div class="or-title">${sanitize(
+          o.productName || o.product || "Order"
+        )}</div>
+        <div class="or-sub">${statusLabel} • ${new Date(
+      o.createdAt || o.ts
+    ).toLocaleString()}</div>
       </div>
+
       <div class="or-right">
-        <div class="or-price">TSh ${Number(o.price).toLocaleString()}</div>
-        <div class="or-qty">Qty ${o.qty}</div>
+        <div class="or-price">TSh ${Number(o.price || 0).toLocaleString()}</div>
       </div>
+
       <div class="or-actions">
+        <button class="btn btn-ghost sm" data-act="details">Details</button>
         ${
-          o.status !== "filled"
-            ? `<button class="btn btn-ghost" data-act="fill">Mark filled</button>`
+          (o.status || ORDER_STATUS.UNFILLED) === ORDER_STATUS.UNFILLED
+            ? `<button class="btn btn-ghost sm" data-act="delete">Delete</button>`
             : ""
         }
-        ${
-          o.status !== "completed"
-            ? `<button class="btn btn-ghost" data-act="complete">Complete</button>`
-            : ""
-        }
-        <button class="btn btn-ghost" data-act="delete">Delete</button>
       </div>
     `;
+
     row.addEventListener("click", (e) => {
       const act = e.target?.dataset?.act;
       if (!act) return;
-      let arr = JSON.parse(localStorage.getItem(ORDERS_KEY) || "[]");
-      const idx = arr.findIndex((x) => x.id === o.id);
-      if (idx < 0) return;
-      if (act === "fill") arr[idx].status = "filled";
-      if (act === "complete") arr[idx].status = "completed";
-      if (act === "delete") arr = arr.filter((x) => x.id !== o.id);
-      localStorage.setItem(ORDERS_KEY, JSON.stringify(arr));
-      renderOrders(filter);
-      updateOverview();
-      showToast("Order updated ✅", "success");
+
+      if (act === "details") {
+        openOrderDetails(o.id);
+        return;
+      }
+
+      if (act === "delete") {
+        const st = o.status || ORDER_STATUS.UNFILLED;
+        if (st !== ORDER_STATUS.UNFILLED) {
+          showToast("Cannot delete after payment.", "error");
+          return;
+        }
+        const keep = getAllOrders().filter((x) => x.id !== o.id);
+        saveAllOrders(keep);
+        renderOrders(filter);
+        updateOverview();
+        showToast("Order deleted.", "success");
+      }
     });
+
     box.appendChild(row);
   });
 }
+
 function createOrderFromPayment(chat, pc, receiptDataUrl) {
   const all = JSON.parse(localStorage.getItem(ORDERS_KEY) || "[]");
   const id = `c${Date.now()}`;
@@ -883,8 +910,85 @@ document.querySelectorAll("[data-order]").forEach((btn) => {
     renderOrders(btn.dataset.order);
   });
 });
+function openOrderDetails(orderId) {
+  const o = findOrderById(orderId);
+  if (!o) return showToast("Order not found.", "error");
+
+  // For now: quick preview popup (temporary)
+  alert(
+    `ORDER DETAILS\n\n` +
+      `Product: ${o.productName}\n` +
+      `Price: TSh ${Number(o.price).toLocaleString()}\n` +
+      `Buyer: ${o.buyerName} (${o.buyerCity})\n` +
+      `Type: ${o.type}\n` +
+      (o.type === "intercity"
+        ? `Bus: ${o.busCompany}\nStation: ${o.busStation}\nReceiver: ${o.receiverName} ${o.receiverPhone}\n`
+        : "") +
+      `Status: ${o.status}`
+  );
+}
 
 const ORDERS_KEY = "orders_v70_flow"; // bump version so old seed is ignored
+
+// ================================
+// ORDER LOGIC v2 (LOCKED SCHEMA)
+// ================================
+
+const ORDER_STATUS = {
+  UNFILLED: "unfilled", // awaiting payment
+  FILLED: "filled", // buyer paid + receipt uploaded
+  COMPLETED: "completed", // seller confirmed (active shipping)
+  DONE: "done", // arrived (read-only)
+};
+
+function makeOrder({
+  productId,
+  productName,
+  price,
+  buyerId,
+  buyerName,
+  buyerCity,
+  sellerCity,
+  type = "local", // "local" | "intercity"
+  busCompany = "",
+  busStation = "",
+  receiverName = "",
+  receiverPhone = "",
+  chatId = "",
+}) {
+  return {
+    id: `o${Date.now()}`,
+    productId: productId || "",
+    productName: productName || "NgoXi Order",
+    price: Number(price || 0),
+
+    buyerId: buyerId || "",
+    buyerName: buyerName || "",
+    buyerCity: buyerCity || "",
+    sellerCity: sellerCity || "",
+
+    type, // local | intercity
+
+    // intercity only
+    busCompany,
+    busStation,
+    receiverName,
+    receiverPhone,
+
+    receiptImage: null,
+
+    status: ORDER_STATUS.UNFILLED,
+
+    shipping: {
+      plateNumber: "",
+      tripStatus: "pending", // pending | on_the_way | arrived
+    },
+
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+    chatId: chatId || "",
+  };
+}
 
 function getAllOrders() {
   return JSON.parse(localStorage.getItem(ORDERS_KEY) || "[]");
@@ -897,52 +1001,58 @@ function saveAllOrders(arr) {
 function findOrderById(id) {
   return getAllOrders().find((o) => o.id === id) || null;
 }
-function markOrderPaid(orderId, receiptUrl) {
+function markOrderPaid(orderId, receiptDataUrl) {
   const all = getAllOrders();
   const idx = all.findIndex((o) => o.id === orderId);
   if (idx < 0) return null;
 
   const o = all[idx];
-  o.status = "filled";
-  o.payment = o.payment || {};
-  o.payment.receiptUrl = receiptUrl || o.payment.receiptUrl || null;
+  o.status = ORDER_STATUS.FILLED;
+  o.receiptImage = receiptDataUrl || o.receiptImage || null;
   o.updatedAt = Date.now();
 
   all[idx] = o;
   saveAllOrders(all);
   return o;
 }
+
 function confirmOrder(orderId) {
   const all = getAllOrders();
   const idx = all.findIndex((o) => o.id === orderId);
   if (idx < 0) return null;
 
   const o = all[idx];
-  o.status = "completed";
-  o.logistics = o.logistics || {};
-  if (!o.logistics.tripStatus) o.logistics.tripStatus = "pending";
+  o.status = ORDER_STATUS.COMPLETED;
+  if (!o.shipping) o.shipping = { plateNumber: "", tripStatus: "pending" };
+  if (!o.shipping.tripStatus) o.shipping.tripStatus = "pending";
   o.updatedAt = Date.now();
 
   all[idx] = o;
   saveAllOrders(all);
   return o;
 }
-function updateTrip(orderId, { busPlate, tripStatus }) {
+
+function updateTrip(orderId, { plateNumber, tripStatus }) {
   const all = getAllOrders();
   const idx = all.findIndex((o) => o.id === orderId);
   if (idx < 0) return null;
 
   const o = all[idx];
-  o.logistics = o.logistics || {};
-  if (busPlate !== undefined) o.logistics.busPlate = busPlate;
-  if (tripStatus) o.logistics.tripStatus = tripStatus;
-  o.updatedAt = Date.now();
+  if (!o.shipping) o.shipping = { plateNumber: "", tripStatus: "pending" };
 
+  if (plateNumber !== undefined) o.shipping.plateNumber = plateNumber;
+  if (tripStatus) o.shipping.tripStatus = tripStatus;
+
+  // If arrived -> lock it to DONE
+  if (o.shipping.tripStatus === "arrived") {
+    o.status = ORDER_STATUS.DONE;
+  }
+
+  o.updatedAt = Date.now();
   all[idx] = o;
   saveAllOrders(all);
   return o;
 }
-
 
 /* ---------- QR Generator ---------- */
 function getSellerId() {
