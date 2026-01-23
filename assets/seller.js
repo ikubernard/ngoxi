@@ -280,8 +280,8 @@ function renderSizes() {
     el.className = "size-chip";
     el.innerHTML = `
       <span><strong>${sanitize(s.size)}</strong>${
-      s.priceDiff ? ` · +TSh ${Number(s.priceDiff).toLocaleString()}` : ""
-    }</span>
+        s.priceDiff ? ` · +TSh ${Number(s.priceDiff).toLocaleString()}` : ""
+      }</span>
       <button class="chip-remove" data-i="${i}" title="Remove">✖</button>
     `;
     list.appendChild(el);
@@ -290,7 +290,7 @@ function renderSizes() {
     b.addEventListener("click", () => {
       sizesData.splice(Number(b.dataset.i), 1);
       renderSizes();
-    })
+    }),
   );
 }
 document.getElementById("addSizeBtn")?.addEventListener("click", () => {
@@ -302,8 +302,8 @@ document
   .querySelectorAll("[data-close-size]")
   .forEach((btn) =>
     btn.addEventListener("click", () =>
-      document.getElementById("sizeModal")?.setAttribute("aria-hidden", "true")
-    )
+      document.getElementById("sizeModal")?.setAttribute("aria-hidden", "true"),
+    ),
   );
 document.getElementById("sizeSaveBtn")?.addEventListener("click", () => {
   const name = (document.getElementById("sizeNameInput").value || "").trim();
@@ -485,9 +485,9 @@ function sanitize(s = "") {
   return s.replace(
     /[&<>"']/g,
     (m) =>
-      ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[
+      ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[
         m
-      ])
+      ],
   );
 }
 /* ==========================================================
@@ -586,7 +586,7 @@ document.getElementById("savePayment")?.addEventListener("click", () => {
   if (!methods || !payNumber || !phone) {
     showToast(
       "Fill payment channels, payment number(s) and phone number.",
-      "error"
+      "error",
     );
     return;
   }
@@ -705,7 +705,7 @@ async function onToggleVisibility(id) {
     if (!res.ok) throw new Error(data.message || "Toggle failed");
     showToast(
       data.hidden ? "Product hidden 👁" : "Product visible ✅",
-      "success"
+      "success",
     );
     await refreshProductsEverywhere();
   } catch (e) {
@@ -824,19 +824,19 @@ function renderOrders(filter) {
       o.status === ORDER_STATUS.UNFILLED
         ? "Awaiting payment"
         : o.status === ORDER_STATUS.FILLED
-        ? "Paid (waiting confirmation)"
-        : o.status === ORDER_STATUS.COMPLETED
-        ? "Active shipping"
-        : "Arrived (Done)";
+          ? "Paid (waiting confirmation)"
+          : o.status === ORDER_STATUS.COMPLETED
+            ? "Active shipping"
+            : "Arrived (Done)";
 
     row.innerHTML = `
       <div class="or-left">
         <div class="or-title">${sanitize(
-          o.productName || o.product || "Order"
+          o.productName || o.product || "Order",
         )}</div>
         <div class="or-sub">${statusLabel} • ${new Date(
-      o.createdAt || o.ts
-    ).toLocaleString()}</div>
+          o.createdAt || o.ts,
+        ).toLocaleString()}</div>
       </div>
 
       <div class="or-right">
@@ -924,7 +924,7 @@ function openOrderDetails(orderId) {
       (o.type === "intercity"
         ? `Bus: ${o.busCompany}\nStation: ${o.busStation}\nReceiver: ${o.receiverName} ${o.receiverPhone}\n`
         : "") +
-      `Status: ${o.status}`
+      `Status: ${o.status}`,
   );
 }
 
@@ -1062,10 +1062,10 @@ function getSellerId() {
 function generateQR() {
   const id = getSellerId();
   const url = `http://localhost:5000/store.html?sellerId=${encodeURIComponent(
-    id
+    id,
   )}`;
   const imgUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(
-    url
+    url,
   )}`;
   const img = document.getElementById("qrImage");
   if (img) {
@@ -1134,7 +1134,7 @@ function openLocationModal() {
     }).addTo(locationMapInstance);
 
     locationMarker = L.marker(initialLatLng, { draggable: true }).addTo(
-      locationMapInstance
+      locationMapInstance,
     );
   }
 
@@ -1154,7 +1154,7 @@ function openLocationModal() {
       },
       () => {
         // ignore if user denies
-      }
+      },
     );
   }
 }
@@ -1332,6 +1332,56 @@ function renderChatList() {
   });
 }
 
+function getSavedPaymentInfo() {
+  try {
+    return JSON.parse(localStorage.getItem(PAYMENT_KEY) || "null");
+  } catch {
+    return null;
+  }
+}
+
+// Builds/refreshes the pinned card content for a chat based on order status
+function buildPinnedPaymentCard(chat) {
+  if (!chat) return null;
+
+  // We show pinned card only while order is UNFILLED or FILLED
+  const orderId = chat.orderId || chat.paymentCard?.orderId;
+  if (!orderId) return null;
+
+  const o = findOrderById(orderId);
+  if (!o) return null;
+
+  if (o.status !== "unfilled" && o.status !== "filled") {
+    return null; // disappears after confirm (completed/done)
+  }
+
+  const pay = getSavedPaymentInfo();
+  if (!pay) {
+    // Payment card cannot show without saved seller payment info
+    return {
+      orderId: o.id,
+      productName: o.productName,
+      totalPrice: o.price,
+      methods: "—",
+      payNumber: "Set payment info in Me → Settings → Payment Info",
+      phone: "",
+      note: "",
+      receipt: o.receiptImage || null,
+    };
+  }
+
+  return {
+    orderId: o.id,
+    productName: o.productName,
+    totalPrice: o.price,
+    methods: pay.methods || "",
+    payNumber: pay.payNumber || "",
+    phone: pay.phone || "",
+    note: pay.note || "",
+    receipt: o.receiptImage || null,
+  };
+}
+
 function setActiveChat(id) {
   activeChatId = id;
   renderChatList();
@@ -1367,32 +1417,52 @@ function renderChatMessages() {
       "<div class='muted'>Select a conversation to start chatting.</div>";
     return;
   }
-  // Payment card, if any
-  if (chat.paymentCard) {
+  // Pinned Payment Card (AUTO) — visible only for unfilled/filled
+  const pinned = buildPinnedPaymentCard(chat);
+  if (pinned) {
+    // keep it on chat object for internal use
+    chat.paymentCard = pinned;
+
     const card = document.createElement("div");
     card.className = "payment-card";
-    const pc = chat.paymentCard;
+    const pc = pinned;
+
+    const statusLine =
+      findOrderById(pc.orderId)?.status === "unfilled"
+        ? "Status: Awaiting payment"
+        : "Status: Receipt uploaded • Waiting seller confirmation";
 
     card.innerHTML = `
       <div class="payment-card-header">
         <div>Payment Details</div>
         <div class="muted">${sanitize(chat.name)}</div>
       </div>
+
       <div class="payment-card-meta">
-        <div><strong>Methods:</strong> ${sanitize(
-          pc.methods || "M-Pesa, TigoPesa, AirtelMoney, HaloPesa, CRDB, NMB"
-        )}</div>
-        <div><strong>Payment number(s):</strong> ${sanitize(
-          pc.payNumber || ""
-        )}</div>
+        <div><strong>Product:</strong> ${sanitize(pc.productName || "Product")}</div>
+        <div><strong>Total:</strong> TSh ${Number(pc.totalPrice || 0).toLocaleString()}</div>
+        <div class="muted">${sanitize(statusLine)}</div>
+        <hr style="border:0;border-top:1px solid rgba(0,0,0,0.06);margin:8px 0;">
+        <div><strong>Methods:</strong> ${sanitize(pc.methods || "")}</div>
+        <div><strong>Payment number(s):</strong> ${sanitize(pc.payNumber || "")}</div>
         <div><strong>Phone:</strong> ${sanitize(pc.phone || "")}</div>
         ${pc.note ? `<div class="muted">${sanitize(pc.note)}</div>` : ""}
       </div>
+
       <div class="payment-card-actions">
         <input type="file" id="receiptInput" accept="image/*" style="display:none" />
         <button data-card-action="paid" class="btn btn-primary">I have paid</button>
         <button data-card-action="cancel" class="btn btn-ghost">Cancel</button>
       </div>
+
+      ${
+        pc.receipt
+          ? `<div class="payment-receipt">
+               <div class="small muted">Receipt uploaded:</div>
+               <img src="${pc.receipt}" alt="Receipt" />
+             </div>`
+          : ""
+      }
     `;
     cardHost.appendChild(card);
 
@@ -1401,48 +1471,66 @@ function renderChatMessages() {
     card.querySelectorAll("[data-card-action]").forEach((btn) => {
       btn.addEventListener("click", () => {
         const act = btn.dataset.cardAction;
+
+        // NOTE: This "buyer action" is temporary for seller-demo/testing.
+        // Later buyer-side will do this for real.
         if (act === "paid") {
-          // Step 1: open file selector for receipt screenshot
-          if (receiptInput) {
-            receiptInput.click();
-            receiptInput.onchange = () => {
-              const file = receiptInput.files?.[0];
-              if (!file) {
-                showToast("No receipt selected.", "error");
-                return;
-              }
+          if (!receiptInput) return;
+          receiptInput.click();
 
-              // TODO: here you will upload the receipt + create order via backend
-              // e.g., send FormData with chatId, productId, amount, receiptFile...
+          receiptInput.onchange = () => {
+            const file = receiptInput.files?.[0];
+            if (!file) return showToast("No receipt selected.", "error");
 
+            const reader = new FileReader();
+            reader.onload = () => {
+              // Update order -> FILLED + save receipt
+              markOrderPaid(pc.orderId, reader.result);
+
+              chat.orderState = "open"; // 🔴 still order active before confirm
               addSystemMessage(
                 chat.id,
-                `Buyer marked this order as paid for: ${
-                  pc.productName
-                } – TSh ${Number(
-                  pc.totalPrice || 0
-                ).toLocaleString()}. Waiting for seller confirmation.`
+                `Buyer uploaded receipt for ${pc.productName}. Waiting for seller confirmation.`,
+                "order",
               );
 
-              // Mark in memory that we have a pending payment
-              chat.paymentStatus = "pendingSeller";
-              showToast(
-                "Receipt attached (local). Plug this into your API later.",
-                "success"
-              );
+              renderChatList();
+              renderChatMessages();
             };
-          }
+            reader.readAsDataURL(file);
+          };
         }
 
         if (act === "cancel") {
-          addSystemMessage(chat.id, "Buyer cancelled this payment card.");
+          // Cancel means: remove order only if still UNFILLED (awaiting payment)
+          const o = findOrderById(pc.orderId);
+          if (!o) return;
+
+          if (o.status !== "unfilled") {
+            showToast("Cannot cancel after payment/receipt.", "error");
+            return;
+          }
+
+          // delete unfilled order
+          const keep = getAllOrders().filter((x) => x.id !== o.id);
+          saveAllOrders(keep);
+
+          chat.orderId = null;
           chat.paymentCard = null;
-          chat.paymentStatus = null;
+          chat.orderState = null;
+
+          addSystemMessage(chat.id, "Buyer cancelled the order.", "order");
+          updateOverview();
+          renderChatList();
           renderChatMessages();
         }
       });
     });
+  } else {
+    // No pinned card should show (order confirmed or no order)
+    chat.paymentCard = null;
   }
+
   // Seller confirm/report block when receipt exists and waiting
   if (
     chat.paymentCard &&
@@ -1455,7 +1543,7 @@ function renderChatMessages() {
     sellerActions.innerHTML = `
       <div class="muted small">
         Buyer has uploaded a receipt for <strong>${sanitize(
-          pc.productName || "order"
+          pc.productName || "order",
         )}</strong>. Confirm or report a problem.
       </div>
       <button class="btn btn-primary sm" data-seller-pay="confirm">
@@ -1474,17 +1562,24 @@ function renderChatMessages() {
       const all = JSON.parse(localStorage.getItem(ORDERS_KEY) || "[]");
       const idx = all.findIndex((o) => o.id === pc.orderId);
       if (idx < 0) return;
-
       if (act === "confirm") {
-        all[idx].status = "filled";
+        // completed/active shipping
+        confirmOrder(pc.orderId);
+
         chat.paymentStatus = "confirmed";
-        chat.orderState = "open"; // still open until completed
+        chat.orderState = "completed"; // 🟠 orange
+        chat.paymentCard = null; // DISAPPEAR pinned card
+
         addSystemMessage(
           chat.id,
-          "Seller confirmed payment. Order is now being processed.",
-          "order"
+          "Seller confirmed payment. Order is now Active Shipping.",
+          "order",
         );
+
         showToast("Payment confirmed ✅", "success");
+        renderChatList();
+        renderChatMessages();
+        return;
       }
 
       if (act === "problem") {
@@ -1494,7 +1589,7 @@ function renderChatMessages() {
         addSystemMessage(
           chat.id,
           "Seller reported a payment issue. Please chat to resolve.",
-          "order"
+          "order",
         );
         showToast("Payment problem recorded ⚠️", "error");
       }
@@ -1515,7 +1610,7 @@ function renderChatMessages() {
     div.className = cls;
     const timeHtml = m.ts
       ? `<div style="font-size:11px;opacity:0.7;margin-top:4px;">${formatTime(
-          m.ts
+          m.ts,
         )}</div>`
       : "";
     div.innerHTML = `${sanitize(m.text)}${timeHtml}`;
@@ -1577,29 +1672,6 @@ document.getElementById("callContact")?.addEventListener("click", () => {
   // - or redirect to your /call?room=... page instead
 });
 
-// Payment info button: creates a payment card for active chat
-document.getElementById("sendPaymentInfo")?.addEventListener("click", () => {
-  if (!activeChatId) {
-    showToast("Select a chat first.", "error");
-    return;
-  }
-  const chat = CHAT_STORE.find((c) => c.id === activeChatId);
-  if (!chat) return;
-
-  // Simple demo card; later you can plug in real product/order data
-  chat.paymentCard = {
-    productName: "Sample Product",
-    totalPrice: 550000,
-    note: "Send via M-Pesa or TigoPesa, then press 'I have paid'.",
-  };
-
-  addSystemMessage(
-    chat.id,
-    "Payment card created for this product. Buyer can tap 'I have paid' after sending money."
-  );
-  renderChatMessages();
-});
-
 // Refresh contacts list
 document.getElementById("refreshContacts")?.addEventListener("click", () => {
   renderChatList();
@@ -1633,7 +1705,7 @@ function logoutSeller() {
   const revenueCard = document.querySelector('.stat.card[data-stat="revenue"]');
   const ordersCard = document.querySelector('.stat.card[data-stat="orders"]');
   const productsCard = document.querySelector(
-    '.stat.card[data-stat="products"]'
+    '.stat.card[data-stat="products"]',
   );
 
   // helper to simulate tab / subtab clicks
@@ -1648,7 +1720,7 @@ function logoutSeller() {
     const prodBtn = document.querySelector('.nav-btn[data-view="products"]');
     if (prodBtn) prodBtn.click();
     const postedTab = document.querySelector(
-      '.prod-tab-btn[data-prodtab="posted"]'
+      '.prod-tab-btn[data-prodtab="posted"]',
     );
     if (postedTab) postedTab.click();
   }
