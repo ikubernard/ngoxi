@@ -266,6 +266,46 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 });
 
+document.getElementById("saveOrderUpdateBtn")?.addEventListener("click", () => {
+  if (!activeOrderDetailsId) return;
+
+  const o = findOrderById(activeOrderDetailsId);
+  if (!o) return showToast("Order not found.", "error");
+  if ((o.status || "unfilled") !== "completed") {
+    showToast("Shipping updates only allowed in Active shipping.", "error");
+    return;
+  }
+
+  const plate = document.getElementById("busPlateInput")?.value?.trim() || "";
+  const tripBtn = document.querySelector("#orderModalBody [data-trip].active");
+  const tripStatus = tripBtn?.dataset?.trip || "pending";
+
+  const updated = updateTrip(activeOrderDetailsId, {
+    busPlate: plate,
+    tripStatus,
+  });
+
+  if (!updated) return showToast("Failed to save update.", "error");
+
+  // Update chat dot based on order status
+  if (updated.chatId) {
+    const chat = CHAT_STORE.find((c) => c.id === updated.chatId);
+    if (chat) {
+      chat.orderState = updated.status === "done" ? "completed" : "completed"; // orange either way once confirmed/shipping
+      renderChatList();
+    }
+  }
+
+  showToast("Shipping update saved ✅", "success");
+
+  // Refresh modal content (in case it turned DONE)
+  openOrderDetails(activeOrderDetailsId);
+
+  // Refresh orders list (respect active filter)
+  const activePill = document.querySelector("[data-order].active");
+  renderOrders(activePill?.dataset?.order || "completed");
+});
+
 /* ----------------------------------------------------------
    8) POST FORM: Variants + Sizes UI helpers
    ---------------------------------------------------------- */
@@ -910,23 +950,185 @@ document.querySelectorAll("[data-order]").forEach((btn) => {
     renderOrders(btn.dataset.order);
   });
 });
+function statusLabel(st) {
+  if (st === "unfilled") return "Awaiting payment";
+  if (st === "filled") return "Receipt uploaded • Waiting seller confirm";
+  if (st === "completed") return "Active shipping";
+  if (st === "done") return "Arrived (Done)";
+  return "Awaiting payment";
+}
+
 function openOrderDetails(orderId) {
   const o = findOrderById(orderId);
   if (!o) return showToast("Order not found.", "error");
 
-  // For now: quick preview popup (temporary)
-  alert(
-    `ORDER DETAILS\n\n` +
-      `Product: ${o.productName}\n` +
-      `Price: TSh ${Number(o.price).toLocaleString()}\n` +
-      `Buyer: ${o.buyerName} (${o.buyerCity})\n` +
-      `Type: ${o.type}\n` +
-      (o.type === "intercity"
-        ? `Bus: ${o.busCompany}\nStation: ${o.busStation}\nReceiver: ${o.receiverName} ${o.receiverPhone}\n`
-        : "") +
-      `Status: ${o.status}`,
-  );
+  activeOrderDetailsId = orderId;
+
+  const title = document.getElementById("orderModalTitle");
+  const body = document.getElementById("orderModalBody");
+  const saveBtn = document.getElementById("saveOrderUpdateBtn");
+
+  if (title)
+    title.textContent = `Order • ${o.productName || o.product || "NgoXi"}`;
+  if (!body) return;
+
+  const st = o.status || "unfilled";
+  const badgeClass = st;
+
+  const buyerName = o.buyerName || "—";
+  const buyerCity = o.buyerCity || "—";
+  const sellerCity = o.sellerCity || "—";
+
+  const receiverName = o.receiverName || o.logistics?.receiverName || "—";
+  const receiverPhone = o.receiverPhone || o.logistics?.receiverPhone || "—";
+  const busCompany = o.busCompany || o.logistics?.busCompany || "—";
+  const busStation = o.busStation || o.logistics?.busStation || "—";
+
+  const receipt = o.receiptImage || o.payment?.receiptUrl || o.receipt || null;
+
+  const isIntercity =
+    o.type === "intercity" || busCompany !== "—" || busStation !== "—";
+
+  // Shipping editable only in completed (active shipping)
+  const shippingEditable = st === "completed";
+  const readOnly = st === "done";
+
+  const busPlate = o.shipping?.plateNumber || o.logistics?.busPlate || "";
+  const tripStatus =
+    o.shipping?.tripStatus || o.logistics?.tripStatus || "pending";
+
+  body.innerHTML = `
+    <div class="od-grid">
+      <div class="od-row">
+        <div class="od-label">Status</div>
+        <div class="od-value"><span class="od-badge ${badgeClass}">${statusLabel(st)}</span></div>
+      </div>
+
+      <div class="od-row">
+        <div class="od-label">Product</div>
+        <div class="od-value">${sanitize(o.productName || o.product || "—")}</div>
+      </div>
+
+      <div class="od-row">
+        <div class="od-label">Amount</div>
+        <div class="od-value">TSh ${Number(o.price || 0).toLocaleString()}</div>
+      </div>
+
+      <div class="od-row">
+        <div class="od-label">Buyer</div>
+        <div class="od-value">${sanitize(buyerName)} • ${sanitize(buyerCity)}</div>
+      </div>
+
+      <div class="od-row">
+        <div class="od-label">From → To</div>
+        <div class="od-value">${sanitize(sellerCity)} → ${sanitize(buyerCity)}</div>
+      </div>
+
+      ${
+        isIntercity
+          ? `
+          <div class="od-row">
+            <div class="od-label">Bus</div>
+            <div class="od-value">${sanitize(busCompany)}</div>
+          </div>
+          <div class="od-row">
+            <div class="od-label">Station</div>
+            <div class="od-value">${sanitize(busStation)}</div>
+          </div>
+          <div class="od-row">
+            <div class="od-label">Receiver</div>
+            <div class="od-value">${sanitize(receiverName)} • ${sanitize(receiverPhone)}</div>
+          </div>
+        `
+          : `
+          <div class="od-row">
+            <div class="od-label">Type</div>
+            <div class="od-value">Local</div>
+          </div>
+        `
+      }
+
+      ${
+        receipt
+          ? `
+          <div class="od-row">
+            <div class="od-label">Receipt</div>
+            <div class="od-value od-receipt">
+              <img src="${receipt}" alt="Receipt" />
+            </div>
+          </div>
+        `
+          : `
+          <div class="od-row">
+            <div class="od-label">Receipt</div>
+            <div class="od-value muted">Not uploaded yet</div>
+          </div>
+        `
+      }
+
+      <div class="ship-box">
+        <div class="od-label">Shipping Updates</div>
+
+        <div class="ship-row">
+          <div class="muted small">Bus plate number</div>
+          <input id="busPlateInput" class="input" placeholder="e.g. T 123 ABC" value="${sanitize(busPlate)}"
+            ${shippingEditable ? "" : "disabled"} />
+        </div>
+
+        <div class="ship-row">
+          <div class="muted small">Trip status</div>
+          <div class="trip-pills">
+            <button type="button" data-trip="pending" class="${tripStatus === "pending" ? "active" : ""}" ${shippingEditable ? "" : "disabled"}>Pending</button>
+            <button type="button" data-trip="on_the_way" class="${tripStatus === "on_the_way" ? "active" : ""}" ${shippingEditable ? "" : "disabled"}>On the way</button>
+            <button type="button" data-trip="arrived" class="${tripStatus === "arrived" ? "active" : ""}" ${shippingEditable ? "" : "disabled"}>Arrived</button>
+          </div>
+        </div>
+
+        ${
+          readOnly
+            ? `<div class="muted small">Order is done. Read-only.</div>`
+            : shippingEditable
+              ? `<div class="muted small">Update trip then click Save update.</div>`
+              : `<div class="muted small">Shipping updates available after payment confirmation.</div>`
+        }
+      </div>
+    </div>
+  `;
+
+  // Trip pills behavior (only if editable)
+  body.querySelectorAll("[data-trip]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      if (!shippingEditable) return;
+      body
+        .querySelectorAll("[data-trip]")
+        .forEach((b) => b.classList.remove("active"));
+      btn.classList.add("active");
+    });
+  });
+
+  // Save button only for completed
+  if (saveBtn) {
+    saveBtn.style.display = shippingEditable ? "inline-block" : "none";
+  }
+
+  openOrderModal();
 }
+
+let activeOrderDetailsId = null;
+
+function openOrderModal() {
+  const m = document.getElementById("orderModal");
+  if (m) m.setAttribute("aria-hidden", "false");
+}
+function closeOrderModal() {
+  const m = document.getElementById("orderModal");
+  if (m) m.setAttribute("aria-hidden", "true");
+  activeOrderDetailsId = null;
+}
+
+document
+  .querySelectorAll("[data-close-order]")
+  .forEach((b) => b.addEventListener("click", closeOrderModal));
 
 const ORDERS_KEY = "orders_v70_flow"; // bump version so old seed is ignored
 
@@ -1032,20 +1234,21 @@ function confirmOrder(orderId) {
   return o;
 }
 
-function updateTrip(orderId, { plateNumber, tripStatus }) {
+function updateTrip(orderId, { busPlate, tripStatus }) {
   const all = getAllOrders();
   const idx = all.findIndex((o) => o.id === orderId);
   if (idx < 0) return null;
 
   const o = all[idx];
-  if (!o.shipping) o.shipping = { plateNumber: "", tripStatus: "pending" };
 
-  if (plateNumber !== undefined) o.shipping.plateNumber = plateNumber;
-  if (tripStatus) o.shipping.tripStatus = tripStatus;
+  // Ensure logistics object
+  o.logistics = o.logistics || {};
+  if (busPlate !== undefined) o.logistics.busPlate = busPlate;
+  if (tripStatus) o.logistics.tripStatus = tripStatus;
 
-  // If arrived -> lock it to DONE
-  if (o.shipping.tripStatus === "arrived") {
-    o.status = ORDER_STATUS.DONE;
+  // If arrived, lock the whole order
+  if (o.logistics.tripStatus === "arrived") {
+    o.status = "done";
   }
 
   o.updatedAt = Date.now();

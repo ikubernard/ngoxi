@@ -371,6 +371,27 @@
       </div>
     </div>
 
+    <!-- ORDER DETAILS MODAL -->
+    <div id="orderModal" class="modal" aria-hidden="true">
+      <div class="modal-sheet">
+        <div class="modal-head">
+          <strong id="orderModalTitle">Order Details</strong>
+          <button type="button" class="btn btn-ghost sm" data-close-order>✕</button>
+        </div>
+
+        <div class="modal-body" id="orderModalBody">
+          <!-- filled by JS -->
+        </div>
+
+        <div class="modal-foot" id="orderModalFoot">
+          <button type="button" class="btn btn-ghost sm" data-close-order>Back</button>
+          <button type="button" id="saveOrderUpdateBtn" class="btn btn-primary sm" style="display:none;">
+            Save update
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- ADD SIZE MODAL -->
     <div id="sizeModal" class="modal" aria-hidden="true">
       <div class="modal-sheet">

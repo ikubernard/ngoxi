@@ -13,11 +13,19 @@
 }
 body {
   margin: 0;
-  font-family: Poppins, system-ui, -apple-system, Segoe UI, Roboto, Arial,
+  font-family:
+    Poppins,
+    system-ui,
+    -apple-system,
+    Segoe UI,
+    Roboto,
+    Arial,
     sans-serif;
   background: linear-gradient(160deg, #faf7e0, #d4efd4);
   color: #222;
-  transition: background 0.4s ease, color 0.4s ease;
+  transition:
+    background 0.4s ease,
+    color 0.4s ease;
 }
 
 /* Splash */
@@ -955,6 +963,102 @@ body.dark .size-chip,
   border-color: rgba(255, 255, 255, 0.08);
   color: #eaeaea;
 }
+/* Order details modal */
+.od-grid {
+  display: grid;
+  gap: 10px;
+}
+
+.od-row {
+  display: grid;
+  grid-template-columns: 140px 1fr;
+  gap: 10px;
+  font-size: 13px;
+}
+
+.od-label {
+  font-weight: 800;
+  opacity: 0.85;
+}
+
+.od-value {
+  font-weight: 600;
+}
+
+.od-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.od-badge.unfilled {
+  background: rgba(239, 68, 68, 0.12);
+  color: #b91c1c;
+}
+.od-badge.filled {
+  background: rgba(245, 158, 11, 0.14);
+  color: #92400e;
+}
+.od-badge.completed {
+  background: rgba(34, 197, 94, 0.14);
+  color: #166534;
+}
+.od-badge.done {
+  background: rgba(249, 115, 22, 0.18);
+  color: #9a3412;
+}
+
+.od-receipt img {
+  width: min(280px, 100%);
+  border-radius: 10px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.ship-box {
+  margin-top: 10px;
+  padding: 10px;
+  border-radius: 12px;
+  background: rgba(63, 163, 111, 0.08);
+  display: grid;
+  gap: 10px;
+}
+
+.ship-row {
+  display: grid;
+  gap: 6px;
+}
+
+.trip-pills {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.trip-pills button {
+  border-radius: 999px;
+  padding: 6px 12px;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  background: #fff;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.trip-pills button.active {
+  background: var(--emerald);
+  color: #fff;
+  border-color: transparent;
+}
+
+body.dark .ship-box {
+  background: rgba(189, 165, 79, 0.1);
+}
+body.dark .trip-pills button {
+  background: #0b1a14;
+  color: #f4f7f4;
+  border-color: rgba(255, 255, 255, 0.1);
+}
 
 /* Modal base */
 .modal {
@@ -1171,7 +1275,9 @@ body.dark .btn-danger {
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  transition: transform 0.18s ease, box-shadow 0.18s ease,
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease,
     border-color 0.18s ease;
 }
 
@@ -1487,7 +1593,9 @@ body.dark textarea::placeholder {
   color: #052e16;
   font-weight: 700;
   box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3);
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
   animation: upgradeFlow 3s linear infinite;
 }
 #upgradeBtnHome:hover {
@@ -1536,7 +1644,10 @@ body.dark select {
   background: var(--glass);
   border-radius: 16px;
   border: 1px solid rgba(0, 0, 0, 0.06);
-  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    border-color 0.2s ease;
 }
 
 .stat.card::before {
