@@ -9,7 +9,7 @@ function signToken(user) {
   return jwt.sign(
     { id: user._id, roles: user.roles, name: user.name, email: user.email },
     process.env.JWT_SECRET,
-    { expiresIn: "7d" }
+    { expiresIn: "7d" },
   );
 }
 
@@ -34,22 +34,38 @@ router.post("/signup", async (req, res) => {
     const wantsAdmin = adminCode === "NgoXi_master2025";
 
     if (user) {
-      // merge main role
-      if (!user.roles.includes(role)) user.roles.push(role);
+      const ok = await bcrypt.compare(password, user.password);
 
-      // merge admin role if passed master key
+      if (!ok) {
+        return res.status(401).json({
+          error:
+            "Account already exists with a different password. Please log in with your original password.",
+        });
+      }
+
+      // merge selected role
+      if (!user.roles.includes(role)) {
+        user.roles.push(role);
+      }
+
+      // merge admin role if master key is valid
       if (wantsAdmin && !user.roles.includes("admin")) {
         user.roles.push("admin");
       }
 
       await user.save();
-      const token = signToken(user);
 
+      const token = signToken(user);
       return res.json({
         merged: true,
         message: "Role merged",
-        user: { id: user._id, name: user.name, email: user.email, roles: user.roles },
-        token
+        user: {
+          id: user._id,
+          name: user.name,
+          email: user.email,
+          roles: user.roles,
+        },
+        token,
       });
     }
 
@@ -65,15 +81,19 @@ router.post("/signup", async (req, res) => {
       name,
       email,
       password: hashed,
-      roles
+      roles,
     });
 
     const token = signToken(user);
     return res.status(201).json({
-      user: { id: user._id, name: user.name, email: user.email, roles: user.roles },
-      token
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        roles: user.roles,
+      },
+      token,
     });
-
   } catch (e) {
     console.error("Signup error:", e);
     res.status(500).json({ error: "Signup failed" });
@@ -87,17 +107,23 @@ router.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
     const user = await User.findOne({ email });
-    if (!user) return res.status(401).json({ error: "Invalid email or password" });
+    if (!user)
+      return res.status(401).json({ error: "Invalid email or password" });
 
     const ok = await bcrypt.compare(password, user.password);
-    if (!ok) return res.status(401).json({ error: "Invalid email or password" });
+    if (!ok)
+      return res.status(401).json({ error: "Invalid email or password" });
 
     const token = signToken(user);
     return res.json({
-      user: { id: user._id, name: user.name, email: user.email, roles: user.roles },
-      token
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        roles: user.roles,
+      },
+      token,
     });
-
   } catch (e) {
     console.error("Login error:", e);
     res.status(500).json({ error: "Login failed" });
@@ -105,4 +131,3 @@ router.post("/login", async (req, res) => {
 });
 
 export default router;
-
