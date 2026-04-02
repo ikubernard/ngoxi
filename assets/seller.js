@@ -10,7 +10,11 @@
    - HTML is the seller.html you shared earlier (ids/classes referenced below)
    ========================================================== */
 
-const API_BASE = "http://localhost:5000/api";
+const API_BASE =
+  window.location.hostname === "127.0.0.1" ||
+  window.location.hostname === "localhost"
+    ? "http://127.0.0.1:5000"
+    : window.location.origin;
 // Generic remote placeholder (only used if backend sends no image)
 const PLACEHOLDER = "https://via.placeholder.com/400x400?text=NgoXi";
 const PROFILE_PHOTO_KEY = "ngoxi_profile_photo";
