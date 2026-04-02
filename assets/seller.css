@@ -674,6 +674,18 @@ body.dark .bubble.system {
   color: #d1d5db;
 }
 
+#paymentCardHost {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  padding: 6px 0;
+  background: transparent;
+}
+
+body.dark #paymentCardHost {
+  background: transparent;
+}
+
 /* Payment summary card in chat */
 .payment-card {
   border-radius: 12px;
@@ -1125,6 +1137,25 @@ body.dark .input,
   background: #0b1412;
   border-color: rgba(255, 255, 255, 0.1);
   color: #f3f3f3;
+}
+/* Order modal: allow scroll + never get stuck */
+#orderModal.modal {
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+  overflow: auto; /* important */
+}
+
+#orderModal .modal-sheet {
+  width: min(720px, 96vw);
+  max-height: 86vh; /* important */
+  display: flex;
+  flex-direction: column;
+}
+
+#orderModal .modal-body {
+  overflow-y: auto; /* important */
+  -webkit-overflow-scrolling: touch;
 }
 
 /* Buttons (inherit your existing .btn styles; add a compact tweak if needed) */
@@ -1808,4 +1839,451 @@ body.dark select {
   border-radius: 50%;
   object-fit: cover;
   margin-right: 8px;
+}
+
+/* ORDER DETAIL MINI PAGE */
+.od-page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.od-topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.od-order-id {
+  font-weight: 800;
+  font-size: 15px;
+}
+
+.od-order-date {
+  font-size: 12px;
+  opacity: 0.7;
+  margin-top: 4px;
+}
+
+.od-hero {
+  display: grid;
+  grid-template-columns: 1.4fr 0.8fr;
+  gap: 12px;
+  align-items: center;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: rgba(63, 163, 111, 0.08);
+}
+
+.od-product {
+  font-size: 24px;
+  font-weight: 900;
+  line-height: 1.15;
+}
+
+.od-price {
+  margin-top: 6px;
+  font-size: 22px;
+  font-weight: 800;
+  color: #14532d;
+}
+
+.od-qty,
+.od-type {
+  font-size: 14px;
+  font-weight: 700;
+  text-align: right;
+}
+
+.od-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.od-section-title {
+  font-size: 15px;
+  font-weight: 900;
+}
+
+.od-grid {
+  display: grid;
+  gap: 10px;
+}
+
+.od-grid-2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.od-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+.od-card span,
+.od-field span {
+  font-size: 12px;
+  opacity: 0.72;
+}
+
+.od-card strong {
+  font-size: 14px;
+}
+
+.od-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.od-trip-pills {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.od-trip {
+  border: 1px solid var(--emerald);
+  background: #fff;
+  color: var(--emerald);
+  border-radius: 999px;
+  padding: 8px 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.od-trip.active {
+  background: var(--emerald);
+  color: #fff;
+}
+
+.od-receipt-wrap {
+  background: #fff;
+  border-radius: 16px;
+  padding: 10px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+.od-receipt-img {
+  display: block;
+  width: 100%;
+  max-height: 340px;
+  object-fit: contain;
+  border-radius: 10px;
+}
+
+.od-empty,
+.od-note {
+  font-size: 13px;
+  opacity: 0.78;
+}
+
+.od-printbar {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 8px;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+#orderModal .modal-sheet {
+  width: min(920px, 94vw);
+  max-height: 88vh;
+  overflow: auto;
+}
+
+body.dark .od-card,
+body.dark .od-receipt-wrap {
+  background: #102019;
+}
+
+body.dark .od-hero {
+  background: rgba(189, 165, 79, 0.12);
+}
+
+@media (max-width: 760px) {
+  .od-grid-2,
+  .od-hero {
+    grid-template-columns: 1fr;
+  }
+
+  .od-qty,
+  .od-type {
+    text-align: left;
+  }
+
+  .od-product {
+    font-size: 20px;
+  }
+
+  .od-price {
+    font-size: 18px;
+  }
+}
+
+/* PRINT: JD-style compact sheet */
+@media print {
+  body * {
+    visibility: hidden !important;
+  }
+
+  #orderModal,
+  #orderModal * {
+    visibility: visible !important;
+  }
+
+  #orderModal {
+    position: absolute !important;
+    inset: 0 !important;
+    background: #fff !important;
+  }
+
+  #orderModal .modal-sheet {
+    width: 80mm !important;
+    max-width: 80mm !important;
+    min-height: auto !important;
+    box-shadow: none !important;
+    border: none !important;
+    margin: 0 auto !important;
+    padding: 8mm !important;
+  }
+
+  .od-printbar,
+  .modal-close,
+  [data-close-order],
+  #saveOrderUpdateBtn {
+    display: none !important;
+  }
+
+  .od-product {
+    font-size: 16px !important;
+  }
+
+  .od-price {
+    font-size: 15px !important;
+  }
+
+  .od-card {
+    box-shadow: none !important;
+    border: 1px solid #ddd !important;
+  }
+}
+
+/* hidden on screen */
+#printLabel {
+  display: none;
+}
+
+.pl-space {
+  height: 12px;
+  border-bottom: 1px dashed #999;
+  margin: 6px 0 8px;
+}
+
+@media print {
+  body * {
+    visibility: hidden !important;
+  }
+
+  #printLabel,
+  #printLabel * {
+    visibility: visible !important;
+  }
+
+  #printLabel {
+    display: block !important;
+    position: fixed !important;
+    top: 0;
+    left: 0;
+    width: 80mm;
+    min-height: auto;
+    padding: 6mm;
+    background: #fff;
+    color: #000;
+    font-family: Arial, sans-serif;
+    box-sizing: border-box;
+  }
+
+  @page {
+    size: 80mm auto;
+    margin: 0;
+  }
+
+  .pl-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 13px;
+    font-weight: 700;
+    margin-bottom: 8px;
+    border-bottom: 1px solid #000;
+    padding-bottom: 4px;
+  }
+
+  .pl-logo {
+    font-size: 15px;
+    font-weight: 800;
+  }
+
+  .pl-order {
+    font-size: 11px;
+  }
+
+  .pl-product {
+    margin-bottom: 8px;
+  }
+
+  .pl-product-name {
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  .pl-price {
+    font-size: 12px;
+    margin-top: 2px;
+  }
+
+  :root {
+    --print-label-width: 80mm;
+    --print-label-height: 50mm;
+  }
+
+  .label-size-select {
+    min-width: 140px;
+    padding: 0.45rem 0.6rem;
+    border-radius: 8px;
+    border: 1px solid #d8d8d8;
+    background: #fff;
+  }
+
+  #printLabel {
+    display: none;
+    box-sizing: border-box;
+    background: #fff;
+    color: #000;
+    overflow: hidden;
+    width: var(--print-label-width);
+    height: var(--print-label-height);
+    padding: 3mm;
+    font-family: Arial, sans-serif;
+  }
+
+  #printLabel .pl-wrap {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+  }
+
+  #printLabel .pl-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    font-weight: 800;
+    border-bottom: 1px solid #000;
+    padding-bottom: 2mm;
+  }
+
+  #printLabel .pl-logo {
+    font-size: 14px;
+    font-weight: 900;
+  }
+
+  #printLabel .pl-order {
+    font-size: 11px;
+  }
+
+  #printLabel .pl-product {
+    padding: 2mm 0;
+    border-bottom: 1px dashed #000;
+  }
+
+  #printLabel .pl-product-name {
+    font-size: 12px;
+    font-weight: 800;
+    line-height: 1.2;
+  }
+
+  #printLabel .pl-price {
+    font-size: 11px;
+    margin-top: 1mm;
+  }
+
+  #printLabel .pl-section {
+    padding: 2mm 0;
+    border-bottom: 1px dashed #000;
+    font-size: 10px;
+    line-height: 1.35;
+  }
+
+  #printLabel .pl-title {
+    font-size: 10px;
+    font-weight: 800;
+    text-transform: uppercase;
+    margin-bottom: 1mm;
+  }
+
+  #printLabel .pl-space {
+    height: 4mm;
+    border-bottom: 1px dashed #888;
+    margin: 2mm 0;
+  }
+
+  #printLabel .pl-footer {
+    margin-top: auto;
+    padding-top: 2mm;
+    font-size: 10px;
+    text-align: center;
+    font-weight: 700;
+  }
+}
+@media print {
+  @page {
+    size: var(--print-label-width) var(--print-label-height);
+    margin: 0;
+  }
+
+  html,
+  body {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #fff !important;
+    width: var(--print-label-width);
+    height: var(--print-label-height);
+  }
+
+  body * {
+    visibility: hidden !important;
+  }
+
+  #printLabel,
+  #printLabel * {
+    visibility: visible !important;
+  }
+
+  #printLabel {
+    display: block !important;
+    position: fixed !important;
+    left: 0 !important;
+    top: 0 !important;
+    margin: 0 !important;
+    width: var(--print-label-width) !important;
+    height: var(--print-label-height) !important;
+  }
+
+  #orderModal,
+  #locationModal,
+  .modal,
+  .topbar,
+  .bottom-nav {
+    display: none !important;
+  }
 }

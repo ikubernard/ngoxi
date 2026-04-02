@@ -103,7 +103,7 @@
     applyTheme(getStoredTheme());
 
     /* ===== CONFIG ===== */
-    const API_BASE = window.location.origin;   // or just ""
+    const API_BASE = "http://127.0.0.1:5000";  // or just ""
     const routeMap = {
       buyer: "/home.html",
       seller: "/seller.html",
@@ -194,16 +194,19 @@
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ email, password })
         });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || "Login failed");
+
+        const text = await res.text();
+        const data = text ? JSON.parse(text) : {};
+
+        if (!res.ok) throw new Error(data.error || data.message || "Login failed");
 
         saveAuth(data.token, data.user);
-        if (manyRoles(data.user)) goRoleSelect(); else goFirst(data.user);
+        if (manyRoles(data.user)) goRoleSelect();
+        else goFirst(data.user);
       } catch (err) {
-        msg.textContent = err.message;
+        msg.textContent = err.message || "Login failed";
       }
     });
-
     /* ===== SIGNUP (merges roles; optional adminCode) ===== */
     frmSignup.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -214,7 +217,8 @@
       const adminCode = adminBlock.classList.contains('hidden') ? "" : adminKey.value.trim();
 
       if (!name || !email || !password) {
-        msg.textContent = "Fill all required fields."; return;
+        msg.textContent = "Fill all required fields.";
+        return;
       }
 
       msg.textContent = "Creating account…";
@@ -224,13 +228,17 @@
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ name, email, password, role, adminCode })
         });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || "Signup failed");
+
+        const text = await res.text();
+        const data = text ? JSON.parse(text) : {};
+
+        if (!res.ok) throw new Error(data.error || data.message || "Signup failed");
 
         saveAuth(data.token, data.user);
-        if (manyRoles(data.user)) goRoleSelect(); else goFirst(data.user);
+        if (manyRoles(data.user)) goRoleSelect();
+        else goFirst(data.user);
       } catch (err) {
-        msg.textContent = err.message;
+        msg.textContent = err.message || "Signup failed";
       }
     });
 

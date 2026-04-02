@@ -27,7 +27,7 @@ window.addEventListener("load", () => {
   // If no token, go back to auth
   if (!token) {
     alert("Session expired ⚠️ Please log in again.");
-    window.location.href = "../views/auth.html";
+    window.location.href = "/auth";
     return;
   }
 
@@ -212,8 +212,12 @@ function renderRecent(list) {
       card.classList.add("recent-card--hidden");
     }
     card.addEventListener("click", () => {
-      // Switch tab to My Products
-      switchTab("products");
+      showTab("products");
+      document
+        .querySelectorAll(".nav-btn")
+        .forEach((b) =>
+          b.classList.toggle("active", b.dataset.view === "products"),
+        );
 
       // Smooth scroll to Posted Products grid
       setTimeout(() => {
@@ -798,6 +802,19 @@ function onEditProduct(id) {
       showToast("Failed to load product", "error");
     });
 }
+// Close modal when clicking outside (backdrop)
+document.getElementById("orderModal")?.addEventListener("click", (e) => {
+  const sheet = document.querySelector("#orderModal .modal-sheet");
+  if (sheet && !sheet.contains(e.target)) closeOrderModal();
+});
+
+// Close modal on ESC
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") {
+    const m = document.getElementById("orderModal");
+    if (m && m.getAttribute("aria-hidden") === "false") closeOrderModal();
+  }
+});
 
 /* ---------- Attach actions to kebab menus ---------- */
 function attachProductActions() {
@@ -835,6 +852,48 @@ function attachProductActions() {
     b.addEventListener("click", () => onEditProduct(b.dataset.edit));
   });
 }
+
+const ORDERS_KEY = "orders_v70_flow";
+
+const ORDER_STATUS = {
+  UNFILLED: "unfilled",
+  FILLED: "filled",
+  COMPLETED: "completed",
+  DONE: "done",
+};
+
+let activeOrderDetailsId = null;
+
+function statusLabel(st) {
+  if (st === ORDER_STATUS.UNFILLED) return "Awaiting payment";
+  if (st === ORDER_STATUS.FILLED) return "Paid (waiting confirmation)";
+  if (st === ORDER_STATUS.COMPLETED) return "Active shipping";
+  if (st === ORDER_STATUS.DONE) return "Arrived (Done)";
+  return "Unknown";
+}
+
+function updateTrip(id, data) {
+  const all = getAllOrders();
+  const idx = all.findIndex((o) => o.id === id);
+  if (idx < 0) return null;
+
+  const current = all[idx];
+  current.shipping = {
+    ...(current.shipping || {}),
+    plateNumber: data.busPlate ?? current.shipping?.plateNumber ?? "",
+    tripStatus: data.tripStatus ?? current.shipping?.tripStatus ?? "pending",
+  };
+
+  if (current.shipping.tripStatus === "arrived") {
+    current.status = ORDER_STATUS.DONE;
+  }
+
+  current.updatedAt = Date.now();
+  all[idx] = current;
+  saveAllOrders(all);
+  return current;
+}
+
 function renderOrders(filter) {
   const box = document.getElementById("orders");
   if (!box) return;
@@ -920,26 +979,6 @@ function renderOrders(filter) {
   });
 }
 
-function createOrderFromPayment(chat, pc, receiptDataUrl) {
-  const all = JSON.parse(localStorage.getItem(ORDERS_KEY) || "[]");
-  const id = `c${Date.now()}`;
-  const newOrder = {
-    id,
-    product: pc.productName || "NgoXi Order",
-    price: Number(pc.totalPrice || 0),
-    qty: pc.qty || 1,
-    status: "unfilled", // payment done, waiting processing
-    ts: Date.now(),
-    chatId: chat.id,
-    receipt: receiptDataUrl || null,
-  };
-  all.unshift(newOrder);
-  localStorage.setItem(ORDERS_KEY, JSON.stringify(all));
-  updateOverview();
-  chat.orderState = "open"; // red dot in chat list
-  return id;
-}
-
 // Bind order filter buttons
 document.querySelectorAll("[data-order]").forEach((btn) => {
   btn.addEventListener("click", () => {
@@ -950,13 +989,6 @@ document.querySelectorAll("[data-order]").forEach((btn) => {
     renderOrders(btn.dataset.order);
   });
 });
-function statusLabel(st) {
-  if (st === "unfilled") return "Awaiting payment";
-  if (st === "filled") return "Receipt uploaded • Waiting seller confirm";
-  if (st === "completed") return "Active shipping";
-  if (st === "done") return "Arrived (Done)";
-  return "Awaiting payment";
-}
 
 function openOrderDetails(orderId) {
   const o = findOrderById(orderId);
@@ -998,102 +1030,95 @@ function openOrderDetails(orderId) {
     o.shipping?.tripStatus || o.logistics?.tripStatus || "pending";
 
   body.innerHTML = `
-    <div class="od-grid">
-      <div class="od-row">
-        <div class="od-label">Status</div>
-        <div class="od-value"><span class="od-badge ${badgeClass}">${statusLabel(st)}</span></div>
+  <div class="od-page">
+    <div class="od-topbar">
+      <div>
+        <div class="od-order-id">Order ID: ${sanitize(o.id || "—")}</div>
+        <div class="od-order-date">${new Date(o.createdAt || Date.now()).toLocaleString()}</div>
       </div>
+      <div class="od-badge ${badgeClass}">${statusLabel(st)}</div>
+    </div>
 
-      <div class="od-row">
-        <div class="od-label">Product</div>
-        <div class="od-value">${sanitize(o.productName || o.product || "—")}</div>
+    <div class="od-hero">
+      <div class="od-hero-left">
+        <div class="od-product">${sanitize(o.productName || o.product || "—")}</div>
+        <div class="od-price">TSh ${Number(o.price || 0).toLocaleString()}</div>
       </div>
-
-      <div class="od-row">
-        <div class="od-label">Amount</div>
-        <div class="od-value">TSh ${Number(o.price || 0).toLocaleString()}</div>
-      </div>
-
-      <div class="od-row">
-        <div class="od-label">Buyer</div>
-        <div class="od-value">${sanitize(buyerName)} • ${sanitize(buyerCity)}</div>
-      </div>
-
-      <div class="od-row">
-        <div class="od-label">From → To</div>
-        <div class="od-value">${sanitize(sellerCity)} → ${sanitize(buyerCity)}</div>
-      </div>
-
-      ${
-        isIntercity
-          ? `
-          <div class="od-row">
-            <div class="od-label">Bus</div>
-            <div class="od-value">${sanitize(busCompany)}</div>
-          </div>
-          <div class="od-row">
-            <div class="od-label">Station</div>
-            <div class="od-value">${sanitize(busStation)}</div>
-          </div>
-          <div class="od-row">
-            <div class="od-label">Receiver</div>
-            <div class="od-value">${sanitize(receiverName)} • ${sanitize(receiverPhone)}</div>
-          </div>
-        `
-          : `
-          <div class="od-row">
-            <div class="od-label">Type</div>
-            <div class="od-value">Local</div>
-          </div>
-        `
-      }
-
-      ${
-        receipt
-          ? `
-          <div class="od-row">
-            <div class="od-label">Receipt</div>
-            <div class="od-value od-receipt">
-              <img src="${receipt}" alt="Receipt" />
-            </div>
-          </div>
-        `
-          : `
-          <div class="od-row">
-            <div class="od-label">Receipt</div>
-            <div class="od-value muted">Not uploaded yet</div>
-          </div>
-        `
-      }
-
-      <div class="ship-box">
-        <div class="od-label">Shipping Updates</div>
-
-        <div class="ship-row">
-          <div class="muted small">Bus plate number</div>
-          <input id="busPlateInput" class="input" placeholder="e.g. T 123 ABC" value="${sanitize(busPlate)}"
-            ${shippingEditable ? "" : "disabled"} />
-        </div>
-
-        <div class="ship-row">
-          <div class="muted small">Trip status</div>
-          <div class="trip-pills">
-            <button type="button" data-trip="pending" class="${tripStatus === "pending" ? "active" : ""}" ${shippingEditable ? "" : "disabled"}>Pending</button>
-            <button type="button" data-trip="on_the_way" class="${tripStatus === "on_the_way" ? "active" : ""}" ${shippingEditable ? "" : "disabled"}>On the way</button>
-            <button type="button" data-trip="arrived" class="${tripStatus === "arrived" ? "active" : ""}" ${shippingEditable ? "" : "disabled"}>Arrived</button>
-          </div>
-        </div>
-
-        ${
-          readOnly
-            ? `<div class="muted small">Order is done. Read-only.</div>`
-            : shippingEditable
-              ? `<div class="muted small">Update trip then click Save update.</div>`
-              : `<div class="muted small">Shipping updates available after payment confirmation.</div>`
-        }
+      <div class="od-hero-right">
+        <div class="od-qty">Qty: ${Number(o.qty || 1)}</div>
+        <div class="od-type">${isIntercity ? "Intercity delivery" : "Local / pickup"}</div>
       </div>
     </div>
-  `;
+
+    <div class="od-section">
+      <div class="od-section-title">Buyer Details</div>
+      <div class="od-grid od-grid-2">
+        <div class="od-card"><span>Name</span><strong>${sanitize(buyerName)}</strong></div>
+        <div class="od-card"><span>Buyer City</span><strong>${sanitize(buyerCity)}</strong></div>
+        <div class="od-card"><span>Seller City</span><strong>${sanitize(sellerCity)}</strong></div>
+        <div class="od-card"><span>Route</span><strong>${sanitize(sellerCity)} → ${sanitize(buyerCity)}</strong></div>
+      </div>
+    </div>
+
+    ${
+      isIntercity
+        ? `
+      <div class="od-section">
+        <div class="od-section-title">Bus / Receiver Details</div>
+        <div class="od-grid od-grid-2">
+          <div class="od-card"><span>Bus Company</span><strong>${sanitize(busCompany)}</strong></div>
+          <div class="od-card"><span>Bus Station</span><strong>${sanitize(busStation)}</strong></div>
+          <div class="od-card"><span>Receiver Name</span><strong>${sanitize(receiverName)}</strong></div>
+          <div class="od-card"><span>Receiver Phone</span><strong>${sanitize(receiverPhone)}</strong></div>
+        </div>
+      </div>
+    `
+        : ""
+    }
+
+    ${
+      receipt
+        ? `
+      <div class="od-section">
+        <div class="od-section-title">Payment Receipt</div>
+        <div class="od-receipt-wrap">
+          <img src="${receipt}" alt="Payment receipt" class="od-receipt-img" />
+        </div>
+      </div>
+    `
+        : `
+      <div class="od-section">
+        <div class="od-section-title">Payment Receipt</div>
+        <div class="od-empty">No receipt uploaded yet.</div>
+      </div>
+    `
+    }
+
+    <div class="od-section">
+      <div class="od-section-title">Shipping Update</div>
+      <div class="od-grid od-grid-2">
+        <label class="od-field">
+          <span>Bus Plate Number</span>
+          <input id="busPlateInput" type="text" value="${sanitize(busPlate)}" ${shippingEditable ? "" : "disabled"} />
+        </label>
+
+        <div class="od-field">
+          <span>Trip Status</span>
+          <div class="od-trip-pills">
+            <button class="od-trip ${tripStatus === "pending" ? "active" : ""}" data-trip="pending" ${shippingEditable ? "" : "disabled"}>Pending</button>
+            <button class="od-trip ${tripStatus === "on_the_way" ? "active" : ""}" data-trip="on_the_way" ${shippingEditable ? "" : "disabled"}>On the way</button>
+            <button class="od-trip ${tripStatus === "arrived" ? "active" : ""}" data-trip="arrived" ${shippingEditable ? "" : "disabled"}>Arrived</button>
+          </div>
+        </div>
+      </div>
+      <div class="od-note">
+        ${shippingEditable ? "Seller can update the plate number and trip status here." : readOnly ? "This order is completed and locked." : "Shipping becomes editable after payment is confirmed."}
+      </div>
+    </div>
+
+  
+  </div>
+`;
 
   // Trip pills behavior (only if editable)
   body.querySelectorAll("[data-trip]").forEach((btn) => {
@@ -1114,8 +1139,6 @@ function openOrderDetails(orderId) {
   openOrderModal();
 }
 
-let activeOrderDetailsId = null;
-
 function openOrderModal() {
   const m = document.getElementById("orderModal");
   if (m) m.setAttribute("aria-hidden", "false");
@@ -1125,23 +1148,72 @@ function closeOrderModal() {
   if (m) m.setAttribute("aria-hidden", "true");
   activeOrderDetailsId = null;
 }
+function normalizeMoney(n) {
+  const x = Number(n || 0);
+  return isFinite(x) ? x : 0;
+}
+
+function renderOrderDetails(order = {}) {
+  const buyer =
+    order.buyerName || order.buyer?.name || order.customerName || "Buyer";
+
+  const status = order.status || "pending";
+
+  const items = order.items || order.cartItems || order.products || [];
+
+  const total =
+    normalizeMoney(order.total) ||
+    normalizeMoney(order.amount) ||
+    normalizeMoney(order.totalAmount) ||
+    items.reduce(
+      (s, it) =>
+        s +
+        normalizeMoney(it.price) * normalizeMoney(it.qty || it.quantity || 1),
+      0,
+    );
+
+  const itemsHtml = items.length
+    ? items
+        .map((it) => {
+          const name = it.name || it.title || "Item";
+          const qty = it.qty ?? it.quantity ?? 1;
+          const price = normalizeMoney(it.price);
+          const line = price * normalizeMoney(qty);
+          return `
+            <div style="display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid rgba(0,0,0,.08)">
+              <div>
+                <div style="font-weight:700">${name}</div>
+                <div style="opacity:.75;font-size:13px">Qty: ${qty}</div>
+              </div>
+              <div style="font-weight:800">TSh ${line.toLocaleString()}</div>
+            </div>
+          `;
+        })
+        .join("")
+    : `<div style="opacity:.7;padding:10px 0">No items found for this order.</div>`;
+
+  return `
+    <div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:10px">
+      <div><b>Order:</b> ${order.id || order._id || "—"}</div>
+      <div><b>Status:</b> ${status}</div>
+      <div><b>Buyer:</b> ${buyer}</div>
+    </div>
+
+    <div style="margin-top:10px">
+      <div style="font-weight:800;margin-bottom:6px">Items</div>
+      ${itemsHtml}
+    </div>
+
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:14px;padding-top:12px;border-top:1px solid rgba(0,0,0,.10)">
+      <div style="font-weight:800">Total</div>
+      <div style="font-size:18px;font-weight:900">TSh ${total.toLocaleString()}</div>
+    </div>
+  `;
+}
 
 document
   .querySelectorAll("[data-close-order]")
   .forEach((b) => b.addEventListener("click", closeOrderModal));
-
-const ORDERS_KEY = "orders_v70_flow"; // bump version so old seed is ignored
-
-// ================================
-// ORDER LOGIC v2 (LOCKED SCHEMA)
-// ================================
-
-const ORDER_STATUS = {
-  UNFILLED: "unfilled", // awaiting payment
-  FILLED: "filled", // buyer paid + receipt uploaded
-  COMPLETED: "completed", // seller confirmed (active shipping)
-  DONE: "done", // arrived (read-only)
-};
 
 function makeOrder({
   productId,
@@ -1199,7 +1271,90 @@ function getAllOrders() {
 function saveAllOrders(arr) {
   localStorage.setItem(ORDERS_KEY, JSON.stringify(arr));
 }
+function seedDevOrders() {
+  const existing = getAllOrders();
+  if (Array.isArray(existing) && existing.length) return;
 
+  const seed = [
+    {
+      id: "ORD-1001",
+      productId: "p-demo-1",
+      productName: "Nike Air Max 90",
+      price: 185000,
+      buyerId: "b1",
+      buyerName: "Ibrahim Musa",
+      buyerCity: "Dar es Salaam",
+      sellerCity: "Dar es Salaam",
+      type: "local",
+      busCompany: "",
+      busStation: "",
+      receiverName: "",
+      receiverPhone: "",
+      receiptImage: null,
+      status: ORDER_STATUS.UNFILLED,
+      shipping: {
+        plateNumber: "",
+        tripStatus: "pending",
+      },
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+      chatId: "buyer1",
+      qty: 1,
+    },
+    {
+      id: "ORD-1002",
+      productId: "p-demo-2",
+      productName: "iPhone 13 Pro Max",
+      price: 2100000,
+      buyerId: "b2",
+      buyerName: "Amina Yusuf",
+      buyerCity: "Mbeya",
+      sellerCity: "Dar es Salaam",
+      type: "intercity",
+      busCompany: "ABOOD",
+      busStation: "Magufuli Bus Terminal",
+      receiverName: "Amina Yusuf",
+      receiverPhone: "0767123456",
+      receiptImage: "../assets/logo.png",
+      status: ORDER_STATUS.FILLED,
+      shipping: {
+        plateNumber: "",
+        tripStatus: "pending",
+      },
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+      chatId: "buyer1",
+      qty: 1,
+    },
+    {
+      id: "ORD-1003",
+      productId: "p-demo-3",
+      productName: "Samsung Smart TV",
+      price: 1450000,
+      buyerId: "b3",
+      buyerName: "Kelvin James",
+      buyerCity: "Mwanza",
+      sellerCity: "Dar es Salaam",
+      type: "intercity",
+      busCompany: "Shabiby",
+      busStation: "Ubungo",
+      receiverName: "Kelvin James",
+      receiverPhone: "0711223344",
+      receiptImage: "../assets/logo.png",
+      status: ORDER_STATUS.COMPLETED,
+      shipping: {
+        plateNumber: "T 345 ABC",
+        tripStatus: "on_the_way",
+      },
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+      chatId: "buyer1",
+      qty: 1,
+    },
+  ];
+
+  saveAllOrders(seed);
+}
 function findOrderById(id) {
   return getAllOrders().find((o) => o.id === id) || null;
 }
@@ -1234,28 +1389,7 @@ function confirmOrder(orderId) {
   return o;
 }
 
-function updateTrip(orderId, { busPlate, tripStatus }) {
-  const all = getAllOrders();
-  const idx = all.findIndex((o) => o.id === orderId);
-  if (idx < 0) return null;
-
-  const o = all[idx];
-
-  // Ensure logistics object
-  o.logistics = o.logistics || {};
-  if (busPlate !== undefined) o.logistics.busPlate = busPlate;
-  if (tripStatus) o.logistics.tripStatus = tripStatus;
-
-  // If arrived, lock the whole order
-  if (o.logistics.tripStatus === "arrived") {
-    o.status = "done";
-  }
-
-  o.updatedAt = Date.now();
-  all[idx] = o;
-  saveAllOrders(all);
-  return o;
-}
+seedDevOrders();
 
 /* ---------- QR Generator ---------- */
 function getSellerId() {
@@ -1535,6 +1669,174 @@ function renderChatList() {
   });
 }
 
+// ================================
+// PHASE 2.4 — INCOMING ORDER BRIDGE
+// Seller side receives payloads (buyer side will send later)
+// ================================
+
+function ensureChatForBuyer(buyerId, buyerName) {
+  // Try find existing chat
+  let chat = CHAT_STORE.find((c) => c.buyerId === buyerId);
+
+  if (!chat) {
+    // Create new chat
+    chat = {
+      id: `chat_${buyerId || Date.now()}`,
+      buyerId: buyerId || "",
+      name: buyerName || "Buyer",
+      isSupport: false,
+      phone: "",
+
+      // order linking
+      orderId: null,
+      orderState: null,
+
+      lastMessage: "New chat started",
+      lastTs: Date.now(),
+      lastKind: "order",
+
+      messages: [],
+    };
+    CHAT_STORE.push(chat);
+  }
+
+  return chat;
+}
+
+// Creates an order UNFILLED and links it to a chat.
+// payload should include local/intercity info.
+function receiveIncomingOrder(payload) {
+  if (!payload) return;
+
+  const buyerId = payload.buyerId || "";
+  const buyerName = payload.buyerName || "Buyer";
+  const buyerCity = payload.buyerCity || "";
+  const sellerCity = payload.sellerCity || "";
+
+  const chat = ensureChatForBuyer(buyerId, buyerName);
+
+  // If chat already has an active order, do not create duplicate
+  if (chat.orderId) {
+    const existing = findOrderById(chat.orderId);
+    if (existing && existing.status !== "done") {
+      chat.orderState = "open";
+      renderChatList();
+      return existing;
+    }
+  }
+
+  const o = makeOrder({
+    productId: payload.productId || "",
+    productName: payload.productName || "NgoXi Order",
+    price: payload.price || 0,
+
+    buyerId,
+    buyerName,
+    buyerCity,
+    sellerCity,
+
+    type: payload.type || "local",
+
+    busCompany: payload.busCompany || "",
+    busStation: payload.busStation || "",
+    receiverName: payload.receiverName || "",
+    receiverPhone: payload.receiverPhone || "",
+
+    chatId: chat.id,
+  });
+
+  const all = getAllOrders();
+  all.unshift(o);
+  saveAllOrders(all);
+
+  // Link chat to order + set red dot
+  chat.orderId = o.id;
+  chat.orderState = "open";
+  chat.lastKind = "order";
+  chat.lastMessage = `New order: ${o.productName} • TSh ${Number(o.price).toLocaleString()}`;
+  chat.lastTs = Date.now();
+
+  addSystemMessage(
+    chat.id,
+    `New order created (${o.type === "intercity" ? "Intercity" : "Local"}). Status: Awaiting payment.`,
+    "order",
+  );
+
+  // Refresh UI
+  updateOverview();
+  renderOrders("unfilled");
+  renderChatList();
+
+  return o;
+}
+
+// Called after buyer uploads receipt.
+// Sets order to FILLED + attaches receipt image.
+function receiveReceiptUploaded(payload) {
+  if (!payload) return;
+
+  const orderId = payload.orderId;
+  const receipt = payload.receiptImage; // dataURL or url
+  const productName = payload.productName || "Order";
+
+  if (!orderId || !receipt) return;
+
+  const updated = markOrderPaid(orderId, receipt);
+  if (!updated) return;
+
+  // Update chat indicator
+  const chat = CHAT_STORE.find(
+    (c) => c.orderId === orderId || c.id === updated.chatId,
+  );
+  if (chat) {
+    chat.orderState = "open"; // still active until done
+    chat.lastKind = "order";
+    chat.lastMessage = `Receipt uploaded • ${productName}`;
+    chat.lastTs = Date.now();
+
+    addSystemMessage(
+      chat.id,
+      `Buyer uploaded receipt. Status: Waiting seller confirmation.`,
+      "order",
+    );
+  }
+
+  updateOverview();
+  renderOrders("filled");
+  renderChatList();
+}
+
+// Optional helper when seller confirms (standardized)
+function receiveSellerConfirm(orderId) {
+  const updated = confirmOrder(orderId);
+  if (!updated) return;
+
+  const chat = CHAT_STORE.find(
+    (c) => c.orderId === orderId || c.id === updated.chatId,
+  );
+  if (chat) {
+    chat.orderState = "completed"; // 🟠
+    chat.lastKind = "order";
+    chat.lastMessage = "Payment confirmed • Active shipping";
+    chat.lastTs = Date.now();
+
+    addSystemMessage(
+      chat.id,
+      "Seller confirmed payment. Active shipping.",
+      "order",
+    );
+  }
+
+  updateOverview();
+  renderOrders("completed");
+  renderChatList();
+}
+// DEV TEST (run in console)
+// receiveIncomingOrder({ type:"intercity", buyerId:"b1", buyerName:"Asha", buyerCity:"Mbeya", sellerCity:"Dar", productId:"p1", productName:"iPhone 13", price:850000, busCompany:"ABOOD", busStation:"Magufuli", receiverName:"Asha John", receiverPhone:"0756xxxxxx" })
+window.receiveIncomingOrder = receiveIncomingOrder;
+window.receiveReceiptUploaded = receiveReceiptUploaded;
+window.receiveSellerConfirm = receiveSellerConfirm;
+
 function getSavedPaymentInfo() {
   try {
     return JSON.parse(localStorage.getItem(PAYMENT_KEY) || "null");
@@ -1605,6 +1907,18 @@ function setActiveChat(id) {
       headerImg.style.display = "none";
     }
   }
+}
+
+function getInitials(fullName = "") {
+  return (
+    String(fullName)
+      .trim()
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((w) => w[0].toUpperCase())
+      .join("") || "S"
+  );
 }
 
 function renderChatMessages() {
@@ -1892,7 +2206,9 @@ const dp = localStorage.getItem(PROFILE_PHOTO_KEY);
 if (dp) {
   avatar.innerHTML = `<img src="${dp}" />`;
 } else {
-  avatar.textContent = initials(name);
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
+  const displayName = user.storeName || user.name || user.fullName || "Seller";
+  avatar.textContent = getInitials(displayName);
 }
 
 /* ---------- Logout ---------- */
@@ -1992,4 +2308,86 @@ function animateStatsFromDom() {
   }
 }
 
+function printLabel(order) {
+  if (!order) {
+    showToast("No order selected for printing.", "error");
+    return;
+  }
+
+  const label = document.getElementById("printLabel");
+  if (!label) {
+    showToast("Print label template not found.", "error");
+    return;
+  }
+
+  const selectedSize =
+    document.getElementById("labelSizeSelect")?.value || "80x50";
+
+  const LABEL_SIZES = {
+    "80x50": { width: 80, height: 50 },
+    "70x60": { width: 70, height: 60 },
+    "100x80": { width: 100, height: 80 },
+    "60x40": { width: 60, height: 40 },
+    "50x30": { width: 50, height: 30 },
+    "90x60": { width: 90, height: 60 },
+    "75x50": { width: 75, height: 50 },
+    "100x50": { width: 100, height: 50 },
+    "80x80": { width: 80, height: 80 },
+    "60x60": { width: 60, height: 60 },
+    "50x50": { width: 50, height: 50 },
+    "40x30": { width: 40, height: 30 },
+  };
+
+  const size = LABEL_SIZES[selectedSize] || LABEL_SIZES["80x50"];
+
+  document.documentElement.style.setProperty(
+    "--print-label-width",
+    `${size.width}mm`,
+  );
+  document.documentElement.style.setProperty(
+    "--print-label-height",
+    `${size.height}mm`,
+  );
+
+  const packageNo =
+    order.packageNo ||
+    `PKG-${String(order.id || "")
+      .replace(/\s+/g, "")
+      .slice(-5)}` ||
+    "________";
+
+  label.innerHTML = `
+    <div class="pl-wrap">
+      <div class="pl-header">
+        <div class="pl-logo">NgoXi</div>
+        <div class="pl-order">#${sanitize(order.id || "—")}</div>
+      </div>
+
+      <div class="pl-product">
+        <div class="pl-product-name">${sanitize(order.productName || "Product")}</div>
+        <div class="pl-price">TSh ${Number(order.price || 0).toLocaleString()}</div>
+      </div>
+
+      <div class="pl-section">
+        <div class="pl-title">Receiver</div>
+        <div>${sanitize(order.receiverName || order.buyerName || "—")}</div>
+        <div>${sanitize(order.receiverPhone || "—")}</div>
+        <div>${sanitize(order.buyerCity || "—")} - ${sanitize(order.busStation || "—")}</div>
+      </div>
+
+      <div class="pl-section">
+        <div class="pl-title">Transport</div>
+        <div>Bus: ${sanitize(order.busCompany || "—")}</div>
+        <div>Plate: ${sanitize(order.shipping?.plateNumber || "________")}</div>
+        <div>Date: ${new Date().toLocaleDateString()}</div>
+        <div class="pl-space"></div>
+        <div>Package No: ${sanitize(packageNo)}</div>
+      </div>
+
+      <div class="pl-footer">NgoXi Logistics</div>
+    </div>
+  `;
+
+  window.print();
+}
 initDashboard();

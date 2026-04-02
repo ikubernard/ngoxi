@@ -37,10 +37,8 @@ app.use(
     credentials: true,
     allowedHeaders: ["Content-Type", "Authorization"],
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
-  })
+  }),
 );
-
-app.use(cors({ origin: allowed, credentials: true }));
 
 app.set("trust proxy", 1);
 
@@ -51,10 +49,37 @@ app.use(bodyParser.urlencoded({ extended: true }));
 // ============================
 // ✅ STATIC FILES (THE IMPORTANT FIX)
 // ============================
+// ============================
+// ✅ STATIC FILES + PAGE ROUTES
+// ============================
 app.use("/assets", express.static(path.join(__dirname, "assets")));
 app.use("/public", express.static(path.join(__dirname, "public")));
-app.use("/", express.static(path.join(__dirname, "views")));
-// ✅ This means: /home.html, /seller.html, /product.html will load correctly
+app.use(express.static(path.join(__dirname, "views")));
+
+// Clean page routes
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "views", "auth.html"));
+});
+
+app.get("/auth", (req, res) => {
+  res.sendFile(path.join(__dirname, "views", "auth.html"));
+});
+
+app.get("/seller", (req, res) => {
+  res.sendFile(path.join(__dirname, "views", "seller.html"));
+});
+
+app.get("/buyer", (req, res) => {
+  res.sendFile(path.join(__dirname, "views", "home.html"));
+});
+
+app.get("/admin", (req, res) => {
+  res.sendFile(path.join(__dirname, "views", "admin.html"));
+});
+
+app.get("/role-select", (req, res) => {
+  res.sendFile(path.join(__dirname, "views", "role-select.html"));
+});
 
 // ============================
 // ✅ DATABASE CONNECTION
@@ -86,7 +111,27 @@ app.use("/api/admin/dashboard", adminRoutes);
 
 // Root API index
 app.get("/", (req, res) => {
-  res.send("NgoXi Backend API Running 🚀");
+  res.sendFile(path.join(__dirname, "views", "auth.html"));
+});
+
+app.get("/auth", (req, res) => {
+  res.sendFile(path.join(__dirname, "views", "auth.html"));
+});
+
+app.get("/seller", (req, res) => {
+  res.sendFile(path.join(__dirname, "views", "seller.html"));
+});
+
+app.get("/buyer", (req, res) => {
+  res.sendFile(path.join(__dirname, "views", "home.html"));
+});
+
+app.get("/admin", (req, res) => {
+  res.sendFile(path.join(__dirname, "views", "admin.html"));
+});
+
+app.get("/role-select", (req, res) => {
+  res.sendFile(path.join(__dirname, "views", "role-select.html"));
 });
 
 // ============================
@@ -173,11 +218,11 @@ io.on("connection", (socket) => {
 
     if (seg === "buyers") {
       globalThis.online.buyers.forEach((id) =>
-        io.to(id).emit("chat:notice", payload)
+        io.to(id).emit("chat:notice", payload),
       );
     } else if (seg === "sellers") {
       globalThis.online.sellers.forEach((id) =>
-        io.to(id).emit("chat:notice", payload)
+        io.to(id).emit("chat:notice", payload),
       );
     } else if (seg === "admins") {
       io.to("admin-room").emit("chat:notice", payload);
@@ -213,7 +258,7 @@ app.get("/api/chat/history", (req, res) => {
     const all = JSON.parse(fs.readFileSync(CHAT_LOG, "utf8"));
     const history = all.filter(
       (m) =>
-        (m.fromId === a && m.toId === b) || (m.fromId === b && m.toId === a)
+        (m.fromId === a && m.toId === b) || (m.fromId === b && m.toId === a),
     );
     res.json(history);
   } catch {
@@ -240,5 +285,5 @@ app.get("/api/admin/dashboard/online", (req, res) => {
 const PORT = process.env.PORT || 5000;
 
 server.listen(PORT, () =>
-  console.log(`🚀 NgoXi server + WebSocket running on port ${PORT}`)
+  console.log(`🚀 NgoXi server + WebSocket running on port ${PORT}`),
 );

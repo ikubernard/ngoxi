@@ -378,43 +378,58 @@
           <strong id="orderModalTitle">Order Details</strong>
           <button type="button" class="btn btn-ghost sm" data-close-order>✕</button>
         </div>
-
         <div class="modal-body" id="orderModalBody">
           <!-- filled by JS -->
         </div>
-
         <div class="modal-foot" id="orderModalFoot">
           <button type="button" class="btn btn-ghost sm" data-close-order>Back</button>
+
+          <select id="labelSizeSelect" class="label-size-select">
+            <option value="80x50">80mm × 50mm</option>
+            <option value="70x60">70mm × 60mm</option>
+            <option value="100x80">100mm × 80mm</option>
+            <option value="60x40">60mm × 40mm</option>
+            <option value="50x30">50mm × 30mm</option>
+            <option value="90x60">90mm × 60mm</option>
+            <option value="75x50">75mm × 50mm</option>
+            <option value="100x50">100mm × 50mm</option>
+            <option value="80x80">80mm × 80mm</option>
+            <option value="60x60">60mm × 60mm</option>
+            <option value="50x50">50mm × 50mm</option>
+            <option value="40x30">40mm × 30mm</option>
+          </select>
+          <button type="button" class="btn btn-ghost sm" onclick="printLabel(findOrderById(activeOrderDetailsId))">
+            🧾 Print Label
+          </button>
           <button type="button" id="saveOrderUpdateBtn" class="btn btn-primary sm" style="display:none;">
             Save update
           </button>
         </div>
-      </div>
-    </div>
 
-    <!-- ADD SIZE MODAL -->
-    <div id="sizeModal" class="modal" aria-hidden="true">
-      <div class="modal-sheet">
-        <div class="modal-head">
-          <strong>Add Size</strong>
-          <button class="btn btn-ghost" data-close-size>✖</button>
+
+        <!-- ADD SIZE MODAL -->
+        <div id="sizeModal" class="modal" aria-hidden="true">
+          <div class="modal-sheet">
+            <div class="modal-head">
+              <strong>Add Size</strong>
+              <button class="btn btn-ghost" data-close-size>✖</button>
+            </div>
+            <div class="modal-body">
+              <label class="formline">
+                <span>Size (e.g., 39 or XL)</span>
+                <input id="sizeNameInput" class="input" placeholder="e.g., 39 or XL" />
+              </label>
+              <label class="formline">
+                <span>Price Difference (TSh)</span>
+                <input id="sizeDiffInput" class="input" type="number" value="0" />
+              </label>
+            </div>
+            <div class="modal-foot">
+              <button class="btn btn-ghost" data-close-size>Cancel</button>
+              <button id="sizeSaveBtn" class="btn btn-primary">Add</button>
+            </div>
+          </div>
         </div>
-        <div class="modal-body">
-          <label class="formline">
-            <span>Size (e.g., 39 or XL)</span>
-            <input id="sizeNameInput" class="input" placeholder="e.g., 39 or XL" />
-          </label>
-          <label class="formline">
-            <span>Price Difference (TSh)</span>
-            <input id="sizeDiffInput" class="input" type="number" value="0" />
-          </label>
-        </div>
-        <div class="modal-foot">
-          <button class="btn btn-ghost" data-close-size>Cancel</button>
-          <button id="sizeSaveBtn" class="btn btn-primary">Add</button>
-        </div>
-      </div>
-    </div>
   </main>
   <div id="locationModal" class="modal" aria-hidden="true">
     <div class="modal-sheet">
@@ -441,7 +456,36 @@
       </div>
     </div>
   </div>
+  <!-- PRINT LABEL TEMPLATE -->
+  <div id="printLabel" class="print-label">
+    <div class="pl-header">
+      <div class="pl-logo">NgoXi</div>
+      <div class="pl-order">#ORDER_ID</div>
+    </div>
 
+    <div class="pl-product">
+      <div class="pl-product-name">PRODUCT_NAME</div>
+      <div class="pl-price">TSh PRICE</div>
+    </div>
+
+    <div class="pl-section">
+      <div class="pl-title">Receiver</div>
+      <div>NAME</div>
+      <div>PHONE</div>
+      <div>CITY - STATION</div>
+    </div>
+
+    <div class="pl-section">
+      <div class="pl-title">Transport</div>
+      <div>Bus: BUS_NAME</div>
+      <div>Plate: ________</div>
+      <div>Date: DATE</div>
+    </div>
+
+    <div class="pl-footer">
+      NgoXi Logistics
+    </div>
+  </div>
   <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
   <script src="../assets/seller.js"></script>
 </body>
