@@ -18,7 +18,11 @@ function signToken(user) {
 // ======================
 router.post("/signup", async (req, res) => {
   try {
-    const { name, email, password, role = "buyer", adminCode } = req.body;
+    const name = req.body.name?.trim();
+    const email = req.body.email?.trim().toLowerCase();
+    const password = req.body.password;
+    const role = req.body.role || "buyer";
+    const adminCode = req.body.adminCode;
 
     if (!name || !email || !password) {
       return res.status(400).json({ error: "Missing required fields" });
@@ -105,7 +109,8 @@ router.post("/signup", async (req, res) => {
 // ======================
 router.post("/login", async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const email = req.body.email?.trim().toLowerCase();
+    const password = req.body.password;
     const user = await User.findOne({ email });
     if (!user)
       return res.status(401).json({ error: "Invalid email or password" });
