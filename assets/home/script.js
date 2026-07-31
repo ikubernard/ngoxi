@@ -32,6 +32,12 @@
     pages: 1,
     loading: false,
     products: [], // cache of products from list
+    marketplace: {
+      category: "all",
+      search: "",
+      mode: "all",
+      sort: "default",
+    },
     productById: new Map(), // quick index by _id
     favorites: new Set(), // product IDs (we normalize whatever backend returns)
     theme: localStorage.getItem("ngoxi_theme") || "light",
@@ -363,6 +369,7 @@
     } catch (err) {
       console.error("loadProducts", err);
       toast("Failed to load products");
+      refreshMarketplace();
     } finally {
       state.loading = false;
     }
@@ -393,7 +400,65 @@
 
     state.gridObserver.observe(sentinel);
   }
+  // -----------------------------
+  // Marketplace Engine
+  // -----------------------------
 
+  function getMarketplaceProducts() {
+    let products = [...state.products];
+
+    // CATEGORY FILTER
+    if (state.marketplace.category !== "all") {
+      products = products.filter((product) => {
+        return (
+          product.category?.toLowerCase() ===
+          state.marketplace.category.toLowerCase()
+        );
+      });
+    }
+
+    // SEARCH FILTER
+    if (state.marketplace.search) {
+      const keyword = state.marketplace.search.toLowerCase();
+
+      products = products.filter((product) => {
+        const text = `
+        ${product.name || ""}
+        ${product.category || ""}
+        ${product.description || ""}
+      `.toLowerCase();
+
+        return text.includes(keyword);
+      });
+    }
+
+    // MODE FILTER (future)
+    if (state.marketplace.mode !== "all") {
+      products = products.filter((product) => {
+        return product[state.marketplace.mode] === true;
+      });
+    }
+
+    // SORTING (future)
+    if (state.marketplace.sort === "price-low") {
+      products.sort((a, b) => Number(a.price) - Number(b.price));
+    }
+
+    if (state.marketplace.sort === "price-high") {
+      products.sort((a, b) => Number(b.price) - Number(a.price));
+    }
+
+    return products;
+  }
+  function refreshMarketplace() {
+    const products = getMarketplaceProducts();
+
+    els.grid.innerHTML = "";
+
+    products.forEach((product) => {
+      els.grid.appendChild(renderCard(product));
+    });
+  }
   // -----------------------------
   // Product Sheet
   // -----------------------------
@@ -471,8 +536,9 @@
   let searchDebounce = 0;
   function onSearchInput() {
     const q = els.searchInput.value.trim();
-    state.search.term = q;
 
+    state.search.term = q;
+    state.marketplace.search = q;
     // Suggestion dropdown (basic)
     // You can enhance to call /api/search-suggest if you add it server-side
     // For now we rely on history (already typed) — omitted dropdown UI for simplicity.
@@ -1033,13 +1099,12 @@
   }
   function initCategoryCarousel() {
     const categoryStrip = document.querySelector(".category-strip");
+
     const categoryScroll = categoryStrip?.querySelector(".category-scroll");
+
     const arrows = categoryStrip?.querySelectorAll(".category-arrow");
 
-    if (!categoryScroll || arrows.length < 2) {
-      console.warn("Category carousel missing");
-      return;
-    }
+    if (!categoryScroll || arrows.length < 2) return;
 
     arrows[0].onclick = () => {
       categoryScroll.scrollLeft -= 400;
@@ -1048,6 +1113,20 @@
     arrows[1].onclick = () => {
       categoryScroll.scrollLeft += 400;
     };
+
+    categoryScroll.querySelectorAll(".category").forEach((button) => {
+      button.addEventListener("click", () => {
+        categoryScroll
+          .querySelectorAll(".category")
+          .forEach((btn) => btn.classList.remove("active"));
+
+        button.classList.add("active");
+
+        state.marketplace.category = button.dataset.category;
+
+        refreshMarketplace();
+      });
+    });
   }
 
   // -----------------------------
