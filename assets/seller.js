@@ -159,7 +159,7 @@ async function authorizedUpload(url, formData) {
    ---------------------------------------------------------- */
 async function renderPlanLine() {
   try {
-    const r = await authorizedFetch(`${API_BASE}/seller/my-products`);
+    const r = await authorizedFetch(`${API_BASE}/api/seller/my-products`);
     const list = await r.json();
     const planLine = document.getElementById("planLine");
     if (planLine)
@@ -175,7 +175,7 @@ async function renderPlanLine() {
 async function loadProductsForHome() {
   // You can swap to a public /api/products list if desired
   try {
-    const res = await authorizedFetch(`${API_BASE}/seller/my-products`);
+    const res = await authorizedFetch(`${API_BASE}/api/seller/my-products`);
     const arr = await res.json();
     renderRecent(Array.isArray(arr) ? arr : []);
     document.getElementById("statProducts").textContent = Array.isArray(arr)
@@ -535,7 +535,7 @@ document.getElementById("postProduct")?.addEventListener("click", async () => {
     // NOTE: We no longer use the generic p_image gallery input.
     // You can delete the <input id="p_image"> block from seller.html if you want.
 
-    const res = await authorizedUpload(`${API_BASE}/products/add`, fd);
+    const res = await authorizedUpload(`${API_BASE}/api/products/add`, fd);
     const data = await res.json().catch(() => ({}));
     if (!res.ok || data?.success === false)
       throw new Error(data?.message || "Upload failed");
@@ -700,7 +700,7 @@ async function loadMyProducts() {
 
   grid.innerHTML = "";
   try {
-    const r = await authorizedFetch(`${API_BASE}/seller/my-products`);
+    const r = await authorizedFetch(`${API_BASE}/api/seller/my-products`);
     const products = await r.json();
 
     if (!Array.isArray(products) || products.length === 0) {
@@ -772,9 +772,12 @@ async function loadMyProducts() {
 /* ---------- Kebab action handlers ---------- */
 async function onToggleVisibility(id) {
   try {
-    const res = await authorizedFetch(`${API_BASE}/products/${id}/visibility`, {
-      method: "PATCH",
-    });
+    const res = await authorizedFetch(
+      `${API_BASE}/api/products/${id}/visibility`,
+      {
+        method: "PATCH",
+      },
+    );
     const data = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(data.message || "Toggle failed");
     showToast(
@@ -791,7 +794,7 @@ async function onToggleVisibility(id) {
 async function onDeleteProduct(id) {
   if (!confirm("Delete this product permanently?")) return;
   try {
-    const res = await authorizedFetch(`${API_BASE}/products/${id}`, {
+    const res = await authorizedFetch(`${API_BASE}/api/products/${id}`, {
       method: "DELETE",
     });
     const data = await res.json().catch(() => ({}));
@@ -807,7 +810,7 @@ async function onDeleteProduct(id) {
 function onEditProduct(id) {
   // Simple prefill into the Post form (same page edit)
   // You can expand this to an Edit modal if you like.
-  authorizedFetch(`${API_BASE}/products/${id}`)
+  authorizedFetch(`${API_BASE}/api/products/${id}`)
     .then((r) => r.json())
     .then((p) => {
       if (!p || !p._id) return showToast("Product not found", "error");

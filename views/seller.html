@@ -398,38 +398,46 @@
             <option value="50x50">50mm × 50mm</option>
             <option value="40x30">40mm × 30mm</option>
           </select>
-          <button type="button" class="btn btn-ghost sm" onclick="printLabel(findOrderById(activeOrderDetailsId))">
-            🧾 Print Label
-          </button>
           <button type="button" id="saveOrderUpdateBtn" class="btn btn-primary sm" style="display:none;">
             Save update
           </button>
+
         </div>
+      </div>
+    </div>
+
+    <!-- ADD SIZE MODAL -->
+    <div id="sizeModal" class="modal" aria-hidden="true">
 
 
-        <!-- ADD SIZE MODAL -->
-        <div id="sizeModal" class="modal" aria-hidden="true">
-          <div class="modal-sheet">
-            <div class="modal-head">
-              <strong>Add Size</strong>
-              <button class="btn btn-ghost" data-close-size>✖</button>
-            </div>
-            <div class="modal-body">
-              <label class="formline">
-                <span>Size (e.g., 39 or XL)</span>
-                <input id="sizeNameInput" class="input" placeholder="e.g., 39 or XL" />
-              </label>
-              <label class="formline">
-                <span>Price Difference (TSh)</span>
-                <input id="sizeDiffInput" class="input" type="number" value="0" />
-              </label>
-            </div>
-            <div class="modal-foot">
-              <button class="btn btn-ghost" data-close-size>Cancel</button>
-              <button id="sizeSaveBtn" class="btn btn-primary">Add</button>
-            </div>
+      <!-- ADD SIZE MODAL -->
+      <div id="sizeModal" class="modal" aria-hidden="true">
+        <div class="modal-sheet">
+          <div class="modal-head">
+            <strong>Add Size</strong>
+            <button type="button" class="btn btn-ghost" data-close-size>✖</button>
+          </div>
+          <div class="modal-body">
+            <label class="formline">
+              <span>Size (e.g., 39 or XL)</span>
+              <input id="sizeNameInput" class="input" placeholder="e.g., 39 or XL" />
+            </label>
+            <label class="formline">
+              <span>Price Difference (TSh)</span>
+              <input id="sizeDiffInput" class="input" type="number" value="0" />
+            </label>
+          </div>
+          <div class="modal-foot">
+            <button type="button" class="btn btn-ghost" data-close-size>
+              Cancel
+            </button>
+
+            <button type="button" id="sizeSaveBtn" class="btn btn-primary">
+              Add
+            </button>
           </div>
         </div>
+      </div>
   </main>
   <div id="locationModal" class="modal" aria-hidden="true">
     <div class="modal-sheet">
