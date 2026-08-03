@@ -33,6 +33,7 @@ router.post(
   upload.fields([
     { name: "cover", maxCount: 1 },
     { name: "gallery", maxCount: 8 },
+    { name: "variantImages", maxCount: 12 },
   ]),
   async (req, res) => {
     try {
@@ -119,7 +120,7 @@ router.post(
       console.error("❌ Internal product creation error:", err);
       return res.status(500).json({ success: false, message: "Server error" });
     }
-  }
+  },
 );
 
 /* =========================================================

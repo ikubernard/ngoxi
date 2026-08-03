@@ -318,47 +318,68 @@ document.getElementById("saveOrderUpdateBtn")?.addEventListener("click", () => {
    8) POST FORM: Variants + Sizes UI helpers
    ---------------------------------------------------------- */
 // SIZES
-let sizesData = []; // [{ size, priceDiff }, ...]
+let sizesData = []; // [{ label, priceDiff }]
+
 function renderSizes() {
   const list = document.getElementById("sizesList");
   if (!list) return;
+
   list.innerHTML = "";
+
   sizesData.forEach((s, i) => {
     const el = document.createElement("div");
     el.className = "size-chip";
+
     el.innerHTML = `
-      <span><strong>${sanitize(s.size)}</strong>${
-        s.priceDiff ? ` · +TSh ${Number(s.priceDiff).toLocaleString()}` : ""
-      }</span>
-      <button class="chip-remove" data-i="${i}" title="Remove">✖</button>
+      <span>
+        <strong>${sanitize(s.label)}</strong>
+        ${s.priceDiff ? ` · +TSh ${Number(s.priceDiff).toLocaleString()}` : ""}
+      </span>
+
+      <button 
+        class="chip-remove"
+        data-i="${i}"
+        type="button">
+        ✖
+      </button>
     `;
+
     list.appendChild(el);
   });
-  list.querySelectorAll(".chip-remove").forEach((b) =>
-    b.addEventListener("click", () => {
-      sizesData.splice(Number(b.dataset.i), 1);
+
+  list.querySelectorAll(".chip-remove").forEach((btn) => {
+    btn.onclick = () => {
+      sizesData.splice(Number(btn.dataset.i), 1);
+
       renderSizes();
-    }),
-  );
+    };
+  });
 }
+
 document.getElementById("addSizeBtn")?.addEventListener("click", () => {
   document.getElementById("sizeNameInput").value = "";
   document.getElementById("sizeDiffInput").value = "0";
+
   document.getElementById("sizeModal")?.setAttribute("aria-hidden", "false");
 });
-document
-  .querySelectorAll("[data-close-size]")
-  .forEach((btn) =>
-    btn.addEventListener("click", () =>
-      document.getElementById("sizeModal")?.setAttribute("aria-hidden", "true"),
-    ),
-  );
+
 document.getElementById("sizeSaveBtn")?.addEventListener("click", () => {
-  const name = (document.getElementById("sizeNameInput").value || "").trim();
-  const diff = Number(document.getElementById("sizeDiffInput").value || 0);
-  if (!name) return showToast("Please enter a size.", "error");
-  sizesData.push({ size: name, priceDiff: isNaN(diff) ? 0 : diff });
+  const label = document.getElementById("sizeNameInput").value.trim();
+
+  const priceDiff = Number(document.getElementById("sizeDiffInput").value || 0);
+
+  if (!label) {
+    showToast("Enter size", "error");
+    return;
+  }
+
+  sizesData.push({
+    label,
+    priceDiff,
+  });
+
   renderSizes();
+
   document.getElementById("sizeModal")?.setAttribute("aria-hidden", "true");
 });
 
@@ -394,29 +415,38 @@ function collectVariantsAndFiles() {
   const rows = [...document.querySelectorAll("#variants .variant-row")];
 
   const variants = [];
-  const files = []; // array of File objects, one per variant that has an image
+  const variantImages = [];
 
-  rows.forEach((r) => {
-    const name = r.querySelector(".v-name")?.value?.trim();
+  rows.forEach((row) => {
+    const name = row.querySelector(".v-name")?.value.trim();
+
     if (!name) return;
 
-    const price = Number(r.querySelector(".v-price")?.value || 0);
-    const imgInput = r.querySelector(".v-image");
+    const priceDiff = Number(row.querySelector(".v-price")?.value || 0);
+
+    const file = row.querySelector(".v-image")?.files?.[0];
+
     let imageIndex = null;
 
-    if (imgInput && imgInput.files && imgInput.files[0]) {
-      imageIndex = files.length;
-      files.push(imgInput.files[0]);
+    if (file) {
+      imageIndex = variantImages.length;
+
+      variantImages.push(file);
     }
 
     variants.push({
       name,
-      price: Number.isFinite(price) && price > 0 ? price : 0,
-      imageIndex, // null if no image, or index in gallery[]
+
+      priceDiff,
+
+      imageIndex,
     });
   });
 
-  return { variants, files };
+  return {
+    variants,
+    variantImages,
+  };
 }
 
 function collectSizesArray() {
@@ -489,7 +519,7 @@ document.getElementById("postProduct")?.addEventListener("click", async () => {
     fd.append("deliveryTime", deliveryTime);
 
     // Collect variants + their images
-    const { variants, files: variantImages } = collectVariantsAndFiles();
+    const { variants, variantImages } = collectVariantsAndFiles();
     fd.append("variants", JSON.stringify(variants));
 
     // Sizes stay as before
@@ -497,14 +527,10 @@ document.getElementById("postProduct")?.addEventListener("click", async () => {
 
     // Cover image
     fd.append("cover", cover);
-
-    // Attach variant images as gallery[]
-    // Backend should map gallery[index] -> variants[index].imageIndex
-    let i = 0;
-    for (const f of variantImages) {
-      if (i++ >= 12) break; // safety cap
-      fd.append("gallery", f);
-    }
+    // Variant images
+    variantImages.forEach((file) => {
+      fd.append("variantImages", file);
+    });
 
     // NOTE: We no longer use the generic p_image gallery input.
     // You can delete the <input id="p_image"> block from seller.html if you want.
