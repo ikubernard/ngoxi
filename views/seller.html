@@ -406,38 +406,35 @@
       </div>
     </div>
 
+
     <!-- ADD SIZE MODAL -->
     <div id="sizeModal" class="modal" aria-hidden="true">
+      <div class="modal-sheet">
+        <div class="modal-head">
+          <strong>Add Size</strong>
+          <button type="button" class="btn btn-ghost" data-close-size>✖</button>
+        </div>
+        <div class="modal-body">
+          <label class="formline">
+            <span>Size (e.g., 39 or XL)</span>
+            <input id="sizeNameInput" class="input" placeholder="e.g., 39 or XL" />
+          </label>
+          <label class="formline">
+            <span>Price Difference (TSh)</span>
+            <input id="sizeDiffInput" class="input" type="number" value="0" />
+          </label>
+        </div>
+        <div class="modal-foot">
+          <button type="button" class="btn btn-ghost" data-close-size>
+            Cancel
+          </button>
 
-
-      <!-- ADD SIZE MODAL -->
-      <div id="sizeModal" class="modal" aria-hidden="true">
-        <div class="modal-sheet">
-          <div class="modal-head">
-            <strong>Add Size</strong>
-            <button type="button" class="btn btn-ghost" data-close-size>✖</button>
-          </div>
-          <div class="modal-body">
-            <label class="formline">
-              <span>Size (e.g., 39 or XL)</span>
-              <input id="sizeNameInput" class="input" placeholder="e.g., 39 or XL" />
-            </label>
-            <label class="formline">
-              <span>Price Difference (TSh)</span>
-              <input id="sizeDiffInput" class="input" type="number" value="0" />
-            </label>
-          </div>
-          <div class="modal-foot">
-            <button type="button" class="btn btn-ghost" data-close-size>
-              Cancel
-            </button>
-
-            <button type="button" id="sizeSaveBtn" class="btn btn-primary">
-              Add
-            </button>
-          </div>
+          <button type="button" id="sizeSaveBtn" class="btn btn-primary">
+            Add
+          </button>
         </div>
       </div>
+    </div>
   </main>
   <div id="locationModal" class="modal" aria-hidden="true">
     <div class="modal-sheet">
