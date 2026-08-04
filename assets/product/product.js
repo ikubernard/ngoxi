@@ -1,262 +1,638 @@
-(function () {
-  const API = "http://localhost:5000";
-  const $ = (s, r = document) => r.querySelector(s);
-  const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
-  const param = k => new URLSearchParams(location.search).get(k);
+(() => {
+  "use strict";
 
-  // State
-  const id = param("id");
-  let product = null, gallery = [], idx = 0;
-  let selectedVariant = null, selectedSize = null;
+  const API_BASE = window.API_BASE || window.location.origin;
 
-  // DOM
-  const ribbon = $("#nx-ribbon"), rTitle = $("#nxRibbonTitle"), rPrice = $("#nxRibbonPrice");
-  const slider = $("#nxSlider"), thumbs = $("#nxThumbs");
-  const titleEl = $("#nxTitle"), priceEl = $("#nxPrice"), badgesEl = $("#nxBadges");
-  const variantBlock = $("#nxVariantBlock"), variantsEl = $("#nxVariants");
-  const sizeBlock = $("#nxSizeBlock"), sizesEl = $("#nxSizes");
-  const totalEl = $("#nxTotal"), stickyTotal = $("#nxStickyTotal");
-  const desc = $("#nxDesc"), toggleDesc = $("#nxToggleDescGallery"), descGrid = $("#nxDescGallery");
-  const storeBox = $("#nxStore"), storeLogo = $("#nxStoreLogo"), storeName = $("#nxStoreName"), storeCap = $("#nxStoreCaption");
-  const buyTop = $("#nxBuyTop"), buySticky = $("#nxBuySticky");
-  const favBtn = $("#nxFav"), storeBtn = $("#nxStoreBtn"), reviewBtn = $("#nxReviewBtn");
+  const PLACEHOLDER =
+    "data:image/svg+xml;charset=UTF-8," +
+    encodeURIComponent(`
+      <svg xmlns="http://www.w3.org/2000/svg" width="900" height="900">
+        <rect width="100%" height="100%" fill="#eef3f0"/>
+        <text
+          x="50%"
+          y="50%"
+          text-anchor="middle"
+          dominant-baseline="middle"
+          fill="#688076"
+          font-family="Arial"
+          font-size="42">
+          NgoXi Product
+        </text>
+      </svg>
+    `);
 
-  // Sheet
-  const sheet = $("#nxSheet"), sClose = $("#nxSheetClose"), sImg = $("#nxSheetImg"),
-    sName = $("#nxSheetName"), sPrice = $("#nxSheetPrice"), sVar = $("#nxSheetVariants"),
-    sSizes = $("#nxSheetSizes"), sMinus = $("#nxQminus"), sPlus = $("#nxQplus"),
-    sQ = $("#nxQval"), sTotal = $("#nxSheetTotal"), sBuy = $("#nxSheetBuy");
-  let qty = 1;
+  const $ = (selector) => document.querySelector(selector);
+  const params = new URLSearchParams(window.location.search);
 
-  async function load() {
-    if (!id) throw new Error("Missing product id");
-    const res = await fetch(`${API}/api/products/${id}`);
-    if (!res.ok) throw new Error("Failed to fetch product");
-    product = await res.json();
+  const state = {
+    product: null,
+    images: [],
+    activeImage: 0,
+    variant: null,
+    size: null,
+    quantity: 1,
+  };
+
+  const els = {
+    loading: $("#loadingState"),
+    error: $("#errorState"),
+    errorMessage: $("#errorMessage"),
+    page: $("#productPage"),
+    buyBar: $("#buyBar"),
+
+    mainImage: $("#mainImage"),
+    imageCount: $("#imageCount"),
+    thumbs: $("#thumbnailGallery"),
+
+    name: $("#productName"),
+    category: $("#category"),
+    modeBadge: $("#modeBadge"),
+    rating: $("#ratingText"),
+    price: $("#productPrice"),
+    description: $("#description"),
+    delivery: $("#deliveryInfo"),
+
+    sellerName: $("#sellerName"),
+    sellerAvatar: $("#sellerAvatar"),
+    visitStore: $("#visitStoreBtn"),
+
+    stickyTotal: $("#stickyTotal"),
+    favorite: $("#favoriteBtn"),
+
+    overlay: $("#selectionOverlay"),
+    sheet: $("#selectionSheet"),
+    closeSheet: $("#closeSheet"),
+
+    sheetImage: $("#sheetImage"),
+    sheetName: $("#sheetName"),
+    sheetUnitPrice: $("#sheetUnitPrice"),
+
+    variantSection: $("#variantSection"),
+    variantChoices: $("#variantChoices"),
+
+    sizeSection: $("#sizeSection"),
+    sizeChoices: $("#sizeChoices"),
+
+    minus: $("#minusQty"),
+    plus: $("#plusQty"),
+    quantity: $("#quantity"),
+    sheetTotal: $("#sheetTotal"),
+    continueButton: $("#continueButton"),
+  };
+
+  function money(value) {
+    return `TSh ${Number(value || 0).toLocaleString("en-US")}`;
   }
 
-  function buildGallery() {
-    const cover = product.cover?.url || null;
-    const imgs = Array.isArray(product.images) ? product.images.map(i => i.url).filter(Boolean) : [];
-    gallery = cover ? [cover, ...imgs.filter(u => u !== cover)] : imgs.slice();
-    if (selectedVariant?.image) gallery = [selectedVariant.image, ...gallery.filter(u => u !== selectedVariant.image)];
-    if (!gallery.length) gallery = ["https://via.placeholder.com/800x600?text=No+Image"];
-    idx = 0;
+  function safeNumber(value) {
+    const converted = Number(value);
+    return Number.isFinite(converted) ? converted : 0;
   }
 
-  function renderSlider() {
-    slider.innerHTML = "";
-    gallery.forEach((url, i) => {
-      const slide = document.createElement("div");
-      slide.className = "nx-slide";
-      slide.style.transform = `translateX(${(i - idx) * 100}%)`;
-      slide.innerHTML = `<img src="${url}" alt="image ${i + 1}">`;
-      slider.appendChild(slide);
-    });
-    thumbs.innerHTML = "";
-    gallery.forEach((url, i) => {
-      const t = document.createElement("img");
-      t.src = url; if (i === idx) t.classList.add("active");
-      t.onclick = () => { idx = i; renderSlider(); };
-      thumbs.appendChild(t);
-    });
-
-    // touch swipe
-    let sx = 0, dx = 0, isDown = false;
-    slider.ontouchstart = (e) => { isDown = true; sx = e.touches[0].clientX; };
-    slider.ontouchmove = (e) => { if (!isDown) return; dx = e.touches[0].clientX - sx; };
-    slider.ontouchend = () => {
-      if (!isDown) return; isDown = false;
-      if (Math.abs(dx) > 40) { if (dx < 0) next(); else prev(); } dx = 0;
-    };
-  }
-  function next() { idx = (idx + 1) % gallery.length; renderSlider(); }
-  function prev() { idx = (idx - 1 + gallery.length) % gallery.length; renderSlider(); }
-
-  function renderHeader() {
-    titleEl.textContent = product.name || "Product";
-    badgesEl.innerHTML = `
-      <span class="nx-badge safe">Quality Assured</span>
-      <span class="nx-badge">Pay Later</span>`;
-    priceEl.textContent = `TSh ${Number(product.price || 0).toLocaleString()}`;
+  function imageUrl(value) {
+    if (typeof value === "string") return value;
+    return value?.url || "";
   }
 
-  function renderVariants() {
-    const arr = Array.isArray(product.variants) ? product.variants : [];
-    if (!arr.length) { variantBlock.hidden = true; return; }
-    variantBlock.hidden = false;
-    if (!selectedVariant) selectedVariant = arr[0];
-    variantsEl.innerHTML = "";
-    arr.forEach(v => {
-      const b = document.createElement("button");
-      b.className = "nx-variant";
-      b.innerHTML = `<img src="${v.image || product.cover?.url || ''}" alt="${v.name || 'variant'}">`;
-      if (selectedVariant?.name === v.name) b.classList.add("active");
-      b.onclick = () => { selectedVariant = v; buildGallery(); renderSlider(); markVariants(); updateTotals(); };
-      variantsEl.appendChild(b);
-    });
-    function markVariants() {
-      $$(".nx-variant", variantsEl).forEach(x => x.classList.remove("active"));
-      $$(".nx-variant", variantsEl).find((el, i) => arr[i] === selectedVariant)?.classList.add("active");
-    }
-  }
-
-  function renderSizes() {
-    const arr = Array.isArray(product.sizes) ? product.sizes : [];
-    if (!arr.length) { sizeBlock.hidden = true; return; }
-    sizeBlock.hidden = false;
-    if (!selectedSize) selectedSize = arr[0];
-    sizesEl.innerHTML = "";
-    arr.forEach(s => {
-      const b = document.createElement("button"); b.className = "nx-size"; b.textContent = s;
-      if (s === selectedSize) b.classList.add("active");
-      b.onclick = () => { selectedSize = s; $$(".nx-size", sizesEl).forEach(x => x.classList.remove("active")); b.classList.add("active"); };
-      sizesEl.appendChild(b);
-    });
-  }
-
-  function updateTotals() {
-    const price = selectedVariant?.price ?? product.price ?? 0;
-    const v = `TSh ${Number(price).toLocaleString()}`;
-    totalEl.textContent = v; stickyTotal.textContent = v;
-    rTitle.textContent = product.name || "Product"; rPrice.textContent = v;
-  }
-
-  function ribbonObserve() {
-    const target = $(".nx-total");
-    const io = new IntersectionObserver(([e]) => {
-      ribbon.hidden = e.isIntersecting; // hide while total is visible; show after scrolled
-    }, { rootMargin: "-80px 0px 0px 0px" });
-    io.observe(target);
-  }
-
-  function renderDescription() {
-    const text = (product.description || "").trim();
-    const limit = 240; let expanded = false;
-    const draw = () => { desc.textContent = expanded ? text : (text.length > limit ? (text.slice(0, limit) + "…") : text); };
-    draw();
-    if (text.length > limit) {
-      const btn = document.createElement("button"); btn.className = "nx-link"; btn.textContent = "See more";
-      btn.onclick = () => { expanded = !expanded; draw(); btn.textContent = expanded ? "See less" : "See more"; };
-      desc.after(btn);
+  function sellerObject() {
+    if (typeof state.product?.sellerId === "object") {
+      return state.product.sellerId;
     }
 
-    const imgs = Array.isArray(product.descriptionImages) ? product.descriptionImages.filter(Boolean) : [];
-    if (!imgs.length) { toggleDesc.hidden = true; descGrid.hidden = true; return; }
-    descGrid.innerHTML = imgs.map(u => `<img src="${u}" alt="detail">`).join("");
-    toggleDesc.hidden = false;
-    toggleDesc.onclick = () => {
-      const show = descGrid.hidden;
-      descGrid.hidden = !show; toggleDesc.textContent = show ? "Hide images" : "View more images";
-    };
+    return null;
   }
 
-  function renderStore() {
-    if (!product?.sellerId) return;
-    // Basic placeholders; replace with your seller API values if available
-    storeBox.hidden = false;
-    storeLogo.src = (product.cover?.url || product.images?.[0]?.url) || "https://via.placeholder.com/88";
-    storeName.textContent = product.sellerName || "Seller";
-    storeCap.textContent = "Tap to visit store";
-    const go = () => window.location.href = `/views/store.html?seller=${encodeURIComponent(product.sellerId)}`;
-    storeBox.onclick = go; storeBtn.onclick = go;
+  function getSellerId() {
+    return sellerObject()?._id || state.product?.sellerId || "";
   }
 
-  function attachStickyActions() {
-    favBtn.onclick = () => {
-      const key = "favorites"; const list = JSON.parse(localStorage.getItem(key) || "[]");
-      if (!list.includes(product._id)) { list.push(product._id); localStorage.setItem(key, JSON.stringify(list)); }
-      favBtn.style.borderColor = "#ffadc1"; favBtn.textContent = "❤";
-    };
-    reviewBtn.onclick = () => window.location.href = `/views/review.html?product=${encodeURIComponent(product._id)}`;
+  function getVariantImage(variant) {
+    return imageUrl(variant?.image);
   }
 
-  // BUY SHEET
-  function openSheet() {
-    qty = 1; sQ.textContent = "1";
-    sImg.src = selectedVariant?.image || product.cover?.url || product.images?.[0]?.url || "";
-    sName.textContent = product.name || "Product";
-    const base = selectedVariant?.price ?? product.price ?? 0;
-    sPrice.textContent = `TSh ${Number(base).toLocaleString()}`;
-    sTotal.textContent = sPrice.textContent;
+  function getSelectedSize() {
+    if (!state.size) return null;
 
-    // Variant picks inside sheet (optional mirror)
-    sVar.innerHTML = "";
-    (product.variants || []).forEach(v => {
-      const b = document.createElement("button"); b.className = "nx-size"; b.textContent = v.name || "Variant";
-      if (selectedVariant?.name === v.name) b.classList.add("active");
-      b.onclick = () => {
-        selectedVariant = v; buildGallery(); renderSlider(); updateTotals();
-        $$(".nx-size", sVar).forEach(x => x.classList.remove("active")); b.classList.add("active");
-        sImg.src = selectedVariant?.image || sImg.src;
-        const p = selectedVariant?.price ?? product.price ?? 0;
-        sPrice.textContent = `TSh ${Number(p).toLocaleString()}`;
-        sTotal.textContent = `TSh ${Number(p * qty).toLocaleString()}`;
+    if (typeof state.size === "string") {
+      return {
+        label: state.size,
+        priceDiff: 0,
       };
-      sVar.appendChild(b);
-    });
+    }
 
-    // Sizes in sheet
-    sSizes.innerHTML = "";
-    (product.sizes || []).forEach(s => {
-      const b = document.createElement("button"); b.className = "nx-size"; b.textContent = s;
-      if (s === selectedSize || (!selectedSize && s === product.sizes?.[0])) b.classList.add("active");
-      b.onclick = () => { selectedSize = s; $$(".nx-size", sSizes).forEach(x => x.classList.remove("active")); b.classList.add("active"); };
-      sSizes.appendChild(b);
-    });
+    return state.size;
+  }
 
-    const recalc = () => {
-      const p = selectedVariant?.price ?? product.price ?? 0;
-      sTotal.textContent = `TSh ${Number(p * qty).toLocaleString()}`;
+  function unitPrice() {
+    const basePrice = safeNumber(state.product?.price);
+    const variantDifference = safeNumber(state.variant?.priceDiff);
+    const sizeDifference = safeNumber(getSelectedSize()?.priceDiff);
+
+    return basePrice + variantDifference + sizeDifference;
+  }
+
+  function orderTotal() {
+    return unitPrice() * state.quantity;
+  }
+
+  function collectImages(product) {
+    const urls = [];
+
+    urls.push(imageUrl(product.cover));
+
+    if (Array.isArray(product.images)) {
+      product.images.forEach((image) => {
+        urls.push(imageUrl(image));
+      });
+    }
+
+    if (Array.isArray(product.variants)) {
+      product.variants.forEach((variant) => {
+        urls.push(getVariantImage(variant));
+      });
+    }
+
+    return [...new Set(urls.filter(Boolean))];
+  }
+
+  async function loadProduct() {
+    const id = params.get("id");
+
+    if (!id) {
+      throw new Error("The product link is missing its product ID.");
+    }
+
+    const response = await fetch(
+      `${API_BASE}/api/products/${encodeURIComponent(id)}`,
+      {
+        credentials: "include",
+      },
+    );
+
+    const data = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      throw new Error(data.message || "This product is unavailable.");
+    }
+
+    state.product = data.product || data;
+    state.images = collectImages(state.product);
+    state.variant = null;
+    state.size = null;
+  }
+
+  function renderGallery() {
+    if (!state.images.length) {
+      state.images = [PLACEHOLDER];
+    }
+
+    const currentImage = state.images[state.activeImage] || state.images[0];
+
+    els.mainImage.src = currentImage;
+    els.mainImage.alt = state.product.name || "Product";
+
+    els.imageCount.textContent =
+      state.images.length > 1
+        ? `${state.activeImage + 1} / ${state.images.length}`
+        : "";
+
+    els.thumbs.innerHTML = "";
+
+    if (state.images.length < 2) return;
+
+    state.images.forEach((url, index) => {
+      const thumbnail = document.createElement("img");
+
+      thumbnail.className =
+        index === state.activeImage ? "thumb active" : "thumb";
+
+      thumbnail.src = url;
+      thumbnail.alt = `${state.product.name || "Product"} image ${index + 1}`;
+
+      thumbnail.addEventListener("click", () => {
+        state.activeImage = index;
+        renderGallery();
+      });
+
+      els.thumbs.appendChild(thumbnail);
+    });
+  }
+
+  function showVariantImage(variant) {
+    const url = getVariantImage(variant);
+
+    if (!url) return;
+
+    const index = state.images.indexOf(url);
+
+    if (index >= 0) {
+      state.activeImage = index;
+      renderGallery();
+    }
+  }
+
+  function deliveryText(value) {
+    const key = String(value || "pickup").toLowerCase();
+
+    const labels = {
+      pickup:
+        "Pickup or delivery details will be agreed directly with the seller.",
+
+      samecity:
+        "Same-city delivery is available. Final details are confirmed with the seller.",
+
+      "same-city":
+        "Same-city delivery is available. Final details are confirmed with the seller.",
+
+      intercity:
+        "Intercity delivery is available through the selected transport route.",
+
+      "inter-city":
+        "Intercity delivery is available through the selected transport route.",
     };
-    sPlus.onclick = () => { qty++; sQ.textContent = qty; recalc(); };
-    sMinus.onclick = () => { qty = Math.max(1, qty - 1); sQ.textContent = qty; recalc(); };
 
-    sBuy.onclick = () => { sendToChat(qty); };
-    sClose.onclick = () => { sheet.hidden = true; };
-    sheet.hidden = false;
+    return (
+      labels[key] ||
+      `Delivery option: ${String(value).replaceAll("-", " ")}. Confirm timing with the seller.`
+    );
   }
 
-  function sendToChat(finalQty) {
-    const sellerId = product?.sellerId;
-    if (!sellerId) { alert("Seller unavailable"); return; }
+  function renderProduct() {
+    const product = state.product;
 
-    let payment = {}; try { payment = JSON.parse(localStorage.getItem("paymentInfo") || "{}"); } catch { }
-    const price = selectedVariant?.price ?? product.price ?? 0;
+    document.title = `${product.name || "Product"} | NgoXi`;
 
-    const lines = [
-      "BUY REQUEST – PAYMENT INFO",
-      `Product: ${product?.name || "Product"}`,
-      `Variant: ${selectedVariant?.name || "-"}`,
-      `Size: ${selectedSize || "-"}`,
-      `Qty: ${finalQty}`,
-      `Price: TSh ${Number(price).toLocaleString()}`,
-      `Total: TSh ${Number(price * finalQty).toLocaleString()}`,
-      `Method: ${payment.method || "—"}`,
-      `Number: ${payment.phone || "—"}`,
-      `Account/Till: ${payment.account || "—"}`,
-      payment.note ? `Note: ${payment.note}` : "",
-      `Reply with "${payment.confirmPhrase || "PAID"}" after payment.`
-    ].filter(Boolean).join("\n");
+    els.name.textContent = product.name || "Product";
 
-    sessionStorage.setItem("pendingAutoPayMsg", lines);
-    // open SPA messages and chat
-    window.location.href = `home.html?chat=${encodeURIComponent(sellerId)}&autopay=1`;
+    els.category.textContent = (
+      product.category || "NgoXi marketplace"
+    ).replaceAll("-", " ");
+
+    els.price.textContent = money(product.price);
+
+    els.description.textContent =
+      product.description || "No description supplied by the seller.";
+
+    els.delivery.textContent = deliveryText(product.deliveryTime);
+
+    const rating = safeNumber(product.rating || product.averageRating);
+
+    const reviewCount = safeNumber(product.reviewCount || product.reviewsCount);
+
+    if (rating) {
+      els.rating.textContent =
+        `${rating.toFixed(1)}` +
+        (reviewCount ? ` (${reviewCount} reviews)` : "");
+    } else {
+      els.rating.textContent = "New product";
+    }
+
+    const mode = product.mode || (product.isMamba ? "Mamba" : "");
+
+    if (mode) {
+      els.modeBadge.textContent = mode;
+      els.modeBadge.hidden = false;
+    }
+
+    const seller = sellerObject();
+
+    const sellerName =
+      product.sellerName || seller?.storeName || seller?.name || "NgoXi Seller";
+
+    els.sellerName.textContent = sellerName;
+
+    els.sellerAvatar.textContent =
+      sellerName.trim().charAt(0).toUpperCase() || "N";
+
+    renderGallery();
+    updatePrices();
   }
 
-  function attachBuyButtons() {
-    const open = () => openSheet();
-    buyTop.onclick = open; buySticky.onclick = open;
+  function renderSelections() {
+    const variants = Array.isArray(state.product.variants)
+      ? state.product.variants
+      : [];
+
+    const sizes = Array.isArray(state.product.sizes) ? state.product.sizes : [];
+
+    els.variantChoices.innerHTML = "";
+    els.sizeChoices.innerHTML = "";
+
+    els.variantSection.hidden = !variants.length;
+    els.sizeSection.hidden = !sizes.length;
+
+    variants.forEach((variant) => {
+      const button = document.createElement("button");
+
+      button.type = "button";
+
+      button.className =
+        state.variant === variant ? "variant-choice active" : "variant-choice";
+
+      const image =
+        getVariantImage(variant) ||
+        imageUrl(state.product.cover) ||
+        PLACEHOLDER;
+
+      const priceDifference = safeNumber(variant.priceDiff);
+
+      button.innerHTML = `
+        <img
+          src="${escapeAttribute(image)}"
+          alt="${escapeAttribute(variant.name || "Variant")}"
+        >
+
+        <span>
+          <strong>
+            ${escapeHTML(variant.name || "Variant")}
+          </strong>
+
+          <small>
+            ${priceDifference ? `+${money(priceDifference)}` : "No extra cost"}
+          </small>
+        </span>
+      `;
+
+      button.addEventListener("click", () => {
+        state.variant = variant;
+
+        showVariantImage(variant);
+        renderSelections();
+        updatePrices();
+      });
+
+      els.variantChoices.appendChild(button);
+    });
+
+    sizes.forEach((sizeValue) => {
+      const size =
+        typeof sizeValue === "string"
+          ? {
+              label: sizeValue,
+              priceDiff: 0,
+            }
+          : sizeValue;
+
+      const button = document.createElement("button");
+
+      button.type = "button";
+
+      button.className =
+        state.size === sizeValue ? "size-choice active" : "size-choice";
+
+      const priceDifference = safeNumber(size.priceDiff);
+
+      button.innerHTML = `
+        <strong>${escapeHTML(size.label || "Size")}</strong>
+
+        ${priceDifference ? `<small> +${money(priceDifference)}</small>` : ""}
+      `;
+
+      button.addEventListener("click", () => {
+        state.size = sizeValue;
+
+        renderSelections();
+        updatePrices();
+      });
+
+      els.sizeChoices.appendChild(button);
+    });
   }
 
-  // Boot
-  async function init() {
+  function updatePrices() {
+    els.stickyTotal.textContent = money(state.product ? unitPrice() : 0);
+
+    els.sheetUnitPrice.textContent = money(unitPrice());
+
+    els.sheetTotal.textContent = money(orderTotal());
+
+    els.quantity.textContent = String(state.quantity);
+
+    els.sheetImage.src =
+      getVariantImage(state.variant) ||
+      imageUrl(state.product?.cover) ||
+      state.images[0] ||
+      PLACEHOLDER;
+
+    els.sheetName.textContent = state.product?.name || "Product";
+  }
+
+  function openSheet() {
+    state.quantity = 1;
+
+    renderSelections();
+    updatePrices();
+
+    els.overlay.hidden = false;
+    els.sheet.hidden = false;
+
+    document.body.style.overflow = "hidden";
+  }
+
+  function closeSheet() {
+    els.overlay.hidden = true;
+    els.sheet.hidden = true;
+
+    document.body.style.overflow = "";
+  }
+
+  function validateSelection() {
+    const variants = Array.isArray(state.product.variants)
+      ? state.product.variants
+      : [];
+
+    const sizes = Array.isArray(state.product.sizes) ? state.product.sizes : [];
+
+    if (variants.length && !state.variant) {
+      alert("Please choose a variant.");
+      return false;
+    }
+
+    if (sizes.length && !state.size) {
+      alert("Please choose a size.");
+      return false;
+    }
+
+    return true;
+  }
+
+  function continueToSeller() {
+    if (!validateSelection()) return;
+
+    const selectedSize = getSelectedSize();
+
+    const selection = {
+      productId: state.product._id,
+      sellerId: getSellerId(),
+
+      productName: state.product.name,
+
+      cover: getVariantImage(state.variant) || imageUrl(state.product.cover),
+
+      basePrice: safeNumber(state.product.price),
+
+      variant: state.variant
+        ? {
+            name: state.variant.name,
+            priceDiff: safeNumber(state.variant.priceDiff),
+            image: getVariantImage(state.variant),
+          }
+        : null,
+
+      size: selectedSize
+        ? {
+            label: selectedSize.label,
+            priceDiff: safeNumber(selectedSize.priceDiff),
+          }
+        : null,
+
+      quantity: state.quantity,
+      unitPrice: unitPrice(),
+      total: orderTotal(),
+
+      category: state.product.category || "",
+
+      mode:
+        state.product.mode || (state.product.isMamba ? "mamba" : "standard"),
+
+      groupSaleId: state.product.groupSaleId || null,
+
+      createdAt: new Date().toISOString(),
+    };
+
+    sessionStorage.setItem("ngoxi_pending_purchase", JSON.stringify(selection));
+
+    window.location.href = `/home.html?chat=${encodeURIComponent(selection.sellerId)}&buy=1`;
+  }
+
+  function updateFavoriteButton() {
+    const saved = JSON.parse(localStorage.getItem("ngx_favorites") || "[]");
+
+    const active = saved.includes(state.product._id);
+
+    els.favorite.classList.toggle("active", active);
+    els.favorite.textContent = active ? "♥" : "♡";
+  }
+
+  function toggleFavorite() {
+    const key = "ngx_favorites";
+
+    const saved = JSON.parse(localStorage.getItem(key) || "[]");
+
+    const productId = state.product._id;
+
+    const updated = saved.includes(productId)
+      ? saved.filter((id) => id !== productId)
+      : [...saved, productId];
+
+    localStorage.setItem(key, JSON.stringify(updated));
+
+    updateFavoriteButton();
+  }
+
+  async function shareProduct() {
     try {
-      await load();
-      buildGallery(); renderSlider(); renderHeader(); renderStore();
-      renderVariants(); renderSizes(); renderDescription(); updateTotals(); ribbonObserve();
-      attachStickyActions(); attachBuyButtons();
-    } catch (e) { console.error(e); alert("Error loading product."); }
+      if (navigator.share) {
+        await navigator.share({
+          title: state.product.name,
+          url: window.location.href,
+        });
+
+        return;
+      }
+
+      await navigator.clipboard.writeText(window.location.href);
+
+      alert("Product link copied.");
+    } catch {
+      // User cancelled sharing.
+    }
   }
+
+  function visitSellerStore() {
+    const id = getSellerId();
+
+    if (!id) return;
+
+    window.location.href = `/store.html?seller=${encodeURIComponent(id)}`;
+  }
+
+  function initEvents() {
+    $("#backBtn").addEventListener("click", () => {
+      if (history.length > 1) {
+        history.back();
+      } else {
+        window.location.assign("/buyer");
+      }
+    });
+
+    $("#shareBtn").addEventListener("click", shareProduct);
+
+    $("#buyButton").addEventListener("click", openSheet);
+
+    els.closeSheet.addEventListener("click", closeSheet);
+
+    els.overlay.addEventListener("click", closeSheet);
+
+    els.minus.addEventListener("click", () => {
+      state.quantity = Math.max(1, state.quantity - 1);
+
+      updatePrices();
+    });
+
+    els.plus.addEventListener("click", () => {
+      state.quantity += 1;
+      updatePrices();
+    });
+
+    els.continueButton.addEventListener("click", continueToSeller);
+
+    els.favorite.addEventListener("click", toggleFavorite);
+
+    els.visitStore.addEventListener("click", visitSellerStore);
+  }
+
+  function escapeHTML(value) {
+    return String(value ?? "").replace(
+      /[&<>"']/g,
+      (character) =>
+        ({
+          "&": "&amp;",
+          "<": "&lt;",
+          ">": "&gt;",
+          '"': "&quot;",
+          "'": "&#39;",
+        })[character],
+    );
+  }
+
+  function escapeAttribute(value) {
+    return escapeHTML(value);
+  }
+
+  async function init() {
+    initEvents();
+
+    try {
+      await loadProduct();
+
+      renderProduct();
+      updateFavoriteButton();
+
+      els.loading.hidden = true;
+      els.page.hidden = false;
+      els.buyBar.hidden = false;
+    } catch (error) {
+      console.error("Product page error:", error);
+
+      els.loading.hidden = true;
+
+      els.errorMessage.textContent =
+        error.message || "This product could not be loaded.";
+
+      els.error.hidden = false;
+    }
+  }
+
   document.addEventListener("DOMContentLoaded", init);
 })();

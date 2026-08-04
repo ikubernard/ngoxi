@@ -1099,12 +1099,22 @@
 
     // Mode navigation
 
+    const modeRoutes = {
+      mamba: "/mamba.html",
+      trendy: "/trendy.html",
+      group: "/group.html",
+      discount: "/discount.html",
+      others: "/others.html",
+    };
+
     document.querySelectorAll(".mode-card").forEach((card) => {
       card.addEventListener("click", () => {
         const mode = card.dataset.mode;
 
-        if (mode === "mamba") {
-          window.location.href = "/mamba.html";
+        const page = modeRoutes[mode];
+
+        if (page) {
+          window.location.href = page;
         }
       });
     });
