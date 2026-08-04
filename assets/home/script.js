@@ -1096,6 +1096,18 @@
       // location.href = '/logout' (if existed)
       toast("Logged out (demo). Wire to your real /logout.");
     });
+
+    // Mode navigation
+
+    document.querySelectorAll(".mode-card").forEach((card) => {
+      card.addEventListener("click", () => {
+        const mode = card.dataset.mode;
+
+        if (mode === "mamba") {
+          window.location.href = "/mamba.html";
+        }
+      });
+    });
   }
   function initCategoryCarousel() {
     const categoryStrip = document.querySelector(".category-strip");
