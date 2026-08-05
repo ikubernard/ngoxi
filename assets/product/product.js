@@ -33,6 +33,8 @@
     quantity: 1,
   };
 
+  let viewerZoom = 1;
+
   const els = {
     loading: $("#loadingState"),
     error: $("#errorState"),
@@ -79,6 +81,16 @@
     quantity: $("#quantity"),
     sheetTotal: $("#sheetTotal"),
     continueButton: $("#continueButton"),
+
+    imageViewer: $("#imageViewer"),
+    imageViewerImage: $("#imageViewerImage"),
+    imageViewerTitle: $("#imageViewerTitle"),
+    imageViewerBackdrop: $("#imageViewerBackdrop"),
+    closeImageViewer: $("#closeImageViewer"),
+    imageViewerStage: $("#imageViewerStage"),
+    zoomOutButton: $("#zoomOutButton"),
+    resetZoomButton: $("#resetZoomButton"),
+    zoomInButton: $("#zoomInButton"),
   };
 
   function money(value) {
@@ -567,8 +579,114 @@
 
     window.location.href = `/store.html?seller=${encodeURIComponent(id)}`;
   }
+  function applyViewerZoom() {
+    viewerZoom = Math.min(3, Math.max(1, viewerZoom));
 
+    els.imageViewerImage.style.transform = `scale(${viewerZoom})`;
+
+    els.resetZoomButton.textContent = `${Math.round(viewerZoom * 100)}%`;
+  }
+
+  function openImageViewer(imageSource) {
+    if (!imageSource) return;
+
+    viewerZoom = 1;
+
+    els.imageViewerImage.src = imageSource;
+
+    els.imageViewerTitle.textContent = state.product?.name || "Product image";
+
+    els.imageViewer.hidden = false;
+
+    document.body.style.overflow = "hidden";
+
+    applyViewerZoom();
+  }
+
+  function closeImageViewer() {
+    els.imageViewer.hidden = true;
+
+    els.imageViewerImage.src = "";
+
+    viewerZoom = 1;
+
+    /*
+     * Keep body locked if the Buy sheet
+     * is still open underneath the viewer.
+     */
+    document.body.style.overflow = els.sheet.hidden ? "" : "hidden";
+  }
+
+  function zoomViewerIn() {
+    viewerZoom += 0.25;
+    applyViewerZoom();
+  }
+
+  function zoomViewerOut() {
+    viewerZoom -= 0.25;
+    applyViewerZoom();
+  }
+
+  function resetViewerZoom() {
+    viewerZoom = 1;
+    applyViewerZoom();
+  }
   function initEvents() {
+    els.mainImage.addEventListener("click", () => {
+      openImageViewer(els.mainImage.src);
+    });
+
+    els.sheetImage.addEventListener("click", () => {
+      openImageViewer(els.sheetImage.src);
+    });
+
+    els.closeImageViewer.addEventListener("click", closeImageViewer);
+
+    els.imageViewerBackdrop.addEventListener("click", closeImageViewer);
+
+    els.zoomInButton.addEventListener("click", zoomViewerIn);
+
+    els.zoomOutButton.addEventListener("click", zoomViewerOut);
+
+    els.resetZoomButton.addEventListener("click", resetViewerZoom);
+
+    els.imageViewerImage.addEventListener("dblclick", () => {
+      viewerZoom = viewerZoom === 1 ? 2 : 1;
+
+      applyViewerZoom();
+    });
+
+    els.imageViewerStage.addEventListener(
+      "wheel",
+      (event) => {
+        event.preventDefault();
+
+        if (event.deltaY < 0) {
+          zoomViewerIn();
+        } else {
+          zoomViewerOut();
+        }
+      },
+      {
+        passive: false,
+      },
+    );
+
+    document.addEventListener("keydown", (event) => {
+      if (els.imageViewer.hidden) return;
+
+      if (event.key === "Escape") {
+        closeImageViewer();
+      }
+
+      if (event.key === "+" || event.key === "=") {
+        zoomViewerIn();
+      }
+
+      if (event.key === "-") {
+        zoomViewerOut();
+      }
+    });
     $("#backBtn").addEventListener("click", () => {
       if (history.length > 1) {
         history.back();

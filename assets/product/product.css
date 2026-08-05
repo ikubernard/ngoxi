@@ -637,3 +637,126 @@ a {
   color: var(--muted);
   font-size: 13px;
 }
+/* Full-screen product image viewer */
+
+.main-image,
+.sheet-product img {
+  cursor: zoom-in;
+}
+
+.image-viewer {
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  display: flex;
+  flex-direction: column;
+  background: rgba(3, 12, 8, 0.96);
+}
+
+.image-viewer-backdrop {
+  position: absolute;
+  inset: 0;
+}
+
+.image-viewer-header {
+  position: relative;
+  z-index: 2;
+  min-height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 10px 22px;
+  color: #fff;
+}
+
+.image-viewer-header span {
+  overflow: hidden;
+  font-weight: 800;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.viewer-close {
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  font-size: 30px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.image-viewer-stage {
+  position: relative;
+  z-index: 2;
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  place-items: center;
+  overflow: auto;
+  padding: 20px;
+}
+
+.image-viewer-stage img {
+  width: auto;
+  height: auto;
+  max-width: 90vw;
+  max-height: 78vh;
+  display: block;
+  object-fit: contain;
+  transform: scale(1);
+  transform-origin: center;
+  transition: transform 0.2s ease;
+  user-select: none;
+}
+
+.image-viewer-controls {
+  position: relative;
+  z-index: 3;
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  padding: 14px 16px 22px;
+}
+
+.image-viewer-controls button {
+  min-width: 48px;
+  height: 44px;
+  padding: 0 14px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  font-size: 18px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.image-viewer-controls button:hover,
+.viewer-close:hover {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+@media (max-width: 800px) {
+  .image-viewer-header {
+    min-height: 56px;
+    padding: 8px 14px;
+  }
+
+  .image-viewer-stage {
+    padding: 10px;
+  }
+
+  .image-viewer-stage img {
+    max-width: 96vw;
+    max-height: 76vh;
+  }
+
+  .image-viewer-controls {
+    padding-bottom: 16px;
+  }
+}

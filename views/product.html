@@ -138,6 +138,36 @@
     <div class="sheet-total"><span>Total</span><strong id="sheetTotal">TSh 0</strong></div>
     <button id="continueButton" class="primary-btn wide">Continue to seller</button>
   </section>
+  <!-- Full-screen product image viewer -->
+  <div id="imageViewer" class="image-viewer" role="dialog" aria-modal="true" aria-label="Product image viewer" hidden>
+    <div id="imageViewerBackdrop" class="image-viewer-backdrop"></div>
+
+    <div class="image-viewer-header">
+      <span id="imageViewerTitle">Product image</span>
+
+      <button id="closeImageViewer" class="viewer-close" type="button" aria-label="Close image viewer">
+        ×
+      </button>
+    </div>
+
+    <div id="imageViewerStage" class="image-viewer-stage">
+      <img id="imageViewerImage" src="" alt="Enlarged product" />
+    </div>
+
+    <div class="image-viewer-controls">
+      <button id="zoomOutButton" type="button" aria-label="Zoom out">
+        −
+      </button>
+
+      <button id="resetZoomButton" type="button">
+        100%
+      </button>
+
+      <button id="zoomInButton" type="button" aria-label="Zoom in">
+        +
+      </button>
+    </div>
+  </div>
 
   <script src="/assets/product/product.js" defer></script>
 </body>
