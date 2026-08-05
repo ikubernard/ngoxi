@@ -1,11 +1,13 @@
 <!doctype html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Product | NgoXi</title>
   <link rel="stylesheet" href="/assets/product/product.css">
 </head>
+
 <body>
   <header class="topbar">
     <button class="back-btn" id="backBtn" aria-label="Go back">←</button>
@@ -13,9 +15,13 @@
     <button class="share-btn" id="shareBtn" aria-label="Share product">↗</button>
   </header>
 
-  <div id="loadingState" class="page-state"><div class="spinner"></div><p>Loading product…</p></div>
+  <div id="loadingState" class="page-state">
+    <div class="spinner"></div>
+    <p>Loading product…</p>
+  </div>
   <div id="errorState" class="page-state" hidden>
-    <h2>Product unavailable</h2><p id="errorMessage">This product could not be loaded.</p>
+    <h2>Product unavailable</h2>
+    <p id="errorMessage">This product could not be loaded.</p>
     <a href="/buyer" class="state-link">Return home</a>
   </div>
 
@@ -27,10 +33,21 @@
         <button id="favoriteBtn" class="favorite-btn" aria-label="Add to favorites">♡</button>
       </div>
       <div id="thumbnailGallery" class="thumbnail-gallery" aria-label="Product gallery"></div>
+
+      <div id="galleryEmpty" class="gallery-empty" hidden>
+        <div class="gallery-empty-slots">
+          <span>+</span>
+          <span>+</span>
+          <span>+</span>
+        </div>
+
+        <small>More product photos will appear here</small>
+      </div>
     </section>
 
     <section class="product-info card">
-      <div class="eyebrow-row"><span id="category" class="category"></span><span id="modeBadge" class="mode-badge" hidden></span></div>
+      <div class="eyebrow-row"><span id="category" class="category"></span><span id="modeBadge" class="mode-badge"
+          hidden></span></div>
       <h1 id="productName"></h1>
       <div class="rating-row"><span class="stars">★★★★★</span><span id="ratingText">New product</span></div>
       <div class="price-row"><strong id="productPrice"></strong><span id="priceHint">Base price</span></div>
@@ -38,7 +55,8 @@
 
     <section id="sellerCard" class="seller-card card">
       <div id="sellerAvatar" class="seller-avatar">N</div>
-      <div class="seller-copy"><strong id="sellerName">NgoXi Seller</strong><span>Verified marketplace seller</span></div>
+      <div class="seller-copy"><strong id="sellerName">NgoXi Seller</strong><span>Verified marketplace seller</span>
+      </div>
       <button id="visitStoreBtn" class="text-btn">View store</button>
     </section>
 
@@ -49,7 +67,10 @@
 
     <section class="card delivery-card">
       <div class="info-icon">🚚</div>
-      <div><h2>Delivery</h2><p id="deliveryInfo"></p></div>
+      <div>
+        <h2>Delivery</h2>
+        <p id="deliveryInfo"></p>
+      </div>
     </section>
 
     <section class="trust-card card">
@@ -60,6 +81,31 @@
         <div><span>✓</span><strong>Product record</strong><small>Your selection is saved with the order</small></div>
       </div>
     </section>
+    <section id="reviewsSection" class="reviews-card card">
+      <div class="reviews-head">
+        <div>
+          <h2>Product reviews</h2>
+          <p id="reviewSummary">No reviews yet</p>
+        </div>
+
+        <button id="writeReviewButton" class="text-btn">
+          Write a review
+        </button>
+      </div>
+
+      <div id="reviewsList" class="reviews-list">
+        <div class="empty-reviews">
+          <span>☆</span>
+
+          <div>
+            <strong>Be the first to review this product</strong>
+            <p>
+              Reviews from verified NgoXi buyers will appear here.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
   </main>
 
   <footer id="buyBar" class="buy-bar" hidden>
@@ -68,17 +114,32 @@
   </footer>
 
   <div id="selectionOverlay" class="selection-overlay" hidden></div>
-  <section id="selectionSheet" class="selection-sheet" role="dialog" aria-modal="true" aria-labelledby="selectionTitle" hidden>
+  <section id="selectionSheet" class="selection-sheet" role="dialog" aria-modal="true" aria-labelledby="selectionTitle"
+    hidden>
     <div class="sheet-handle"></div>
-    <div class="sheet-head"><h2 id="selectionTitle">Choose your product</h2><button id="closeSheet" class="close-btn">×</button></div>
-    <div class="sheet-product"><img id="sheetImage" alt="Selected product"><div><strong id="sheetName"></strong><span id="sheetUnitPrice"></span></div></div>
-    <div id="variantSection" class="choice-section" hidden><h3>Variant</h3><div id="variantChoices" class="variant-choices"></div></div>
-    <div id="sizeSection" class="choice-section" hidden><h3>Size</h3><div id="sizeChoices" class="size-choices"></div></div>
-    <div class="quantity-row"><span>Quantity</span><div class="quantity-control"><button id="minusQty">−</button><strong id="quantity">1</strong><button id="plusQty">+</button></div></div>
+    <div class="sheet-head">
+      <h2 id="selectionTitle">Choose your product</h2><button id="closeSheet" class="close-btn">×</button>
+    </div>
+    <div class="sheet-product"><img id="sheetImage" alt="Selected product">
+      <div><strong id="sheetName"></strong><span id="sheetUnitPrice"></span></div>
+    </div>
+    <div id="variantSection" class="choice-section" hidden>
+      <h3>Variant</h3>
+      <div id="variantChoices" class="variant-choices"></div>
+    </div>
+    <div id="sizeSection" class="choice-section" hidden>
+      <h3>Size</h3>
+      <div id="sizeChoices" class="size-choices"></div>
+    </div>
+    <div class="quantity-row"><span>Quantity</span>
+      <div class="quantity-control"><button id="minusQty">−</button><strong id="quantity">1</strong><button
+          id="plusQty">+</button></div>
+    </div>
     <div class="sheet-total"><span>Total</span><strong id="sheetTotal">TSh 0</strong></div>
     <button id="continueButton" class="primary-btn wide">Continue to seller</button>
   </section>
 
   <script src="/assets/product/product.js" defer></script>
 </body>
+
 </html>

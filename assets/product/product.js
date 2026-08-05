@@ -43,6 +43,7 @@
     mainImage: $("#mainImage"),
     imageCount: $("#imageCount"),
     thumbs: $("#thumbnailGallery"),
+    galleryEmpty: $("#galleryEmpty"),
 
     name: $("#productName"),
     category: $("#category"),
@@ -107,7 +108,13 @@
   }
 
   function getVariantImage(variant) {
-    return imageUrl(variant?.image);
+    return (
+      imageUrl(variant?.image) ||
+      variant?.imageUrl ||
+      variant?.image?.secure_url ||
+      variant?.url ||
+      ""
+    );
   }
 
   function getSelectedSize() {
@@ -198,7 +205,11 @@
 
     els.thumbs.innerHTML = "";
 
-    if (state.images.length < 2) return;
+    if (state.images.length < 2) {
+      els.galleryEmpty.hidden = false;
+      return;
+    }
+    els.galleryEmpty.hidden = true;
 
     state.images.forEach((url, index) => {
       const thumbnail = document.createElement("img");
@@ -590,6 +601,17 @@
     els.favorite.addEventListener("click", toggleFavorite);
 
     els.visitStore.addEventListener("click", visitSellerStore);
+    $("#writeReviewButton")?.addEventListener("click", () => {
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+        alert("Please log in before writing a review.");
+        window.location.href = "/auth";
+        return;
+      }
+
+      window.location.href = `/review.html?product=${encodeURIComponent(state.product._id)}`;
+    });
   }
 
   function escapeHTML(value) {
