@@ -98,18 +98,107 @@ router.post(
         }
       }
 
-      const variantArr = variants ? JSON.parse(variants) : [];
-      const sizeArr = sizes ? JSON.parse(sizes) : [];
+      let variantArr = [];
+      let sizeArr = [];
+
+      try {
+        variantArr = variants ? JSON.parse(variants) : [];
+
+        sizeArr = sizes ? JSON.parse(sizes) : [];
+      } catch {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid variants or sizes data",
+        });
+      }
+
+      /* Upload variant images */
+
+      const uploadedVariantImages = [];
+      const variantFiles = req.files?.variantImages || [];
+
+      console.log("✅ Variant image files received:", variantFiles.length);
+
+      for (const file of variantFiles) {
+        try {
+          const uploaded = await uploadBufferToCloudinary(file.buffer, {
+            folder: "ngoxi/products/variants",
+            resource_type: "image",
+
+            transformation: [
+              {
+                quality: "auto:good",
+              },
+              {
+                fetch_format: "auto",
+              },
+            ],
+          });
+
+          uploadedVariantImages.push({
+            url: uploaded.secure_url,
+            public_id: uploaded.public_id,
+          });
+        } catch (error) {
+          console.error("❌ Variant image upload failed:", error);
+
+          uploadedVariantImages.push(null);
+        }
+      }
+
+      /* Connect each image to its variant */
+
+      variantArr = variantArr
+        .map((variant, variantPosition) => {
+          let imageIndex = variantPosition;
+
+          if (
+            variant.imageIndex !== null &&
+            variant.imageIndex !== undefined &&
+            variant.imageIndex !== "" &&
+            Number.isInteger(Number(variant.imageIndex))
+          ) {
+            imageIndex = Number(variant.imageIndex);
+          }
+
+          const variantImage =
+            uploadedVariantImages[imageIndex] ||
+            uploadedVariantImages[variantPosition] ||
+            undefined;
+
+          return {
+            name: String(variant.name || "").trim(),
+
+            priceDiff: Number(variant.priceDiff || 0),
+
+            image: variantImage,
+          };
+        })
+        .filter((variant) => variant.name);
+
+      /* Clean size information */
+
+      sizeArr = sizeArr
+        .map((size) => ({
+          label: String(size.label || "").trim(),
+
+          priceDiff: Number(size.priceDiff || 0),
+        }))
+        .filter((size) => size.label);
+
+      /* Save complete product */
 
       const product = await Product.create({
         name,
-        price,
+        price: Number(price),
         description,
         category,
         deliveryTime,
         sellerId: ownerId,
+
         variants: variantArr,
         sizes: sizeArr,
+
         cover,
         images,
         visibility: "visible",
