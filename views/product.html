@@ -26,13 +26,78 @@
   </div>
 
   <main id="productPage" class="product-page" hidden>
+
+    <!-- LEFT SIDE: MAIN PRODUCT IMAGE -->
     <section class="gallery-card">
       <div class="main-image-wrap">
         <img id="mainImage" class="main-image" alt="Product image">
+
         <span id="imageCount" class="image-count"></span>
-        <button id="favoriteBtn" class="favorite-btn" aria-label="Add to favorites">♡</button>
+
+        <button id="favoriteBtn" class="favorite-btn" aria-label="Add to favorites">
+          ♡
+        </button>
       </div>
+
       <div id="thumbnailGallery" class="thumbnail-gallery" aria-label="Product gallery"></div>
+    </section>
+
+    <!-- RIGHT SIDE: PRODUCT INFORMATION -->
+    <section class="product-info card">
+      <div class="eyebrow-row">
+        <span id="category" class="category"></span>
+
+        <span id="modeBadge" class="mode-badge" hidden></span>
+      </div>
+
+      <h1 id="productName"></h1>
+
+      <div class="rating-row">
+        <span class="stars">★★★★★</span>
+        <span id="ratingText">New product</span>
+      </div>
+
+      <div class="price-row">
+        <strong id="productPrice"></strong>
+        <span id="priceHint">Base price</span>
+      </div>
+    </section>
+
+    <!-- SELLER -->
+    <section id="sellerCard" class="seller-card card">
+      <div id="sellerAvatar" class="seller-avatar">
+        N
+      </div>
+
+      <div class="seller-copy">
+        <strong id="sellerName">
+          NgoXi Seller
+        </strong>
+
+        <span>
+          Verified marketplace seller
+        </span>
+      </div>
+
+      <button id="visitStoreBtn" class="text-btn">
+        View store
+      </button>
+    </section>
+
+    <!-- PRODUCT DETAILS -->
+    <section class="card details-card">
+      <h2>Product details</h2>
+      <p id="description"></p>
+    </section>
+
+    <!-- PRODUCT GALLERY: RIGHT SIDE -->
+    <section class="card product-gallery-section">
+      <div class="section-heading">
+        <div>
+          <h2>Product gallery</h2>
+          <p>More photos and product details</p>
+        </div>
+      </div>
 
       <div id="galleryEmpty" class="gallery-empty" hidden>
         <div class="gallery-empty-slots">
@@ -41,51 +106,20 @@
           <span>+</span>
         </div>
 
-        <small>More product photos will appear here</small>
+        <small>
+          More product photos will appear here
+        </small>
       </div>
     </section>
 
-    <section class="product-info card">
-      <div class="eyebrow-row"><span id="category" class="category"></span><span id="modeBadge" class="mode-badge"
-          hidden></span></div>
-      <h1 id="productName"></h1>
-      <div class="rating-row"><span class="stars">★★★★★</span><span id="ratingText">New product</span></div>
-      <div class="price-row"><strong id="productPrice"></strong><span id="priceHint">Base price</span></div>
-    </section>
-
-    <section id="sellerCard" class="seller-card card">
-      <div id="sellerAvatar" class="seller-avatar">N</div>
-      <div class="seller-copy"><strong id="sellerName">NgoXi Seller</strong><span>Verified marketplace seller</span>
-      </div>
-      <button id="visitStoreBtn" class="text-btn">View store</button>
-    </section>
-
-    <section class="card details-card">
-      <h2>Product details</h2>
-      <p id="description"></p>
-    </section>
-
-    <section class="card delivery-card">
-      <div class="info-icon">🚚</div>
-      <div>
-        <h2>Delivery</h2>
-        <p id="deliveryInfo"></p>
-      </div>
-    </section>
-
-    <section class="trust-card card">
-      <h2>NgoXi assurance</h2>
-      <div class="trust-grid">
-        <div><span>✓</span><strong>Secure purchase</strong><small>Confirm details before paying</small></div>
-        <div><span>✓</span><strong>Seller support</strong><small>Chat directly with the seller</small></div>
-        <div><span>✓</span><strong>Product record</strong><small>Your selection is saved with the order</small></div>
-      </div>
-    </section>
+    <!-- PRODUCT REVIEWS: RIGHT SIDE -->
     <section id="reviewsSection" class="reviews-card card">
       <div class="reviews-head">
         <div>
           <h2>Product reviews</h2>
-          <p id="reviewSummary">No reviews yet</p>
+          <p id="reviewSummary">
+            No reviews yet
+          </p>
         </div>
 
         <button id="writeReviewButton" class="text-btn">
@@ -98,14 +132,66 @@
           <span>☆</span>
 
           <div>
-            <strong>Be the first to review this product</strong>
+            <strong>
+              Be the first to review this product
+            </strong>
+
             <p>
-              Reviews from verified NgoXi buyers will appear here.
+              Reviews from verified NgoXi buyers
+              will appear here.
             </p>
           </div>
         </div>
       </div>
     </section>
+
+    <!-- DELIVERY -->
+    <section class="card delivery-card">
+      <div class="info-icon">🚚</div>
+
+      <div>
+        <h2>Delivery</h2>
+        <p id="deliveryInfo"></p>
+      </div>
+    </section>
+
+    <!-- NGOXI ASSURANCE -->
+    <section class="trust-card card">
+      <h2>NgoXi assurance</h2>
+
+      <div class="trust-grid">
+        <div>
+          <span>✓</span>
+
+          <strong>Secure purchase</strong>
+
+          <small>
+            Confirm details before paying
+          </small>
+        </div>
+
+        <div>
+          <span>✓</span>
+
+          <strong>Seller support</strong>
+
+          <small>
+            Chat directly with the seller
+          </small>
+        </div>
+
+        <div>
+          <span>✓</span>
+
+          <strong>Product record</strong>
+
+          <small>
+            Your selection is saved with the order
+          </small>
+        </div>
+      </div>
+    </section>
+
   </main>
 
   <footer id="buyBar" class="buy-bar" hidden>

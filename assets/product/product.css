@@ -740,7 +740,44 @@ a {
 .viewer-close:hover {
   background: rgba(255, 255, 255, 0.22);
 }
+/* Desktop product-page columns */
 
+.gallery-card {
+  grid-column: 1;
+  grid-row: 1 / span 8;
+}
+
+.product-info,
+.seller-card,
+.details-card,
+.product-gallery-section,
+.reviews-card,
+.delivery-card,
+.trust-card {
+  grid-column: 2;
+}
+
+.product-gallery-section {
+  min-height: 150px;
+}
+
+.section-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.section-heading h2 {
+  margin: 0 0 4px;
+}
+
+.section-heading p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+}
 @media (max-width: 800px) {
   .image-viewer-header {
     min-height: 56px;
@@ -759,4 +796,34 @@ a {
   .image-viewer-controls {
     padding-bottom: 16px;
   }
+
+  .product-info,
+  .seller-card,
+  .details-card,
+  .product-gallery-section,
+  .reviews-card,
+  .delivery-card,
+  .trust-card,
+  .gallery-card {
+    grid-column: 1;
+    grid-row: auto;
+  }
+}
+/* Keep product information sections in the right column */
+
+.product-info,
+.seller-card,
+.details-card,
+.product-gallery-section,
+.reviews-card,
+.delivery-card,
+.trust-card {
+  grid-column: 2;
+}
+
+/* Keep the large main image on the left */
+
+.gallery-card {
+  grid-column: 1;
+  grid-row: 1 / span 8;
 }
