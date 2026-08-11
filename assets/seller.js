@@ -456,23 +456,121 @@ function collectSizesArray() {
 /* ----------------------------------------------------------
    9) POST PRODUCT: preview + submit
    ---------------------------------------------------------- */
-// Gallery preview (square thumbnails via CSS)
-(function setupLocalPreview() {
-  const galleryInput = document.getElementById("p_image");
-  const galleryWrap = document.getElementById("gallery");
-  if (!galleryInput || !galleryWrap) return;
-  galleryInput.addEventListener("change", () => {
-    galleryWrap.innerHTML = "";
-    Array.from(galleryInput.files || []).forEach((file) => {
-      const url = URL.createObjectURL(file);
-      const img = document.createElement("img");
-      img.src = url;
-      img.alt = file.name;
-      img.className = "thumb";
-      galleryWrap.appendChild(img);
+// GALLERY — multiple photos, preview and removal
+let galleryFiles = [];
+
+function renderGalleryPreview() {
+  const wrap = document.getElementById("galleryPreview");
+  if (!wrap) return;
+
+  wrap.innerHTML = "";
+
+  galleryFiles.forEach((file, index) => {
+    const item = document.createElement("div");
+    item.className = "gallery-preview-item";
+
+    const imageUrl = URL.createObjectURL(file);
+
+    item.innerHTML = `
+      <img
+        src="${imageUrl}"
+        alt="${sanitize(file.name)}"
+      />
+
+      <button
+        type="button"
+        data-remove-gallery="${index}"
+        aria-label="Remove image"
+      >
+        ×
+      </button>
+    `;
+
+    item
+      .querySelector("img")
+      ?.addEventListener("load", () => URL.revokeObjectURL(imageUrl), {
+        once: true,
+      });
+
+    item.querySelector("button")?.addEventListener("click", () => {
+      galleryFiles.splice(index, 1);
+      renderGalleryPreview();
     });
+
+    wrap.appendChild(item);
   });
-})();
+}
+
+document.getElementById("p_gallery")?.addEventListener("change", (event) => {
+  const incomingFiles = Array.from(event.target.files || []);
+
+  const availableSlots = 8 - galleryFiles.length;
+
+  if (availableSlots <= 0) {
+    showToast("Gallery limit is 8 photos.", "error");
+    event.target.value = "";
+    return;
+  }
+
+  galleryFiles.push(...incomingFiles.slice(0, availableSlots));
+
+  if (incomingFiles.length > availableSlots) {
+    showToast("Only the first 8 gallery photos were added.", "info");
+  }
+
+  // Reset input so the same image can be selected again
+  event.target.value = "";
+
+  renderGalleryPreview();
+});
+
+// DISCOUNT CALCULATOR
+function calculateDiscountPreview() {
+  const originalPrice = Number(document.getElementById("p_price")?.value || 0);
+
+  const discountInput = document.getElementById("p_discount");
+
+  let discount = Number(discountInput?.value || 0);
+
+  if (!Number.isFinite(discount)) {
+    discount = 0;
+  }
+
+  discount = Math.min(100, Math.max(0, discount));
+
+  const finalPrice = Math.round(originalPrice * (1 - discount / 100));
+
+  const oldPriceElement = document.getElementById("discountOldPrice");
+
+  const newPriceElement = document.getElementById("discountNewPrice");
+
+  const discountBadge = document.getElementById("discountBadge");
+
+  if (oldPriceElement) {
+    oldPriceElement.textContent = `TSh ${originalPrice.toLocaleString()}`;
+
+    oldPriceElement.hidden = originalPrice <= 0 || discount <= 0;
+  }
+
+  if (newPriceElement) {
+    newPriceElement.textContent = `TSh ${finalPrice.toLocaleString()}`;
+  }
+
+  if (discountBadge) {
+    discountBadge.textContent = `${discount}% OFF`;
+    discountBadge.hidden = discount <= 0;
+  }
+}
+
+document
+  .getElementById("p_price")
+  ?.addEventListener("input", calculateDiscountPreview);
+
+document
+  .getElementById("p_discount")
+  ?.addEventListener("input", calculateDiscountPreview);
+
+calculateDiscountPreview();
 
 // Clear form helper
 document.getElementById("clearProduct")?.addEventListener("click", () => {
@@ -483,11 +581,28 @@ document.getElementById("clearProduct")?.addEventListener("click", () => {
   });
   const cover = document.getElementById("p_cover");
   if (cover) cover.value = "";
-  const gal = document.getElementById("p_image");
-  if (gal) gal.value = "";
-  const galleryWrap = document.getElementById("gallery");
-  if (galleryWrap) galleryWrap.innerHTML = "";
-  document.getElementById("variants").innerHTML = "";
+  const galleryInput = document.getElementById("p_gallery");
+
+  if (galleryInput) {
+    galleryInput.value = "";
+  }
+
+  galleryFiles = [];
+  renderGalleryPreview();
+
+  const modeInput = document.getElementById("p_mode");
+
+  if (modeInput) {
+    modeInput.value = "standard";
+  }
+
+  const discountInput = document.getElementById("p_discount");
+
+  if (discountInput) {
+    discountInput.value = "0";
+  }
+
+  calculateDiscountPreview();
   sizesData = [];
   renderSizes();
 });
@@ -499,7 +614,15 @@ document.getElementById("postProduct")?.addEventListener("click", async () => {
     const description = document.getElementById("p_desc").value.trim();
     const price = Number(document.getElementById("p_price").value);
     const category = document.getElementById("p_cat")?.value || "";
+
+    const mode = document.getElementById("p_mode")?.value || "standard";
+
+    const discountPercent = Number(
+      document.getElementById("p_discount")?.value || 0,
+    );
+
     const deliveryTime = document.getElementById("deliveryOption").value;
+
     const cover = document.getElementById("p_cover")?.files?.[0];
 
     if (!name || !description || !Number.isFinite(price) || price <= 0) {
@@ -510,12 +633,36 @@ document.getElementById("postProduct")?.addEventListener("click", async () => {
       showToast("Cover image is required.", "error");
       return;
     }
+    if (!category) {
+      showToast("Select a product category.", "error");
+      return;
+    }
 
+    if (
+      !Number.isFinite(discountPercent) ||
+      discountPercent < 0 ||
+      discountPercent > 100
+    ) {
+      showToast("Discount must be between 0 and 100%.", "error");
+
+      return;
+    }
+
+    if (mode === "discount" && discountPercent <= 0) {
+      showToast(
+        "Enter a discount percentage for Super Discount mode.",
+        "error",
+      );
+
+      return;
+    }
     const fd = new FormData();
     fd.append("name", name);
     fd.append("description", description);
     fd.append("price", String(price));
     fd.append("category", category);
+    fd.append("mode", mode);
+    fd.append("discountPercent", String(discountPercent));
     fd.append("deliveryTime", deliveryTime);
 
     // Collect variants + their images
@@ -527,13 +674,14 @@ document.getElementById("postProduct")?.addEventListener("click", async () => {
 
     // Cover image
     fd.append("cover", cover);
+    // Gallery images
+    galleryFiles.forEach((file) => {
+      fd.append("gallery", file);
+    });
     // Variant images
     variantImages.forEach((file) => {
       fd.append("variantImages", file);
     });
-
-    // NOTE: We no longer use the generic p_image gallery input.
-    // You can delete the <input id="p_image"> block from seller.html if you want.
 
     const res = await authorizedUpload(`${API_BASE}/api/products/add`, fd);
     const data = await res.json().catch(() => ({}));

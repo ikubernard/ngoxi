@@ -48,6 +48,8 @@ router.post(
         price,
         description,
         category,
+        mode,
+        discountPercent,
         deliveryTime,
         variants,
         sizes,
@@ -61,7 +63,81 @@ router.post(
         return res
           .status(400)
           .json({ success: false, message: "Cover image is required" });
+      // Categories must use the exact same values as the buyer homepage
+      const allowedCategories = new Set([
+        "fashion",
+        "electronics",
+        "beauty",
+        "home",
+        "phones",
+        "computers",
+        "shoes",
+        "bags",
+        "sports",
+        "automotive",
+        "food",
+        "baby",
+        "health",
+        "gaming",
+        "accessories",
+      ]);
 
+      const normalizedCategory = String(category || "")
+        .trim()
+        .toLowerCase();
+
+      if (!allowedCategories.has(normalizedCategory)) {
+        return res.status(400).json({
+          success: false,
+          message: "Please select a valid product category",
+        });
+      }
+
+      // Product modes
+      const allowedModes = new Set([
+        "standard",
+        "mamba",
+        "trendy",
+        "group",
+        "discount",
+      ]);
+
+      const normalizedMode = String(mode || "standard")
+        .trim()
+        .toLowerCase();
+
+      if (!allowedModes.has(normalizedMode)) {
+        return res.status(400).json({
+          success: false,
+          message: "Please select a valid product mode",
+        });
+      }
+
+      // Calculate the real selling price on the server
+      const originalPrice = Number(price);
+      const normalizedDiscount = Number(discountPercent || 0);
+
+      if (!Number.isFinite(originalPrice) || originalPrice <= 0) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid product price",
+        });
+      }
+
+      if (
+        !Number.isFinite(normalizedDiscount) ||
+        normalizedDiscount < 0 ||
+        normalizedDiscount > 100
+      ) {
+        return res.status(400).json({
+          success: false,
+          message: "Discount must be between 0 and 100 percent",
+        });
+      }
+
+      const finalPrice = Math.round(
+        originalPrice * (1 - normalizedDiscount / 100),
+      );
       // upload cover
       let cover = null;
       try {
@@ -187,12 +263,20 @@ router.post(
         .filter((size) => size.label);
 
       /* Save complete product */
-
       const product = await Product.create({
         name,
-        price: Number(price),
+
+        // Final amount paid by the buyer
+        price: finalPrice,
+
+        // Used for the crossed-out price on discounted product cards
+        originalPrice: normalizedDiscount > 0 ? originalPrice : null,
+
+        discountPercent: normalizedDiscount,
+
         description,
-        category,
+        category: normalizedCategory,
+        mode: normalizedMode,
         deliveryTime,
         sellerId: ownerId,
 

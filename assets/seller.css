@@ -2287,3 +2287,196 @@ body.dark .od-hero {
     display: none !important;
   }
 }
+/* =========================================================
+   PRODUCT GALLERY UPLOAD
+   ========================================================= */
+
+.gallery-upload-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: auto;
+  padding: 10px 14px;
+  border: 1px dashed var(--emerald);
+  border-radius: 12px;
+  color: var(--emerald);
+  background: rgba(63, 163, 111, 0.06);
+  font-weight: 800;
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    transform 0.2s ease;
+}
+
+.gallery-upload-btn:hover {
+  background: rgba(63, 163, 111, 0.12);
+  transform: translateY(-1px);
+}
+
+.gallery-preview {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(82px, 1fr));
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.gallery-preview-item {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+  border-radius: 12px;
+  background: #eef2ef;
+}
+
+.gallery-preview-item img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.gallery-preview-item button {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 27px;
+  height: 27px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  color: #fff;
+  background: rgba(17, 24, 39, 0.8);
+  font-size: 19px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.gallery-preview-item button:hover {
+  background: #dc2626;
+}
+
+/* =========================================================
+   PRODUCT DISCOUNT SECTION
+   ========================================================= */
+
+.discount-section {
+  margin-top: 16px;
+  padding: 14px;
+  border: 1px solid rgba(63, 163, 111, 0.25);
+  border-radius: 14px;
+  background: rgba(63, 163, 111, 0.055);
+}
+
+.discount-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.discount-heading small {
+  display: block;
+  margin-top: 3px;
+  color: #6b7280;
+}
+
+.discount-badge {
+  flex-shrink: 0;
+  padding: 5px 9px;
+  border-radius: 999px;
+  color: #fff;
+  background: #dc2626;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.discount-control {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.discount-control input {
+  width: 150px;
+  max-width: 100%;
+  margin: 0;
+}
+
+.discount-control span {
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.discount-preview {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.discount-preview > div {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.discount-preview del {
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.discount-preview strong {
+  color: #166534;
+  font-size: 18px;
+}
+
+/* DARK MODE */
+
+body.dark .gallery-upload-btn {
+  color: var(--gold);
+  border-color: var(--gold);
+  background: rgba(245, 197, 66, 0.08);
+}
+
+body.dark .gallery-preview-item {
+  background: #162821;
+}
+
+body.dark .discount-section {
+  border-color: rgba(245, 197, 66, 0.3);
+  background: rgba(245, 197, 66, 0.06);
+}
+
+body.dark .discount-preview {
+  border-top-color: rgba(255, 255, 255, 0.12);
+}
+
+body.dark .discount-preview strong {
+  color: var(--gold);
+}
+
+/* MOBILE */
+
+@media (max-width: 520px) {
+  .gallery-preview {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .discount-preview {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .discount-preview > div {
+    width: 100%;
+    justify-content: space-between;
+  }
+}

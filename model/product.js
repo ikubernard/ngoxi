@@ -6,6 +6,28 @@ const productSchema = new mongoose.Schema(
     price: { type: Number, required: true },
     description: { type: String, default: "" },
     category: { type: String, default: "" },
+    // Product placement
+    mode: {
+      type: String,
+      enum: ["standard", "mamba", "trendy", "group", "discount"],
+      default: "standard",
+      index: true,
+    },
+
+    // Discount information
+    // price = final amount the buyer pays
+    // originalPrice = price before discount
+    originalPrice: {
+      type: Number,
+      default: null,
+    },
+
+    discountPercent: {
+      type: Number,
+      min: 0,
+      max: 100,
+      default: 0,
+    },
 
     // ✅ cover image (primary display image)
     cover: {

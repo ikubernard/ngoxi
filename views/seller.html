@@ -151,24 +151,25 @@
         </select>
         <!-- CATEGORY -->
         <div class="field-block">
-          <label>Category</label>
+          <label for="p_cat">Category</label>
+
           <select id="p_cat">
             <option value="">-- Select Category --</option>
-            <option value="phones-tablets">Phones & Tablets</option>
-            <option value="electronics">Electronics & Gadgets</option>
-            <option value="computers">Computers & Laptops</option>
-            <option value="fashion-men">Fashion (Men)</option>
-            <option value="fashion-women">Fashion (Women)</option>
+            <option value="fashion">Fashion</option>
+            <option value="electronics">Electronics</option>
+            <option value="beauty">Beauty</option>
+            <option value="home">Home & Living</option>
+            <option value="phones">Phones</option>
+            <option value="computers">Computers</option>
             <option value="shoes">Shoes</option>
-            <option value="beauty">Beauty & Personal Care</option>
-            <option value="home-living">Home & Living</option>
-            <option value="appliances">Appliances</option>
-            <option value="kids-baby">Kids & Baby</option>
-            <option value="sports">Sports & Outdoors</option>
+            <option value="bags">Bags</option>
+            <option value="sports">Sports</option>
             <option value="automotive">Automotive</option>
-            <option value="food">Food & Groceries</option>
+            <option value="food">Food</option>
+            <option value="baby">Baby & Kids</option>
+            <option value="health">Health</option>
+            <option value="gaming">Gaming</option>
             <option value="accessories">Accessories</option>
-            <option value="others">Others</option>
           </select>
         </div>
 
@@ -177,7 +178,21 @@
           <label>Cover Image</label>
           <input id="p_cover" type="file" accept="image/*" />
         </div>
+        <!-- PRODUCT GALLERY -->
+        <div class="images-block">
+          <label>
+            Product Gallery
+            <span class="muted">(up to 8 photos)</span>
+          </label>
 
+          <label for="p_gallery" class="gallery-upload-btn">
+            + Add Gallery Photos
+          </label>
+
+          <input id="p_gallery" type="file" accept="image/*" multiple hidden />
+
+          <div id="galleryPreview" class="gallery-preview"></div>
+        </div>
         <div id="variantSection">
           <div class="flex-row">
             <h4>Variants</h4>
@@ -200,6 +215,48 @@
             price difference.</small>
         </div>
 
+        <!-- PRODUCT MODE -->
+        <div class="field-block">
+          <label for="p_mode">Product Mode</label>
+
+          <select id="p_mode">
+            <option value="standard">Regular Home Product</option>
+            <option value="mamba">Mamba</option>
+            <option value="trendy">Trendy</option>
+            <option value="group">Group Sale</option>
+            <option value="discount">Super Discount</option>
+          </select>
+        </div>
+
+        <!-- DISCOUNT — FINAL PRODUCT SECTION -->
+        <div class="discount-section">
+          <div class="discount-heading">
+            <div>
+              <strong>Discount</strong>
+              <small>Optional percentage discount</small>
+            </div>
+
+            <span id="discountBadge" class="discount-badge" hidden>
+              0% OFF
+            </span>
+          </div>
+
+          <div class="discount-control">
+            <input id="p_discount" type="number" min="0" max="100" step="1" value="0"
+              placeholder="Discount percentage" />
+
+            <span>%</span>
+          </div>
+
+          <div id="discountPreview" class="discount-preview">
+            <span>Final price</span>
+
+            <div>
+              <del id="discountOldPrice" hidden>TSh 0</del>
+              <strong id="discountNewPrice">TSh 0</strong>
+            </div>
+          </div>
+        </div>
         <div class="actions">
           <button id="postProduct" class="btn btn-primary">
             Post Product
