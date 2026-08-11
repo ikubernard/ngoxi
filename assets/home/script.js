@@ -267,25 +267,94 @@
     // prefer cover.url, then first images[].url
     return safeGet(p, "cover.url") || safeGet(p, "images.0.url") || "";
   }
+  function isDiscountedProduct(product) {
+    const discountPercent = Number(product?.discountPercent || 0);
 
+    const originalPrice = Number(product?.originalPrice || 0);
+
+    const finalPrice = Number(product?.price || 0);
+
+    return discountPercent > 0 && originalPrice > finalPrice;
+  }
   function renderCard(p) {
     const img = productCover(p);
-    const price = currency(p.price);
+    const finalPrice = currency(p.price);
+    const originalPrice = currency(p.originalPrice);
+    const discountPercent = Number(p.discountPercent || 0);
+
+    const discounted = isDiscountedProduct(p);
     const desc = (p.description || "").slice(0, 70);
     const title = p.name || p.title || "Product";
+
+    const priceHTML = discounted
+      ? `
+      <div class="p-discount-prices">
+        <del class="p-old-price">
+          ${originalPrice}
+        </del>
+
+        <span class="p-discount-badge">
+          -${discountPercent}%
+        </span>
+      </div>
+
+      <div class="p-price p-new-price">
+        ${finalPrice}
+      </div>
+    `
+      : `
+      <div class="p-price">
+        ${finalPrice}
+      </div>
+    `;
 
     const card = document.createElement("div");
     card.className = "p-card";
     card.dataset.id = p._id;
+    card.dataset.mode = p.mode || "standard";
+    card.dataset.discounted = String(discounted);
 
     card.innerHTML = `
-      <div class="p-img">${img ? `<img src="${img}" alt="${title}"/>` : ""}</div>
-      <div class="p-info">
-        <div class="p-name">${escapeHTML(title)}</div>
-        <div class="p-price">${price}</div>
-        ${desc ? `<div class="muted" style="margin-top:4px;font-size:12px">${escapeHTML(desc)}</div>` : ""}
+    <div class="p-img">
+      ${
+        img
+          ? `<img
+              src="${img}"
+              alt="${escapeHTML(title)}"
+              loading="lazy"
+            />`
+          : ""
+      }
+
+      ${
+        discounted
+          ? `<span class="p-image-discount">
+               ${discountPercent}% OFF
+             </span>`
+          : ""
+      }
+    </div>
+
+    <div class="p-info">
+      <div class="p-name">
+        ${escapeHTML(title)}
       </div>
-    `;
+
+      ${priceHTML}
+
+      ${
+        desc
+          ? `<div
+               class="muted"
+               style="margin-top:4px;font-size:12px"
+             >
+               ${escapeHTML(desc)}
+             </div>`
+          : ""
+      }
+    </div>
+  `;
+
     card.addEventListener("click", () => {
       window.location.href = `/product.html?id=${p._id}`;
     });
@@ -347,6 +416,7 @@
           indexProduct(p);
           els.grid.appendChild(renderCard(p));
         }
+        loadDeals(state.products);
         state.page = 1;
         state.pages = 1; // single-shot search results
         return;
@@ -366,6 +436,7 @@
         indexProduct(p);
         els.grid.appendChild(renderCard(p));
       }
+      loadDeals(state.products);
     } catch (err) {
       console.error("loadProducts", err);
       toast("Failed to load products");
@@ -432,13 +503,21 @@
       });
     }
 
-    // MODE FILTER (future)
+    // MODE FILTER
     if (state.marketplace.mode !== "all") {
+      const selectedMode = state.marketplace.mode.toLowerCase();
+
       products = products.filter((product) => {
-        return product[state.marketplace.mode] === true;
+        // Super Discount is automatic
+        if (selectedMode === "discount") {
+          return isDiscountedProduct(product);
+        }
+
+        return (
+          String(product.mode || "standard").toLowerCase() === selectedMode
+        );
       });
     }
-
     // SORTING (future)
     if (state.marketplace.sort === "price-low") {
       products.sort((a, b) => Number(a.price) - Number(b.price));
@@ -1045,27 +1124,28 @@
       els.chatFile.value = "";
     }
   }
-  function loadDeals(products) {
-    const deals = products.filter((p) => p.deal === true);
+  function loadDeals(products = []) {
     const grid = document.getElementById("dealsGrid");
+    if (!grid) return;
+
+    const deals = products.filter(isDiscountedProduct).slice(0, 8);
+
     grid.innerHTML = "";
 
-    deals.forEach((item) => {
-      const div = document.createElement("div");
-      div.className = "p-card";
-      div.innerHTML = `
-        <div class="p-img"><img src="${item.images[0]}" /></div>
-        <div class="p-info">
-            <div class="p-name">${item.name}</div>
-            <div class="p-price">${item.price} TSh</div>
-        </div>
-      `;
-      div.onclick = () =>
-        (window.location.href = `/product.html?id=${item._id}`);
-      grid.appendChild(div);
+    if (!deals.length) {
+      grid.innerHTML = `
+      <div class="muted">
+        No discounted products yet.
+      </div>
+    `;
+
+      return;
+    }
+
+    deals.forEach((product) => {
+      grid.appendChild(renderCard(product));
     });
   }
-
   // -----------------------------
   // Events wiring
   // -----------------------------

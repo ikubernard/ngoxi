@@ -648,14 +648,6 @@ document.getElementById("postProduct")?.addEventListener("click", async () => {
       return;
     }
 
-    if (mode === "discount" && discountPercent <= 0) {
-      showToast(
-        "Enter a discount percentage for Super Discount mode.",
-        "error",
-      );
-
-      return;
-    }
     const fd = new FormData();
     fd.append("name", name);
     fd.append("description", description);

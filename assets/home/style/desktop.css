@@ -1995,3 +1995,156 @@ html[data-theme="dark"] .chat-body {
     flex: 0 0 auto;
   }
 }
+/* =========================================================
+   NGOXI DISCOUNT PRODUCT CARDS
+   ========================================================= */
+
+/* Required so the discount badge stays inside the image */
+.p-img {
+  position: relative;
+}
+
+/* Discount badge displayed over the product image */
+.p-image-discount {
+  position: absolute;
+  top: 9px;
+  left: 9px;
+  z-index: 3;
+  padding: 5px 8px;
+  border-radius: 7px;
+  color: #fff;
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  box-shadow: 0 4px 10px rgba(220, 38, 38, 0.3);
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.2px;
+  line-height: 1;
+}
+
+/* Old price and percentage row */
+.p-discount-prices {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 7px;
+  min-height: 19px;
+}
+
+/* Original crossed-out price */
+.p-old-price {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration-thickness: 1.5px;
+}
+
+/* Small percentage badge beside old price */
+.p-discount-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3px 6px;
+  border-radius: 5px;
+  color: #b91c1c;
+  background: rgba(239, 68, 68, 0.12);
+  font-size: 10px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+/* Final discounted price */
+.p-price.p-new-price {
+  color: #dc2626;
+  font-size: 16px;
+  font-weight: 950;
+}
+
+/* Slight red border detail for discounted cards */
+.p-card[data-discounted="true"] {
+  border-color: rgba(220, 38, 38, 0.15);
+}
+
+.p-card[data-discounted="true"]:hover {
+  border-color: rgba(220, 38, 38, 0.45);
+}
+
+/* =========================================================
+   SMALL DEAL CARDS — 8 ACROSS
+   ========================================================= */
+
+#dealsGrid .p-image-discount {
+  top: 6px;
+  left: 6px;
+  padding: 4px 5px;
+  border-radius: 5px;
+  font-size: 8.5px;
+}
+
+#dealsGrid .p-discount-prices {
+  gap: 4px;
+  min-height: 14px;
+}
+
+#dealsGrid .p-old-price {
+  font-size: 9px;
+}
+
+#dealsGrid .p-discount-badge {
+  padding: 2px 4px;
+  font-size: 8px;
+}
+
+#dealsGrid .p-price.p-new-price {
+  font-size: 13px;
+}
+
+/* =========================================================
+   DARK THEME
+   ========================================================= */
+
+html[data-theme="dark"] .p-image-discount {
+  color: #fff;
+  background: linear-gradient(135deg, #f05252, #b91c1c);
+}
+
+html[data-theme="dark"] .p-discount-badge {
+  color: #fecaca;
+  background: rgba(239, 68, 68, 0.2);
+}
+
+html[data-theme="dark"] .p-price.p-new-price {
+  color: #fca5a5;
+}
+
+html[data-theme="dark"] .p-card[data-discounted="true"] {
+  border-color: rgba(248, 113, 113, 0.25);
+}
+
+/* =========================================================
+   SMALL SCREENS
+   ========================================================= */
+
+@media (max-width: 768px) {
+  .p-image-discount {
+    top: 7px;
+    left: 7px;
+    padding: 4px 6px;
+    font-size: 9px;
+  }
+
+  .p-discount-prices {
+    gap: 5px;
+  }
+
+  .p-old-price {
+    font-size: 10px;
+  }
+
+  .p-discount-badge {
+    font-size: 9px;
+  }
+
+  .p-price.p-new-price {
+    font-size: 14px;
+  }
+}

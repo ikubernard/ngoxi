@@ -94,13 +94,7 @@ router.post(
       }
 
       // Product modes
-      const allowedModes = new Set([
-        "standard",
-        "mamba",
-        "trendy",
-        "group",
-        "discount",
-      ]);
+      const allowedModes = new Set(["standard", "mamba", "trendy", "group"]);
 
       const normalizedMode = String(mode || "standard")
         .trim()

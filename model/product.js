@@ -9,7 +9,7 @@ const productSchema = new mongoose.Schema(
     // Product placement
     mode: {
       type: String,
-      enum: ["standard", "mamba", "trendy", "group", "discount"],
+      enum: ["standard", "mamba", "trendy", "group"],
       default: "standard",
       index: true,
     },
