@@ -21,7 +21,6 @@ document.addEventListener("DOMContentLoaded", () => {
       console.error("Loading trendy products failed", err);
     }
   }
-
   function renderProducts(products) {
     if (!products.length) {
       grid.innerHTML = `
@@ -37,65 +36,34 @@ No trendy products yet
       .map(
         (product) => `
 
-<div class="product-card"
-data-id="${product._id}">
+<div class="product-card" data-id="${product._id}">
 
 
 <div class="product-image">
 
-
-<img src="${product.cover?.url || ""}"
-alt="${product.name}">
-
+<img 
+src="${product.cover?.url || ""}"
+alt="${product.name}"
+>
 
 </div>
 
 
 <div class="product-info">
 
-
-<h3>${product.name}</h3>
+<h3>
+${product.name}
+</h3>
 
 
 <p>
-${
-  product.description
-    ? product.description.slice(0, 55)
-    : "Discover this trending product"
-}
+${product.description ? product.description.slice(0, 55) : "Trending product"}
 </p>
 
 
 <div class="price">
-
 TSh ${product.price.toLocaleString()}
-
 </div>
-
-
-</div>
-
-
-</div>
-
-
-<div class="image-box">
-
-<img src="${product.cover?.url || ""}">
-
-</div>
-
-
-<div class="product-info">
-
-<h3>${product.name}</h3>
-
-<p>${product.description.slice(0, 45)}...</p>
-
-
-<strong>
-TSh ${product.price.toLocaleString()}
-</strong>
 
 
 </div>
@@ -106,11 +74,15 @@ TSh ${product.price.toLocaleString()}
 `,
       )
       .join("");
-  }
 
-  window.openProduct = function (id) {
-    window.location.href = `/views/product.html?id=${id}`;
-  };
+    // product click
+
+    document.querySelectorAll(".product-card").forEach((card) => {
+      card.onclick = () => {
+        window.location.href = `/views/product.html?id=${card.dataset.id}`;
+      };
+    });
+  }
 
   // SEARCH
   searchInput.addEventListener("input", () => {

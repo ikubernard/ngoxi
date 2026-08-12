@@ -121,8 +121,9 @@ body {
 
   height: 100%;
 
-  object-fit: cover;
+  object-fit: contain;
 
+  padding: 15px;
   display: block;
 }
 
