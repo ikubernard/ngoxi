@@ -292,19 +292,44 @@
         <!-- Conversation -->
         <section class="chat-box card">
           <div id="chatHeader" class="chat-header">
-            <img id="chatDp" class="chat-dp" />
-            <strong id="chatWith">Select a contact</strong>
-            <div class="chat-tools">
-              <button id="callContact" class="btn btn-ghost" type="button">
-                📞 Call
+            <!-- Active contact -->
+            <div class="chat-person">
+              <button id="mobileChatBack" class="mobile-chat-back" type="button" aria-label="Back to conversations">
+                ‹
               </button>
+
+              <img id="chatDp" class="chat-dp" src="/assets/default-avatar.jpeg" alt="Contact profile" />
+              <div class="chat-person-copy">
+                <strong id="chatWith">Select a contact</strong>
+                <small id="chatPresence">online</small>
+              </div>
+            </div>
+
+            <!-- WhatsApp-style options -->
+            <div class="chat-options-wrap">
+              <button id="chatOptionsBtn" class="chat-options-btn" type="button" aria-label="Conversation options"
+                aria-expanded="false">
+                ⋮
+              </button>
+
+              <div id="chatOptionsMenu" class="chat-options-menu" hidden>
+                <button id="callContact" type="button">
+                  <span>Call</span>
+                </button>
+
+                <button id="togglePaymentCard" type="button">
+                  <span>Hide payment card</span>
+                </button>
+              </div>
             </div>
           </div>
           <div id="paymentCardHost"></div>
           <div id="chatMessages" class="chat-messages"></div>
           <div class="chat-input">
             <input type="text" id="chatInput" placeholder="Type a message..." />
-            <button id="sendChat" class="btn btn-primary">Send</button>
+            <button id="sendChat" class="chat-send-btn" type="button" aria-label="Send message">
+              ➤
+            </button>
           </div>
 
         </section>

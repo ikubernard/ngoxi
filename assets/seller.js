@@ -1803,13 +1803,10 @@ function renderChatList() {
     row.dataset.chatId = chat.id;
     if (chat.id === activeChatId) row.classList.add("active");
 
-    const initials = chat.name
-      .split(" ")
-      .map((p) => p[0])
-      .join("")
-      .slice(0, 2)
-      .toUpperCase();
+    const initials = getInitials(chat.name);
 
+    const contactPhoto =
+      chat.profilePhoto || chat.avatar || "/assets/default-avatar.jpeg";
     const lastKind = chat.lastKind || "message";
     const orderState = chat.orderState || null;
 
@@ -1823,7 +1820,17 @@ function renderChatList() {
     }
 
     row.innerHTML = `
-  <div class="avatar">${chat.isSupport ? "N" : initials}</div>
+ <div class="avatar">
+  <img
+    src="${sanitize(contactPhoto)}"
+    alt="${sanitize(chat.name)}"
+    onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+  />
+
+  <span class="avatar-fallback">
+    ${chat.isSupport ? "N" : initials}
+  </span>
+</div>
   <div class="contact-main">
     <div class="contact-name">${sanitize(chat.name)}</div>
     <div class="contact-last">${sanitize(chat.lastMessage || "")}</div>
@@ -2062,24 +2069,40 @@ function buildPinnedPaymentCard(chat) {
 
 function setActiveChat(id) {
   activeChatId = id;
-  renderChatList();
-  const chat = CHAT_STORE.find((c) => c.id === id);
-  const titleEl = document.getElementById("chatWith");
-  if (titleEl) {
-    titleEl.textContent = chat ? chat.name : "Select a contact";
-  }
-  renderChatMessages();
-  const dp = localStorage.getItem(PROFILE_PHOTO_KEY);
-  const headerImg = document.getElementById("chatDp");
 
-  if (headerImg) {
-    if (dp) {
-      headerImg.src = dp;
-      headerImg.style.display = "block";
-    } else {
-      headerImg.style.display = "none";
-    }
+  const chat = CHAT_STORE.find((item) => item.id === id);
+
+  const titleElement = document.getElementById("chatWith");
+
+  const presenceElement = document.getElementById("chatPresence");
+
+  const headerImage = document.getElementById("chatDp");
+
+  if (titleElement) {
+    titleElement.textContent = chat?.name || "Select a contact";
   }
+
+  if (presenceElement) {
+    presenceElement.textContent = chat?.isSupport ? "NgoXi support" : "online";
+  }
+
+  if (headerImage) {
+    headerImage.src =
+      chat?.profilePhoto || chat?.avatar || "/assets/default-avatar.jpeg";
+
+    headerImage.style.display = "block";
+
+    headerImage.onerror = () => {
+      headerImage.src = "/assets/default-avatar.jpeg";
+    };
+  }
+
+  renderChatList();
+  renderChatMessages();
+  syncChatOptions();
+
+  // On phones, opening a contact replaces the contact list
+  document.querySelector(".chat-layout")?.classList.add("conversation-open");
 }
 
 function getInitials(fullName = "") {
@@ -2102,6 +2125,9 @@ function renderChatMessages() {
   cardHost.innerHTML = "";
 
   const chat = CHAT_STORE.find((c) => c.id === activeChatId);
+
+  cardHost.hidden = Boolean(chat?.paymentCardHidden);
+
   if (!chat) {
     body.innerHTML =
       "<div class='muted'>Select a conversation to start chatting.</div>";
@@ -2298,12 +2324,23 @@ function renderChatMessages() {
     else cls += " system";
 
     div.className = cls;
-    const timeHtml = m.ts
-      ? `<div style="font-size:11px;opacity:0.7;margin-top:4px;">${formatTime(
-          m.ts,
-        )}</div>`
+    const timeHTML = m.ts
+      ? `
+    <div class="bubble-meta">
+      <span>${formatTime(m.ts)}</span>
+
+      ${m.from === "seller" ? `<span class="message-ticks">✓✓</span>` : ""}
+    </div>
+  `
       : "";
-    div.innerHTML = `${sanitize(m.text)}${timeHtml}`;
+
+    div.innerHTML = `
+  <div class="bubble-text">
+    ${sanitize(m.text)}
+  </div>
+
+  ${timeHTML}
+`;
     body.appendChild(div);
   });
 
@@ -2341,8 +2378,94 @@ document.getElementById("sendChat")?.addEventListener("click", () => {
   addMessage(activeChatId, "seller", text);
   input.value = "";
 });
+// Send with Enter
+document.getElementById("chatInput")?.addEventListener("keydown", (event) => {
+  if (event.key === "Enter" && !event.shiftKey) {
+    event.preventDefault();
+
+    document.getElementById("sendChat")?.click();
+  }
+});
+
+function closeChatOptions() {
+  const menu = document.getElementById("chatOptionsMenu");
+
+  const button = document.getElementById("chatOptionsBtn");
+
+  if (menu) {
+    menu.hidden = true;
+  }
+
+  if (button) {
+    button.setAttribute("aria-expanded", "false");
+  }
+}
+
+function syncChatOptions() {
+  const chat = CHAT_STORE.find((item) => item.id === activeChatId);
+
+  const toggleButton = document.getElementById("togglePaymentCard");
+
+  if (!toggleButton) return;
+
+  const hasPaymentCard = Boolean(chat && buildPinnedPaymentCard(chat));
+
+  toggleButton.textContent = chat?.paymentCardHidden
+    ? "Show payment card"
+    : "Hide payment card";
+
+  toggleButton.disabled = !hasPaymentCard;
+}
+
+document
+  .getElementById("chatOptionsBtn")
+  ?.addEventListener("click", (event) => {
+    event.stopPropagation();
+
+    const menu = document.getElementById("chatOptionsMenu");
+
+    if (!menu) return;
+
+    menu.hidden = !menu.hidden;
+
+    event.currentTarget.setAttribute("aria-expanded", String(!menu.hidden));
+
+    syncChatOptions();
+  });
+
+document.getElementById("togglePaymentCard")?.addEventListener("click", () => {
+  const chat = CHAT_STORE.find((item) => item.id === activeChatId);
+
+  if (!chat || !buildPinnedPaymentCard(chat)) {
+    showToast("This conversation has no active payment card.", "info");
+
+    closeChatOptions();
+    return;
+  }
+
+  chat.paymentCardHidden = !chat.paymentCardHidden;
+
+  closeChatOptions();
+  renderChatMessages();
+  syncChatOptions();
+});
+
+// Close options when clicking elsewhere
+document.addEventListener("click", (event) => {
+  if (!event.target.closest(".chat-options-wrap")) {
+    closeChatOptions();
+  }
+});
+
+// Mobile: return to conversation list
+document.getElementById("mobileChatBack")?.addEventListener("click", () => {
+  document.querySelector(".chat-layout")?.classList.remove("conversation-open");
+
+  closeChatOptions();
+});
 // CALL BUTTON — opens device dialer using the stored phone number
 document.getElementById("callContact")?.addEventListener("click", () => {
+  closeChatOptions();
   if (!activeChatId) {
     showToast("Select a contact first.", "error");
     return;
@@ -2367,10 +2490,17 @@ document.getElementById("refreshContacts")?.addEventListener("click", () => {
   renderChatList();
 });
 
-// Initial render
-renderChatList();
-// Auto-select NgoXi Support as initial chat
-setActiveChat("support");
+// Initial chat render
+if (window.matchMedia("(max-width: 760px)").matches) {
+  // WhatsApp mobile opens on the chat list
+  activeChatId = null;
+  renderChatList();
+
+  document.querySelector(".chat-layout")?.classList.remove("conversation-open");
+} else {
+  // WhatsApp desktop keeps one conversation open
+  setActiveChat("support");
+}
 
 const avatar = document.createElement("div");
 avatar.className = "contact-avatar";
