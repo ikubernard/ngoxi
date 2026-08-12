@@ -38,7 +38,45 @@ No trendy products yet
         (product) => `
 
 <div class="product-card"
-onclick="openProduct('${product._id}')">
+data-id="${product._id}">
+
+
+<div class="product-image">
+
+
+<img src="${product.cover?.url || ""}"
+alt="${product.name}">
+
+
+</div>
+
+
+<div class="product-info">
+
+
+<h3>${product.name}</h3>
+
+
+<p>
+${
+  product.description
+    ? product.description.slice(0, 55)
+    : "Discover this trending product"
+}
+</p>
+
+
+<div class="price">
+
+TSh ${product.price.toLocaleString()}
+
+</div>
+
+
+</div>
+
+
+</div>
 
 
 <div class="image-box">
