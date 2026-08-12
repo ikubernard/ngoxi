@@ -40,7 +40,7 @@ No trendy products yet
 
 
 <div class="product-card"
-style="animation-delay:${index * 80}ms">
+style="animation-delay:80ms">
 
 <img 
 src="${product.cover?.url || ""}"
