@@ -34,41 +34,19 @@ No trendy products yet
 
     grid.innerHTML = products
       .map(
-        (product) => `
+        (product, index) => `
 
-<div class="product-card" data-id="${product._id}">
+<div class="product-card" data-id="${product._id}" style="animation-delay:${index * 80}ms">
 
+  <div class="product-image">
+    <img src="${product.cover?.url || ""}" alt="${product.name}">
+  </div>
 
-<div class="product-card"
-style="animation-delay:80ms">
-
-<img 
-src="${product.cover?.url || ""}"
-alt="${product.name}"
->
-
-</div>
-
-
-<div class="product-info">
-
-<h3>
-${product.name}
-</h3>
-
-
-<p>
-${product.description ? product.description.slice(0, 55) : "Trending product"}
-</p>
-
-
-<div class="price">
-TSh ${product.price.toLocaleString()}
-</div>
-
-
-</div>
-
+  <div class="product-info">
+    <h3>${product.name}</h3>
+    <p>${product.description ? product.description.slice(0, 55) : "Trending product"}</p>
+    <div class="price">TSh ${product.price.toLocaleString()}</div>
+  </div>
 
 </div>
 
