@@ -1,80 +1,34 @@
 document.addEventListener("DOMContentLoaded", () => {
   const grid = document.getElementById("trendyGrid");
+  const searchInput = document.querySelector(".trendy-search input");
+  const categoryButtons = document.querySelectorAll(
+    ".trendy-categories button",
+  );
 
-  function renderProducts() {
-    grid.innerHTML = products
-      .map(
-        (product) => `
+  let currentCategory = "";
+  let allProducts = [];
 
-
-<div class="product-card"
-onclick="openProduct('${product.id}')">
-
-
-<img src="${product.image}">
-
-
-<div class="product-info">
-
-
-<h3>
-${product.name}
-</h3>
-
-
-<p>
-${product.description}
-</p>
-
-
-<div class="product-price">
-
-TSh ${product.price}
-
-</div>
-
-
-</div>
-
-
-</div>
-
-
-`,
-      )
-      .join("");
-  }
-
-  window.openProduct = function (id) {
-    window.location.href = `/product.html?id=${id}`;
-  };
-
-  renderProducts();
-});
-document.addEventListener("DOMContentLoaded", () => {
-  const grid = document.getElementById("trendyGrid");
-
-  async function loadTrendyProducts() {
+  async function loadProducts() {
     try {
       const res = await fetch("/api/products?mode=trendy");
 
       const data = await res.json();
 
-      const products = data.products || [];
+      allProducts = data.products || [];
 
-      renderProducts(products);
-    } catch (error) {
-      console.error("Trendy products error:", error);
+      renderProducts(allProducts);
+    } catch (err) {
+      console.error("Loading trendy products failed", err);
     }
   }
 
   function renderProducts(products) {
     if (!products.length) {
       grid.innerHTML = `
-        <p class="empty-products">
-            No trendy products yet
-        </p>
-        `;
+<p class="empty-products">
+No trendy products yet
+</p>
+`;
 
       return;
     }
@@ -83,35 +37,35 @@ document.addEventListener("DOMContentLoaded", () => {
       .map(
         (product) => `
 
-    <div class="product-card"
-    onclick="openProduct('${product._id}')">
+<div class="product-card"
+onclick="openProduct('${product._id}')">
 
 
-        <img src="${product.cover?.url || ""}">
+<div class="image-box">
+
+<img src="${product.cover?.url || ""}">
+
+</div>
 
 
-        <div class="product-info">
+<div class="product-info">
 
-            <h3>
-            ${product.name}
-            </h3>
+<h3>${product.name}</h3>
 
-
-            <p>
-            ${product.description}
-            </p>
+<p>${product.description.slice(0, 45)}...</p>
 
 
-            <strong>
-            TSh ${product.price}
-            </strong>
-
-        </div>
+<strong>
+TSh ${product.price.toLocaleString()}
+</strong>
 
 
-    </div>
+</div>
 
-    `,
+
+</div>
+
+`,
       )
       .join("");
   }
@@ -120,5 +74,52 @@ document.addEventListener("DOMContentLoaded", () => {
     window.location.href = `/views/product.html?id=${id}`;
   };
 
-  loadTrendyProducts();
+  // SEARCH
+  searchInput.addEventListener("input", () => {
+    const value = searchInput.value.toLowerCase();
+
+    const filtered = allProducts.filter((product) =>
+      product.name.toLowerCase().includes(value),
+    );
+
+    renderProducts(filtered);
+  });
+
+  // CATEGORY BUTTONS
+
+  categoryButtons.forEach((button) => {
+    button.addEventListener("click", () => {
+      categoryButtons.forEach((btn) => {
+        btn.classList.remove("active");
+      });
+
+      button.classList.add("active");
+
+      const category = button.textContent.trim().toLowerCase();
+
+      if (category === "recommended") {
+        renderProducts(allProducts);
+
+        return;
+      }
+
+      if (category === "new arrivals") {
+        const newest = [...allProducts].sort(
+          (a, b) => new Date(b.createdAt) - new Date(a.createdAt),
+        );
+
+        renderProducts(newest);
+
+        return;
+      }
+
+      const filtered = allProducts.filter(
+        (product) => product.category?.toLowerCase() === category,
+      );
+
+      renderProducts(filtered);
+    });
+  });
+
+  loadProducts();
 });

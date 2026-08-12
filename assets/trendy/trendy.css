@@ -106,12 +106,25 @@ body {
   cursor: pointer;
 }
 
+.product-card {
+  background: white;
+  border-radius: 20px;
+  overflow: hidden;
+  transition: 0.25s;
+}
+
+.product-card:hover {
+  transform: translateY(-5px);
+}
+
 .product-card img {
   width: 100%;
+  height: 260px;
+  object-fit: cover;
+}
 
-  height: 220px;
-
-  object-fit: contain;
+.image-box {
+  background: #f7f7f7;
 }
 
 .product-info {

@@ -299,8 +299,14 @@ router.get("/", async (req, res) => {
     const limit = Number(req.query.limit) || 20;
     const skip = (page - 1) * limit;
 
-    const query = { visibility: "visible", blockedByAdmin: { $ne: true } };
+    const query = {
+      visibility: "visible",
+      blockedByAdmin: { $ne: true },
+    };
 
+    if (req.query.mode) {
+      query.mode = req.query.mode;
+    }
     const total = await Product.countDocuments(query);
     const products = await Product.find(query)
       .sort({ createdAt: -1 })
