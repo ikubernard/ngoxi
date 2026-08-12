@@ -211,3 +211,7 @@ document.addEventListener("DOMContentLoaded", () => {
       .join("");
   }
 });
+function openProduct(id) {
+  window.location.href = `/product.html?id=${id}`;
+}
+<div class="product-card" onclick="openProduct('${product._id}')"></div>;

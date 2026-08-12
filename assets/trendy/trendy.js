@@ -79,7 +79,7 @@ TSh ${product.price.toLocaleString()}
 
     document.querySelectorAll(".product-card").forEach((card) => {
       card.onclick = () => {
-        window.location.href = `/views/product.html?id=${card.dataset.id}`;
+        window.location.href = `/product.html?id=${card.dataset.id}`;
       };
     });
   }
