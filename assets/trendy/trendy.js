@@ -1,32 +1,6 @@
 document.addEventListener("DOMContentLoaded", () => {
   const grid = document.getElementById("trendyGrid");
 
-  let products = [
-    {
-      id: 1,
-      name: "Premium Hoodie",
-      description: "Street fashion style",
-      price: "85000",
-      image: "/assets/logo.png",
-    },
-
-    {
-      id: 2,
-      name: "Running Shoes",
-      description: "Daily comfort",
-      price: "120000",
-      image: "/assets/logo.png",
-    },
-
-    {
-      id: 3,
-      name: "Smart Watch",
-      description: "Modern technology",
-      price: "90000",
-      image: "/assets/logo.png",
-    },
-  ];
-
   function renderProducts() {
     grid.innerHTML = products
       .map(
@@ -76,4 +50,75 @@ TSh ${product.price}
   };
 
   renderProducts();
+});
+document.addEventListener("DOMContentLoaded", () => {
+  const grid = document.getElementById("trendyGrid");
+
+  async function loadTrendyProducts() {
+    try {
+      const res = await fetch("/api/products?mode=trendy");
+
+      const data = await res.json();
+
+      const products = data.products || [];
+
+      renderProducts(products);
+    } catch (error) {
+      console.error("Trendy products error:", error);
+    }
+  }
+
+  function renderProducts(products) {
+    if (!products.length) {
+      grid.innerHTML = `
+        <p class="empty-products">
+            No trendy products yet
+        </p>
+        `;
+
+      return;
+    }
+
+    grid.innerHTML = products
+      .map(
+        (product) => `
+
+    <div class="product-card"
+    onclick="openProduct('${product._id}')">
+
+
+        <img src="${product.cover?.url || ""}">
+
+
+        <div class="product-info">
+
+            <h3>
+            ${product.name}
+            </h3>
+
+
+            <p>
+            ${product.description}
+            </p>
+
+
+            <strong>
+            TSh ${product.price}
+            </strong>
+
+        </div>
+
+
+    </div>
+
+    `,
+      )
+      .join("");
+  }
+
+  window.openProduct = function (id) {
+    window.location.href = `/views/product.html?id=${id}`;
+  };
+
+  loadTrendyProducts();
 });
