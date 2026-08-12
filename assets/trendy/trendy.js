@@ -39,7 +39,8 @@ No trendy products yet
 <div class="product-card" data-id="${product._id}">
 
 
-<div class="product-image">
+<div class="product-card"
+style="animation-delay:${index * 80}ms">
 
 <img 
 src="${product.cover?.url || ""}"
