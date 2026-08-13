@@ -568,37 +568,62 @@ button {
 /* =========================================================
    PRODUCT IMAGE
 ========================================================= */
+
 .product-image {
   position: relative;
 
   width: 100%;
+
   aspect-ratio: 1 / 1;
 
+  padding: 21px;
+
   display: flex;
+
   align-items: center;
+
   justify-content: center;
 
   overflow: hidden;
 
-  background: #f7faf8;
+  background:
+    radial-gradient(circle at 50% 78%, rgba(23, 98, 68, 0.09), transparent 42%),
+    linear-gradient(145deg, #f5f9f6, #ffffff);
 }
 
-.product-image img {
-  width: 100%;
-  height: 100%;
+/* reflective sweep */
 
-  display: block;
+.product-image::before {
+  content: "";
 
-  object-fit: contain;
-  object-position: center;
+  position: absolute;
 
-  padding: 14px;
+  z-index: 3;
+
+  top: -55%;
+
+  left: -65%;
+
+  width: 28%;
+
+  height: 215%;
+
+  pointer-events: none;
+
+  transform: rotate(19deg);
+
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.82),
+    transparent
+  );
+
+  transition: left 0.9s ease;
 }
 
-.mamba-card:hover {
-  transform: translateY(-5px);
-
-  box-shadow: 0 15px 35px rgba(11, 63, 44, 0.12);
+.mamba-card:hover .product-image::before {
+  left: 135%;
 }
 
 .product-image img {
