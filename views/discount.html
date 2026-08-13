@@ -6,153 +6,174 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <title>NgoXi Discount</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=Paytone+One&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap"
+        rel="stylesheet">
 
     <link rel="stylesheet" href="/assets/discount/discount.css">
-
 </head>
-
 
 <body>
 
-
-    <header class="discount-top">
-
-
-        <div class="brand">
-            NgoXi
-            <span>Deals</span>
+    <header class="discount-header">
+        <div class="discount-brand">
+            <span class="brand-main">NgoXi</span>
+            <span class="brand-deals">Deals</span>
         </div>
 
+        <div class="discount-search">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="11" cy="11" r="6"></circle>
+                <path d="M20 20l-4.2-4.2"></path>
+            </svg>
 
-        <div class="search-box">
-
-            <input id="discountSearch" placeholder="Search discount products...">
-
+            <input id="discountSearch" type="search" placeholder="Search discount products...">
         </div>
-
-
     </header>
 
 
+    <main class="discount-page">
 
+        <section class="ending-card">
+            <div class="ending-title">
+                <span class="lightning">⚡</span>
+                <span>Deals Ending Soon</span>
+            </div>
 
+            <div id="discountTimer" class="ending-timer">
+                02 : 45 : 10
+            </div>
+        </section>
 
-    <section class="deal-highlight">
 
+        <section class="hero-wrap">
 
-        <div class="deal-title">
+            <button id="heroPrev" class="hero-arrow hero-arrow-left" type="button" aria-label="Previous slide">
+                ‹
+            </button>
 
-            ⚡ Deals Ending Soon
 
-        </div>
+            <div class="hero-window">
 
+                <div id="discountSlides" class="hero-track">
 
-        <div class="timer">
+                    <!-- SLIDE 1 -->
+                    <article class="hero-slide hero-orange">
 
-            02 : 45 : 10
+                        <div class="hero-copy">
+                            <div class="hero-title-row">
+                                <span class="hero-fire">🔥</span>
+                                <h1>50% OFF</h1>
+                            </div>
 
-        </div>
+                            <h2>Bei za fasta fasta ⚡</h2>
+                            <p>Ukichelewa, deal imeenda.</p>
+                        </div>
 
+                        <div class="hero-art">
+                            <img src="/assets/discount/hero-products.png" class="hero-products" alt="">
+                        </div>
 
-    </section>
+                    </article>
+                    <!-- SLIDE 2 -->
+                    <article class="hero-slide hero-gold">
 
+                        <div class="hero-copy">
 
+                            <div class="hero-title-row">
+                                <span class="hero-fire">⚡</span>
+                                <h1>FLASH DEALS</h1>
+                            </div>
 
+                            <h2>Bei imeshuka balaa 🔥</h2>
 
+                            <p>Usipitwe, chukua yako mapema</p>
 
-    <section class="deal-options">
+                        </div>
 
+                        <div class="hero-art">
+                            <img src="/assets/discount/hero-flash.png" class="hero-products" alt="Flash Deals">
+                        </div>
 
-        <div>
-            🔥
-            <br>
-            50% OFF
-        </div>
+                    </article>
 
+                    <!-- SLIDE 3 -->
+                    <article class="hero-slide hero-saving">
 
-        <div>
-            ⚡
-            <br>
-            Flash Deals
-        </div>
+                        <div class="hero-copy">
 
+                            <div class="hero-title-row">
+                                <span class="hero-fire">💎</span>
+                                <h1>BEST SAVINGS</h1>
+                            </div>
 
-        <div>
-            💰
-            <br>
-            Best Savings
-        </div>
+                            <h2>Beauty & Home Collection</h2>
 
+                            <p>Upgrade your lifestyle bila kuumiza mfuko.</p>
 
-    </section>
+                        </div>
 
+                        <div class="hero-art">
 
+                            <img src="/assets/discount/hero-saving.png" class="hero-products" alt="Best Saving">
 
+                        </div>
 
+                    </article>
+                </div>
 
-    <nav class="categories">
+            </div>
 
 
-        <button class="active" data-category="all">
+            <button id="heroNext" class="hero-arrow hero-arrow-right" type="button" aria-label="Next slide">
+                ›
+            </button>
 
-            Recommended
 
-        </button>
+            <div id="heroDots" class="hero-dots">
+                <button class="hero-dot active" data-slide="0"></button>
+                <button class="hero-dot" data-slide="1"></button>
+                <button class="hero-dot" data-slide="2"></button>
+            </div>
 
+        </section>
 
-        <button data-category="fashion">
 
-            Fashion
+        <nav class="discount-categories">
 
-        </button>
+            <button class="discount-category active" data-category="all">
+                Recommended
+            </button>
 
+            <button class="discount-category" data-category="fashion">
+                Fashion
+            </button>
 
-        <button data-category="electronics">
+            <button class="discount-category" data-category="electronics">
+                Electronics
+            </button>
 
-            Electronics
+            <button class="discount-category" data-category="beauty">
+                Beauty
+            </button>
 
-        </button>
+            <button class="discount-category" data-category="home">
+                Home
+            </button>
 
+            <button class="discount-category" data-category="shoes">
+                Shoes
+            </button>
 
-        <button data-category="beauty">
+        </nav>
 
-            Beauty
 
-        </button>
-
-
-        <button data-category="home">
-
-            Home
-
-        </button>
-
-
-        <button data-category="shoes">
-
-            Shoes
-
-        </button>
-
-
-    </nav>
-
-
-
-
-
-    <main>
-
-
-        <div id="discountGrid" class="discount-grid">
-
-        </div>
-
+        <section id="discountGrid" class="discount-grid"></section>
 
     </main>
-
-
-
 
 
     <script src="/assets/discount/discount.js"></script>
