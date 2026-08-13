@@ -573,57 +573,39 @@ button {
   position: relative;
 
   width: 100%;
-
   aspect-ratio: 1 / 1;
 
-  padding: 21px;
-
   display: flex;
-
   align-items: center;
-
   justify-content: center;
 
   overflow: hidden;
 
+  padding: 0;
+
   background:
-    radial-gradient(circle at 50% 78%, rgba(23, 98, 68, 0.09), transparent 42%),
-    linear-gradient(145deg, #f5f9f6, #ffffff);
+    radial-gradient(circle at 50% 76%, rgba(23, 98, 68, 0.08), transparent 44%),
+    linear-gradient(145deg, #f6f9f7, #ffffff);
 }
 
-/* reflective sweep */
+.product-image img {
+  width: 100%;
+  height: 100%;
 
-.product-image::before {
-  content: "";
+  display: block;
 
-  position: absolute;
+  object-fit: cover;
+  object-position: center;
 
-  z-index: 3;
-
-  top: -55%;
-
-  left: -65%;
-
-  width: 28%;
-
-  height: 215%;
-
-  pointer-events: none;
-
-  transform: rotate(19deg);
-
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(255, 255, 255, 0.82),
-    transparent
-  );
-
-  transition: left 0.9s ease;
+  transition:
+    transform 0.42s cubic-bezier(0.2, 0.7, 0.3, 1),
+    filter 0.42s ease;
 }
 
-.mamba-card:hover .product-image::before {
-  left: 135%;
+.mamba-card:hover .product-image img {
+  transform: scale(1.035);
+
+  filter: drop-shadow(0 12px 16px rgba(11, 63, 44, 0.08));
 }
 
 .product-image img {
