@@ -2,101 +2,240 @@
 <html lang="en">
 
 <head>
-
-
     <meta charset="UTF-8">
-
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <title>NgoXi Trendy</title>
 
     <link rel="stylesheet" href="/assets/trendy/trendy.css">
 
-</head>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
 
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"
+        rel="stylesheet">
+</head>
 
 <body>
 
+    <!-- =====================================================
+         HEADER
+    ====================================================== -->
 
     <header class="trendy-header">
 
-        <button id="backBtn" class="back-btn">
-
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-
+        <button id="backBtn" class="back-btn" type="button" aria-label="Go back">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
                 <path d="M15 18l-6-6 6-6" />
-
             </svg>
-
         </button>
-        <div class="trendy-search">
-
-            <svg class="search-icon" viewBox="0 0 24 24">
-
-                <path d="M10 2a8 8 0 105.3 14l5 5 1.4-1.4-5-5A8 8 0 0010 2z" />
-
-            </svg>
 
 
-            <input type="text" placeholder="Search Trendy products">
+        <div class="trendy-brand">
 
+            <span class="brand-ngo">Ngo</span>
+
+            <span class="brand-x">X</span>
+
+            <span class="brand-i">i</span>
+
+            <span class="trendy-pill">
+                Trendy
+            </span>
 
         </div>
 
+
+        <div class="trendy-search">
+
+            <svg class="search-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <circle cx="11" cy="11" r="6.3" />
+
+                <path d="M20 20l-4.2-4.2" />
+            </svg>
+
+            <input id="trendySearch" type="search" placeholder="Search what's trending..." autocomplete="off">
+
+        </div>
 
     </header>
 
 
 
-    <section class="trendy-categories">
+    <!-- =====================================================
+         TRENDY HERO
+    ====================================================== -->
+
+    <section class="trendy-hero" id="trendyHero">
+
+        <!-- decorative water -->
+        <div class="water-glow glow-one" aria-hidden="true"></div>
+
+        <div class="water-glow glow-two" aria-hidden="true"></div>
+
+        <div class="water-glow glow-three" aria-hidden="true"></div>
 
 
-        <button class="active">
-            Recommended
-        </button>
 
-        <button>
-            New Arrivals
-        </button>
+        <!-- bubbles -->
 
-        <button>
-            Fashion
-        </button>
+        <div class="bubble-field" aria-hidden="true">
 
-        <button>
-            Electronics
-        </button>
+            <span class="bubble bubble-1"></span>
+            <span class="bubble bubble-2"></span>
+            <span class="bubble bubble-3"></span>
+            <span class="bubble bubble-4"></span>
+            <span class="bubble bubble-5"></span>
+            <span class="bubble bubble-6"></span>
+            <span class="bubble bubble-7"></span>
+            <span class="bubble bubble-8"></span>
 
-        <button>
-            Beauty
-        </button>
+        </div>
 
-        <button>
-            Shoes
-        </button>
 
+
+        <!-- left copy -->
+
+        <div class="trendy-hero-copy">
+
+            <div class="trend-kicker">
+
+                <span class="trend-live"></span>
+
+                NOW TRENDING
+
+            </div>
+
+
+            <h1>
+                Find your next obsession.
+            </h1>
+
+
+            <p>
+                Vitu fresh, styles mpya na picks zinazotrend sasa hivi.
+            </p>
+
+
+            <!-- scattered trend labels -->
+
+            <div class="trend-scatter" aria-hidden="true">
+
+                <span class="scatter-tag tag-fashion">
+                    #Fashion
+                </span>
+
+                <span class="scatter-tag tag-fresh">
+                    Fresh Drop
+                </span>
+
+                <span class="scatter-tag tag-tech">
+                    #Tech
+                </span>
+
+                <span class="scatter-tag tag-beauty">
+                    Beauty
+                </span>
+
+                <span class="scatter-tag tag-live">
+                    LIVE
+                </span>
+
+                <span class="scatter-tag tag-style">
+                    #Style
+                </span>
+
+                <span class="scatter-tag tag-hot">
+                    Hot Now
+                </span>
+
+            </div>
+
+        </div>
+
+
+
+        <!-- right visual stage -->
+
+        <div class="trend-visuals" aria-hidden="true">
+
+            <div class="visual-halo halo-one"></div>
+
+            <div class="visual-halo halo-two"></div>
+
+
+            <img src="/assets/trendy/trend-shoe.png" class="trend-png trend-png-1" alt="">
+
+            <img src="/assets/trendy/trend-headphones.png" class="trend-png trend-png-2" alt="">
+
+            <img src="/assets/trendy/trend-phone.png" class="trend-png trend-png-3" alt="">
+
+        </div>
+
+
+        <!-- moving light -->
+
+        <div class="hero-light-ray ray-one" aria-hidden="true"></div>
+
+        <div class="hero-light-ray ray-two" aria-hidden="true"></div>
 
     </section>
 
 
 
+    <!-- =====================================================
+         CATEGORIES
+    ====================================================== -->
 
-    <main>
+    <section class="trendy-categories">
 
-        <div id="trendyGrid" class="product-grid">
+        <button class="active" data-category="recommended" type="button">
+            Recommended
+        </button>
 
 
-        </div>
+        <button data-category="new-arrivals" type="button">
+            New Arrivals
+        </button>
 
+
+        <button data-category="fashion" type="button">
+            Fashion
+        </button>
+
+
+        <button data-category="electronics" type="button">
+            Electronics
+        </button>
+
+
+        <button data-category="beauty" type="button">
+            Beauty
+        </button>
+
+
+        <button data-category="shoes" type="button">
+            Shoes
+        </button>
+
+    </section>
+
+
+
+    <!-- =====================================================
+         PRODUCTS
+    ====================================================== -->
+
+    <main class="trendy-main">
+
+        <div id="trendyGrid" class="product-grid"></div>
 
     </main>
 
 
 
-
     <script src="/assets/trendy/trendy.js"></script>
-
 
 </body>
 

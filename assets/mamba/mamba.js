@@ -1,11 +1,11 @@
 /* =========================================================
-   NGOXI MAMBA JS
+   NGOXI MAMBA
 ========================================================= */
 
 document.addEventListener("DOMContentLoaded", () => {
-  /* ===============================
-       INTRO ANIMATION
-    =============================== */
+  /* =====================================================
+     INTRO
+  ===================================================== */
 
   const intro = document.getElementById("mambaIntro");
 
@@ -15,210 +15,445 @@ document.addEventListener("DOMContentLoaded", () => {
     }, 1800);
   }
 
-  /* ===============================
-       CATEGORY SWITCH
-    =============================== */
+  /* =====================================================
+     BACK BUTTON
+  ===================================================== */
 
-  const categories = document.querySelectorAll(".mamba-category .category");
+  const backBtn = document.getElementById("backBtn");
 
-  categories.forEach((category) => {
-    category.addEventListener("click", () => {
-      categories.forEach((item) => {
-        item.classList.remove("active");
-      });
-
-      category.classList.add("active");
-
-      const selected = category.textContent.trim();
-
-      console.log("Mamba category:", selected);
+  if (backBtn) {
+    backBtn.addEventListener("click", () => {
+      if (history.length > 1) {
+        history.back();
+      } else {
+        location.href = "/views/home.html";
+      }
     });
-  });
-
-  /* ===============================
-       TEMP MAMBA PRODUCTS
-       (later replaced by backend)
-    =============================== */
-
-  const mambaProducts = [
-    {
-      name: "Premium Leather Bag",
-
-      description: "Elegant handmade leather collection",
-
-      price: "180,000",
-
-      image: "../assets/mamba/demo/bag.png",
-    },
-
-    {
-      name: "Luxury Watch",
-
-      description: "Premium stainless steel design",
-
-      price: "350,000",
-
-      image: "../assets/mamba/demo/watch.png",
-    },
-
-    {
-      name: "Original Sneakers",
-
-      description: "Comfortable premium footwear",
-
-      price: "220,000",
-
-      image: "../assets/mamba/demo/shoes.png",
-    },
-
-    {
-      name: "Wireless Headphones",
-
-      description: "High quality sound experience",
-
-      price: "150,000",
-
-      image: "../assets/mamba/demo/headphones.png",
-    },
-
-    {
-      name: "Smart Device",
-
-      description: "Modern technology collection",
-
-      price: "500,000",
-
-      image: "../assets/mamba/demo/device.png",
-    },
-  ];
-});
-/* =========================================================
-   NGOXI MAMBA JS
-========================================================= */
-
-document.addEventListener("DOMContentLoaded", () => {
-  // Intro animation
-  const intro = document.getElementById("mambaIntro");
-
-  if (intro) {
-    setTimeout(() => {
-      intro.remove();
-    }, 1800);
   }
 
-  // Category switching
+  /* =====================================================
+     ELEMENTS
+  ===================================================== */
+
+  const grid = document.getElementById("mambaProductGrid");
+
+  const searchInput = document.querySelector(".mamba-search input");
+
   const categories = document.querySelectorAll(".mamba-category .category");
 
-  categories.forEach((category) => {
-    category.addEventListener("click", () => {
-      categories.forEach((item) => {
-        item.classList.remove("active");
+  /* =====================================================
+     DATA
+  ===================================================== */
+
+  let allProducts = [];
+
+  let activeFilter = "recommended";
+
+  let searchTerm = "";
+
+  /* =====================================================
+     LOAD REAL MAMBA PRODUCTS
+  ===================================================== */
+
+  async function loadMambaProducts() {
+    if (!grid) return;
+
+    grid.innerHTML = `
+      <div class="mamba-loading">
+        Curating Mamba collection...
+      </div>
+    `;
+
+    try {
+      const response = await fetch("/api/products?mode=mamba");
+
+      if (!response.ok) {
+        throw new Error(`Mamba request failed: ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      allProducts = Array.isArray(data) ? data : data.products || [];
+
+      refreshProducts();
+    } catch (error) {
+      console.error("Mamba products failed:", error);
+
+      grid.innerHTML = `
+        <div class="mamba-empty">
+          Mamba collection unavailable right now.
+        </div>
+      `;
+    }
+  }
+
+  /* =====================================================
+     FILTER PRODUCTS
+  ===================================================== */
+
+  function getVisibleProducts() {
+    let products = [...allProducts];
+
+    /* SEARCH */
+
+    if (searchTerm) {
+      products = products.filter((product) => {
+        const searchText = `
+            ${product.name || ""}
+            ${product.description || ""}
+            ${product.category || ""}
+            ${product.brand || ""}
+          `.toLowerCase();
+
+        return searchText.includes(searchTerm);
       });
+    }
 
-      category.classList.add("active");
+    /* FILTER */
 
-      console.log("Mamba category:", category.dataset.filter);
-    });
-  });
+    switch (activeFilter) {
+      case "new":
+        products.sort(
+          (a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0),
+        );
 
-  // Temporary products
-  const mambaProducts = [
-    {
-      name: "Premium Leather Bag",
-      description: "Elegant handmade leather collection",
-      price: "180,000",
-      image: "../assets/mamba/demo/bag.jpg",
-    },
+        break;
 
-    {
-      name: "Luxury Watch",
-      description: "Premium stainless steel design",
-      price: "350,000",
-      image: "../assets/mamba/demo/watch.jpg",
-    },
+      case "top":
+        products.sort((a, b) => Number(b.rating || 0) - Number(a.rating || 0));
 
-    {
-      name: "Original Sneakers",
-      description: "Comfortable premium footwear",
-      price: "220,000",
-      image: "../assets/mamba/demo/shoes.jpg",
-    },
+        break;
 
-    {
-      name: "Wireless Headphones",
-      description: "High quality sound experience",
-      price: "150,000",
-      image: "../assets/mamba/demo/headphones.jpg",
-    },
+      case "best-selling":
+        products.sort(
+          (a, b) =>
+            Number(b.sales || b.sold || 0) - Number(a.sales || a.sold || 0),
+        );
 
-    {
-      name: "Smart Device",
-      description: "Modern technology collection",
-      price: "500,000",
-      image: "../assets/mamba/demo/device.jpg",
-    },
-  ];
+        break;
 
-  // Create card
-  function createMambaCard(product) {
+      case "limited":
+        products = products.filter(
+          (product) =>
+            product.limited === true ||
+            product.isLimited === true ||
+            product.stock <= 10,
+        );
+
+        break;
+
+      case "stores":
+        /*
+          Until the backend has a proper
+          Top Stores endpoint, leave the
+          Mamba product collection intact.
+        */
+
+        break;
+
+      case "recommended":
+      default:
+        break;
+    }
+
+    return products;
+  }
+
+  /* =====================================================
+     ESCAPE HTML
+  ===================================================== */
+
+  function escapeHTML(value) {
+    return String(value || "").replace(
+      /[&<>"']/g,
+      (character) =>
+        ({
+          "&": "&amp;",
+          "<": "&lt;",
+          ">": "&gt;",
+          '"': "&quot;",
+          "'": "&#039;",
+        })[character],
+    );
+  }
+
+  /* =====================================================
+     GET PRODUCT IMAGE
+  ===================================================== */
+
+  function getProductImage(product) {
+    return (
+      product.cover?.url ||
+      product.cover ||
+      product.image?.url ||
+      product.image ||
+      product.images?.[0]?.url ||
+      product.images?.[0] ||
+      product.gallery?.[0]?.url ||
+      ""
+    );
+  }
+
+  /* =====================================================
+     GET PRODUCT LABEL
+  ===================================================== */
+
+  function getMambaLabel(product) {
+    if (product.limited === true || product.isLimited === true) {
+      return "LIMITED";
+    }
+
+    const createdAt = new Date(product.createdAt || 0);
+
+    const age = Date.now() - createdAt.getTime();
+
+    const fiveDays = 5 * 24 * 60 * 60 * 1000;
+
+    if (createdAt.getTime() && age <= fiveDays) {
+      return "NEW";
+    }
+
+    if (Number(product.rating || 0) >= 4.7) {
+      return "ELITE";
+    }
+
+    return "CERTIFIED";
+  }
+
+  /* =====================================================
+     CREATE CARD
+  ===================================================== */
+
+  function createMambaCard(product, index) {
+    const image = getProductImage(product);
+
+    const label = getMambaLabel(product);
+
+    const name = escapeHTML(product.name || "Mamba Product");
+
+    const description = escapeHTML(
+      product.description || "Selected for the Mamba collection.",
+    );
+
+    const brand = escapeHTML(
+      product.brand || product.seller?.storeName || "MAMBA SELECT",
+    );
+
+    const price = Number(product.price || 0).toLocaleString();
+
+    const id = product._id || product.id || "";
+
     return `
 
-        <article class="mamba-card">
+      <article
+        class="mamba-card"
+        data-id="${id}"
+        style="animation-delay:${index * 55}ms"
+      >
 
-            <div class="product-image">
+        <div class="product-image">
 
-                <img 
-                src="${product.image}"
-                alt="${product.name}"
+          <span class="mamba-certified">
+            ${label}
+          </span>
+
+          <button
+            class="product-favorite"
+            type="button"
+            aria-label="Save product"
+          >
+            ♡
+          </button>
+
+          ${
+            image
+              ? `
+                <img
+                  src="${image}"
+                  alt="${name}"
+                  loading="lazy"
                 >
-
-            </div>
-
-
-            <div class="card-info">
-
-                <h3>
-                ${product.name}
-                </h3>
-
-
-                <p>
-                ${product.description}
-                </p>
-
-
-                <div class="price-area">
-
-                    <strong>
-                    TSh ${product.price}
-                    </strong>
-
+              `
+              : `
+                <div class="mamba-no-image">
+                  M
                 </div>
+              `
+          }
 
-            </div>
+        </div>
 
-        </article>
 
-        `;
+        <div class="card-info">
+
+          <div class="mamba-brand-line">
+            ${brand}
+          </div>
+
+          <h3>
+            ${name}
+          </h3>
+
+          <p>
+            ${description}
+          </p>
+
+
+          <div class="mamba-authentic">
+
+            <span class="auth-check">
+              ✓
+            </span>
+
+            <span>
+              Authenticity guaranteed
+            </span>
+
+          </div>
+
+
+          <div class="mamba-price-row">
+
+            <strong>
+              TSh ${price}
+            </strong>
+
+            <span class="product-arrow">
+              →
+            </span>
+
+          </div>
+
+        </div>
+
+      </article>
+
+    `;
   }
 
-  // Render cards
-  const productGrid = document.getElementById("mambaProductGrid");
+  /* =====================================================
+     RENDER
+  ===================================================== */
 
-  if (productGrid) {
-    productGrid.innerHTML = mambaProducts
-      .map((product) => createMambaCard(product))
+  function refreshProducts() {
+    if (!grid) return;
+
+    const products = getVisibleProducts();
+
+    if (!products.length) {
+      grid.innerHTML = `
+        <div class="mamba-empty">
+
+          <div class="empty-mark">
+            M
+          </div>
+
+          <strong>
+            Nothing here yet.
+          </strong>
+
+          <span>
+            Mamba products matching this selection will appear here.
+          </span>
+
+        </div>
+      `;
+
+      return;
+    }
+
+    grid.innerHTML = products
+      .map((product, index) => createMambaCard(product, index))
       .join("");
+
+    bindCardEvents();
   }
-});
-function openProduct(id) {
-  window.location.href = `/product.html?id=${id}`;
-}
-<div class="product-card" onclick="openProduct('${product._id}')"></div>;
-document.getElementById("backBtn")?.addEventListener("click", () => {
-  if (history.length > 1) {
-    history.back();
-  } else {
-    location.href = "/views/home.html";
+
+  /* =====================================================
+     CARD EVENTS
+  ===================================================== */
+
+  function bindCardEvents() {
+    document.querySelectorAll(".mamba-card").forEach((card) => {
+      card.addEventListener("click", () => {
+        const id = card.dataset.id;
+
+        if (!id) return;
+
+        window.location.href = `/product.html?id=${encodeURIComponent(id)}`;
+      });
+
+      const favorite = card.querySelector(".product-favorite");
+
+      if (favorite) {
+        favorite.addEventListener("click", (event) => {
+          event.stopPropagation();
+
+          favorite.classList.toggle("active");
+
+          favorite.textContent = favorite.classList.contains("active")
+            ? "♥"
+            : "♡";
+        });
+      }
+    });
   }
+
+  /* =====================================================
+     SEARCH
+  ===================================================== */
+
+  if (searchInput) {
+    searchInput.addEventListener("input", () => {
+      searchTerm = searchInput.value.trim().toLowerCase();
+
+      refreshProducts();
+    });
+  }
+
+  /* =====================================================
+     CATEGORY SWITCH
+  ===================================================== */
+
+  categories.forEach((category) => {
+    category.addEventListener("click", () => {
+      categories.forEach((item) => item.classList.remove("active"));
+
+      category.classList.add("active");
+
+      activeFilter = category.dataset.filter || "recommended";
+
+      refreshProducts();
+    });
+  });
+
+  /* =====================================================
+     BRAND FILTER
+  ===================================================== */
+
+  document.querySelectorAll(".brand-item").forEach((brandItem) => {
+    brandItem.addEventListener("click", () => {
+      const brand = brandItem
+        .querySelector("span")
+        ?.textContent?.trim()
+        ?.toLowerCase();
+
+      if (!brand) return;
+
+      searchTerm = brand;
+
+      if (searchInput) {
+        searchInput.value =
+          brandItem.querySelector("span")?.textContent?.trim() || "";
+      }
+
+      refreshProducts();
+    });
+  });
+
+  /* =====================================================
+     START
+  ===================================================== */
+
+  loadMambaProducts();
 });
