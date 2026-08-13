@@ -215,3 +215,10 @@ function openProduct(id) {
   window.location.href = `/product.html?id=${id}`;
 }
 <div class="product-card" onclick="openProduct('${product._id}')"></div>;
+document.getElementById("backBtn")?.addEventListener("click", () => {
+  if (history.length > 1) {
+    history.back();
+  } else {
+    location.href = "/views/home.html";
+  }
+});

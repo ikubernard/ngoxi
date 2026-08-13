@@ -91,6 +91,44 @@ body {
   color: #666;
 }
 
+.back-btn {
+  width: 46px;
+
+  height: 46px;
+
+  border: none;
+
+  border-radius: 50%;
+
+  background: #fff;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  cursor: pointer;
+
+  margin-right: 12px;
+
+  transition: 0.25s;
+
+  box-shadow: 0 5px 16px rgba(0, 0, 0, 0.08);
+}
+
+.back-btn:hover {
+  transform: translateX(-2px);
+
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.12);
+}
+
+.back-btn svg {
+  width: 22px;
+
+  height: 22px;
+}
+
 /* =========================
    PAGE
 ========================= */

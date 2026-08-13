@@ -112,3 +112,10 @@ No trendy products yet
 
   loadProducts();
 });
+document.getElementById("backBtn")?.addEventListener("click", () => {
+  if (history.length > 1) {
+    history.back();
+  } else {
+    location.href = "/views/home.html";
+  }
+});

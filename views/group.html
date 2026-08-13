@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>NgoXi Group</title>
+
+    <link rel="stylesheet" href="/assets/group/group.css">
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"
+        rel="stylesheet">
+
+    <link href="https://fonts.googleapis.com/css2?family=Anton&display=swap" rel="stylesheet">
+
+</head>
+
+<body>
+
+    <!-- ================= HEADER ================= -->
+
+    <header class="group-header">
+        <button id="backBtn" class="back-btn">
+
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+
+                <path d="M15 18l-6-6 6-6" />
+
+            </svg>
+
+        </button>
+        <div class="logo-text">
+            <span class="logo-ngo">Ngo</span><span class="logo-x">X</span><span class="logo-i">i</span>
+
+            <span class="group-pill">
+                <i data-lucide="users-round"></i>
+                Group
+            </span>
+        </div>
+
+
+        <div class="group-search">
+
+            <i data-lucide="search"></i>
+
+            <input id="groupSearch" type="text" placeholder="Tafuta group deals...">
+
+        </div>
+
+
+        <div class="group-actions">
+
+            <button>
+
+                <i data-lucide="heart"></i>
+
+                <span>Wishlist</span>
+
+            </button>
+
+            <button>
+
+                <i data-lucide="shopping-cart"></i>
+
+                <span>Cart</span>
+
+            </button>
+
+        </div>
+
+    </header>
+
+
+
+
+
+    <!-- ================= HERO ================= -->
+
+    <section class="hero-wrapper">
+
+        <button id="heroPrev" class="hero-arrow left">
+
+            <i data-lucide="chevron-left"></i>
+
+        </button>
+
+
+        <div class="hero-window">
+
+            <div id="heroTrack" class="hero-track">
+
+
+                <!-- SLIDE 1 -->
+
+                <div class="hero-slide slide1">
+
+                    <div class="hero-left">
+
+                        <h1>
+
+                            👥 BUY TOGETHER
+
+                        </h1>
+
+                        <h2>
+
+                            Watu wengi,
+
+                            bei inashuka.
+
+                        </h2>
+
+                        <p>
+
+                            Jiunge na group,
+
+                            okoa zaidi.
+
+                        </p>
+
+                    </div>
+
+                    <div class="hero-right">
+
+                        <img src="/assets/group/group-slide1.png" alt="">
+
+                    </div>
+
+                </div>
+
+
+
+                <!-- SLIDE 2 -->
+
+                <div class="hero-slide slide2">
+
+                    <div class="hero-left">
+
+                        <h1>
+
+                            🔥 GROUP DEALS
+
+                        </h1>
+
+                        <h2>
+
+                            Nunua pamoja.
+
+                        </h2>
+
+                        <p>
+
+                            Lipa kidogo,
+
+                            furahia zaidi.
+
+                        </p>
+
+                    </div>
+
+                    <div class="hero-right">
+
+                        <img src="/assets/group/group-slide2.png" alt="">
+
+                    </div>
+
+                </div>
+
+
+
+                <!-- SLIDE 3 -->
+
+                <div class="hero-slide slide3">
+
+                    <div class="hero-left">
+
+                        <h1>
+
+                            💚 SAVE ZAIDI
+
+                        </h1>
+
+                        <h2>
+
+                            Kadri group
+
+                            inavyoongezeka
+
+                        </h2>
+
+                        <p>
+
+                            Ndivyo bei
+
+                            inavyoshuka.
+
+                        </p>
+
+                    </div>
+
+                    <div class="hero-right">
+
+                        <img src="/assets/group/group-slide3.png" alt="">
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <button id="heroNext" class="hero-arrow right">
+
+            <i data-lucide="chevron-right"></i>
+
+        </button>
+
+
+        <div class="hero-dots">
+
+            <button class="hero-dot active" data-slide="0"></button>
+
+            <button class="hero-dot" data-slide="1"></button>
+
+            <button class="hero-dot" data-slide="2"></button>
+
+        </div>
+
+    </section>
+
+
+
+
+
+    <!-- ================= CATEGORIES ================= -->
+
+    <nav class="group-categories">
+
+        <button class="active" data-category="all">
+
+            <i data-lucide="users-round"></i>
+
+            Recommended
+
+        </button>
+
+
+
+        <button data-category="fashion">
+
+            <i data-lucide="shirt"></i>
+
+            Fashion
+
+        </button>
+
+
+
+        <button data-category="electronics">
+
+
+            <i data-lucide="monitor"></i>
+
+            Electronics
+
+        </button>
+
+
+
+        <button data-category="beauty">
+
+            <i data-lucide="sparkles"></i>
+
+            Beauty
+
+        </button>
+
+
+
+        <button data-category="home">
+
+            <i data-lucide="house"></i>
+
+            Home
+
+        </button>
+
+
+
+        <button data-category="shoes">
+
+            <i data-lucide="shopping-bag"></i>
+
+            Shoes
+
+        </button>
+
+    </nav>
+
+
+
+
+
+    <!-- ================= PRODUCTS ================= -->
+
+    <section>
+
+        <div class="section-title">
+
+            👥 Group Deals Za Hivi Sasa
+
+        </div>
+
+        <div id="groupGrid" class="group-grid">
+
+        </div>
+
+    </section>
+
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <script src="/assets/group/group.js"></script>
+
+    <script>
+        lucide.createIcons();
+    </script>
+
+</body>
+
+</html>
