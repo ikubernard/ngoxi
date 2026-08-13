@@ -1,0 +1,322 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+
+  background: #fff8f1;
+
+  font-family: Arial, sans-serif;
+
+  color: #222;
+}
+
+.discount-top {
+  display: flex;
+
+  align-items: center;
+
+  gap: 30px;
+
+  padding: 20px 40px;
+
+  background: white;
+
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+}
+
+.brand {
+  font-size: 28px;
+
+  font-weight: 800;
+}
+
+.brand span {
+  color: #ff6b35;
+}
+
+.search-box {
+  flex: 1;
+}
+
+.search-box input {
+  width: 100%;
+
+  padding: 14px 22px;
+
+  border-radius: 30px;
+
+  border: 1px solid #eee;
+
+  background: #fafafa;
+
+  font-size: 15px;
+
+  outline: none;
+}
+
+.deal-highlight {
+  margin: 25px 40px 15px;
+
+  padding: 18px 25px;
+
+  background: white;
+
+  border-radius: 20px;
+
+  display: flex;
+
+  justify-content: space-between;
+
+  align-items: center;
+
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.05);
+}
+
+.deal-title {
+  font-size: 20px;
+
+  font-weight: 800;
+}
+
+.timer {
+  color: #ff6b35;
+
+  font-weight: 900;
+}
+
+.deal-options {
+  display: flex;
+
+  gap: 15px;
+
+  padding: 0 40px;
+}
+
+.deal-options div:nth-child(1) {
+  background: linear-gradient(135deg, #fff0e6, #ffffff);
+}
+
+.deal-options div:nth-child(2) {
+  background: linear-gradient(135deg, #fff8d9, #ffffff);
+}
+
+.deal-options div:nth-child(3) {
+  background: linear-gradient(135deg, #eafff4, #ffffff);
+}
+
+.categories {
+  display: flex;
+
+  gap: 20px;
+
+  padding: 25px 40px;
+
+  overflow-x: auto;
+}
+
+.categories button {
+  border: none;
+
+  background: none;
+
+  font-size: 16px;
+
+  padding: 8px 15px;
+
+  cursor: pointer;
+}
+
+.categories .active {
+  color: #ff6b35;
+
+  border-bottom: 2px solid #ff6b35;
+}
+
+.discount-grid {
+  padding: 0 40px 40px;
+
+  display: grid;
+
+  grid-template-columns: repeat(5, 1fr);
+
+  gap: 18px;
+}
+
+.discount-card {
+  background: white;
+
+  border-radius: 18px;
+
+  overflow: hidden;
+
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.06);
+
+  cursor: pointer;
+
+  transition: 0.25s;
+}
+
+.discount-card:hover {
+  transform: translateY(-5px);
+}
+
+.discount-image {
+  height: 230px;
+
+  position: relative;
+}
+
+.discount-image img {
+  width: 100%;
+
+  height: 100%;
+
+  object-fit: cover;
+}
+
+.discount-badge {
+  position: absolute;
+
+  top: 12px;
+
+  left: 12px;
+
+  background: #ff6b35;
+
+  color: white;
+
+  padding: 6px 12px;
+
+  border-radius: 15px;
+
+  font-size: 13px;
+
+  font-weight: 800;
+}
+
+.discount-info {
+  padding: 15px;
+}
+
+.product-name {
+  font-weight: 700;
+
+  margin-bottom: 8px;
+}
+
+.old-price {
+  color: #999;
+
+  text-decoration: line-through;
+
+  font-size: 14px;
+}
+
+.new-price {
+  font-size: 20px;
+
+  font-weight: 900;
+
+  color: #ff6b35;
+}
+
+.save {
+  font-size: 13px;
+
+  color: #22a06b;
+
+  margin-top: 5px;
+}
+
+@media (max-width: 900px) {
+  .discount-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .discount-top {
+    padding: 15px;
+  }
+
+  .deal-options {
+    padding: 0 15px;
+
+    overflow-x: auto;
+  }
+}
+.deal-highlight {
+  background: linear-gradient(135deg, #fff, #fff0df);
+
+  animation: dealFloat 3s ease-in-out infinite;
+}
+
+@keyframes dealFloat {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-5px);
+  }
+}
+.deal-options div {
+  transition: 0.3s ease;
+
+  position: relative;
+
+  overflow: hidden;
+}
+
+.deal-options div:hover {
+  transform: translateY(-8px) scale(1.03);
+
+  box-shadow: 0 15px 35px rgba(255, 107, 53, 0.18);
+}
+.discount-badge {
+  animation: badgePulse 1.8s infinite;
+}
+
+@keyframes badgePulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.08);
+  }
+}
+.discount-card {
+  animation: cardEnter 0.45s ease both;
+}
+
+@keyframes cardEnter {
+  from {
+    opacity: 0;
+
+    transform: translateY(25px);
+  }
+
+  to {
+    opacity: 1;
+
+    transform: translateY(0);
+  }
+}
+.deal-message {
+  font-size: 14px;
+
+  color: #ff6b35;
+
+  font-weight: 700;
+
+  animation: messageMove 2s infinite;
+}
+
+@keyframes messageMove {
+  50% {
+    transform: translateX(5px);
+  }
+}
