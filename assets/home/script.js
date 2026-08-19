@@ -53,6 +53,11 @@
     settingsMap: null,
     settingsMarker: null,
     socket: null,
+
+    chats: {
+      activeSellerId: null,
+      conversations: new Map(),
+    },
   };
 
   // Elements
@@ -98,10 +103,7 @@
     chatStatus: $("#chatStatus"),
     chatList: $("#chatList"),
     chatBody: $("#chatBody"),
-    chatInput: $("#chatInput"),
-    chatSend: $("#chatSend"),
-    chatAttach: $("#chatAttach"),
-    chatFile: $("#chatFile"),
+
     // Packages pills & containers
     pkgPills: $$(".pills .pill[data-pkg]"),
     pkgProgress: $("#pkgProgress"),
@@ -1043,43 +1045,9 @@
     state.socket.on("connect_error", () => setStatus("offline"));
 
     // Example events; adjust to your server events:
-    state.socket.on("message", (msg) =>
-      pushChat("them", msg.text || JSON.stringify(msg)),
-    );
     state.socket.on("system", (msg) =>
       pushChat("system", msg.text || JSON.stringify(msg)),
     );
-
-    if (els.chatSend) {
-      els.chatSend.addEventListener("click", sendChat);
-      els.chatInput.addEventListener("keydown", (e) => {
-        if (e.key === "Enter") sendChat();
-      });
-    }
-    if (els.chatAttach && els.chatFile) {
-      els.chatAttach.addEventListener("click", () => els.chatFile.click());
-      els.chatFile.addEventListener("change", sendChatImage);
-    }
-    // Default support chat
-
-    if (els.chatList) {
-      const btn = document.createElement("button");
-      btn.className = "chat-tab";
-      btn.innerHTML = `
-      <div class="chat-avatar">💬</div>
-      <div>
-      <div class="chat-title">NgoXi Support</div>
-      <div class="chat-last">Ask anything here</div>
-      </div>`;
-      btn.onclick = () => {
-        $("#chatWith").textContent = "NgoXi Support";
-        els.chatBody.innerHTML =
-          '<div class="chat-row system">Welcome to NgoXi Support 👋</div>';
-      };
-      els.chatList.appendChild(btn);
-    }
-    pushChat("system", "Welcome to NgoXi Support 👋");
-    pushChat("them", "How can we help you today?");
   }
 
   function pushChat(who, text) {
@@ -1091,39 +1059,6 @@
     els.chatBody.scrollTop = els.chatBody.scrollHeight;
   }
 
-  function sendChat() {
-    const text = els.chatInput.value.trim();
-    if (!text) return;
-    state.socket?.emit("message", { text });
-    pushChat("me", text);
-    els.chatInput.value = "";
-  }
-
-  async function sendChatImage() {
-    const file = els.chatFile.files?.[0];
-    if (!file) return;
-    try {
-      const fd = new FormData();
-      fd.append("file", file);
-      const up = await fetch(`${API_BASE}/api/upload/image`, {
-        method: "POST",
-        body: fd,
-        credentials: "include",
-      });
-      const js = await up.json();
-      const url = js.url || js.secure_url;
-      if (url) {
-        state.socket?.emit("message", { image: url });
-        pushChat("me", "[image] " + url);
-      } else {
-        toast("Upload failed");
-      }
-    } catch {
-      toast("Upload failed");
-    } finally {
-      els.chatFile.value = "";
-    }
-  }
   function loadDeals(products = []) {
     const grid = document.getElementById("dealsGrid");
     if (!grid) return;
@@ -1230,6 +1165,2066 @@
       });
     });
   }
+  const chatOptionsBtn = document.getElementById("chatOptionsBtn");
+
+  const chatOptionsMenu = document.getElementById("chatOptionsMenu");
+
+  const toggleTransactionCard = document.getElementById(
+    "toggleTransactionCard",
+  );
+
+  const transactionCenter = document.getElementById("transactionCenter");
+
+  function closeChatOptions() {
+    chatOptionsMenu?.classList.remove("open");
+
+    chatOptionsBtn?.setAttribute("aria-expanded", "false");
+  }
+
+  chatOptionsBtn?.addEventListener("click", (event) => {
+    event.stopPropagation();
+
+    const open = chatOptionsMenu?.classList.toggle("open");
+
+    chatOptionsBtn.setAttribute("aria-expanded", String(Boolean(open)));
+  });
+
+  chatOptionsMenu?.addEventListener("click", (event) => {
+    event.stopPropagation();
+  });
+
+  toggleTransactionCard?.addEventListener("click", () => {
+    if (!transactionCenter) return;
+
+    const hidden = transactionCenter.classList.toggle("user-hidden");
+
+    toggleTransactionCard.textContent = hidden
+      ? "Show transaction card"
+      : "Hide transaction card";
+
+    closeChatOptions();
+  });
+
+  document.addEventListener("click", closeChatOptions);
+  function initMessageFilterOverflow() {
+    const button = document.getElementById("ngxFilterMoreBtn");
+
+    const menu = document.getElementById("ngxFilterMoreMenu");
+
+    if (!button || !menu) return;
+
+    button.addEventListener("click", (event) => {
+      event.stopPropagation();
+
+      menu.classList.toggle("open");
+    });
+
+    menu.addEventListener("click", (event) => {
+      const target = event.target.closest("[data-filter-proxy]");
+
+      if (!target) return;
+
+      const type = target.dataset.filterProxy;
+
+      const realButton = document.getElementById(
+        type === "orders" ? "ngxFilterOrders" : "ngxFilterFavorites",
+      );
+
+      realButton?.click();
+
+      menu.classList.remove("open");
+    });
+
+    document.addEventListener("click", () => {
+      menu.classList.remove("open");
+    });
+  }
+
+  function formatChatTime(value) {
+    const date = value instanceof Date ? value : new Date(value);
+
+    if (Number.isNaN(date.getTime())) {
+      return "";
+    }
+
+    return date.toLocaleTimeString("en-GB", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    });
+  }
+
+  // =========================================================
+  // NGOXI SELLER CONVERSATIONS V1
+  // =========================================================
+
+  function normalizeSellerId(seller) {
+    return String(seller?.id || seller?._id || seller?.sellerId || "");
+  }
+
+  function getOrCreateConversation(seller) {
+    const sellerId = normalizeSellerId(seller);
+
+    if (!sellerId) {
+      console.warn("Cannot create conversation without seller ID", seller);
+
+      return null;
+    }
+
+    let conversation = state.chats.conversations.get(sellerId);
+
+    if (!conversation) {
+      conversation = {
+        sellerId,
+
+        seller: {
+          id: sellerId,
+
+          name:
+            seller?.storeName || seller?.name || seller?.shopName || "Seller",
+
+          avatar:
+            seller?.avatar ||
+            seller?.profileImage ||
+            seller?.profilePicture ||
+            "/assets/default-avatar.png",
+
+          online: false,
+        },
+
+        messages: [],
+        orders: [],
+
+        unread: 0,
+        lastMessageAt: null,
+      };
+
+      state.chats.conversations.set(sellerId, conversation);
+    }
+
+    return conversation;
+  }
+
+  function getActiveConversation() {
+    const sellerId = state.chats.activeSellerId;
+
+    if (!sellerId) {
+      return null;
+    }
+
+    return state.chats.conversations.get(sellerId) || null;
+  }
+
+  function renderActiveSellerHeader(seller) {
+    const header = document.querySelector("#view-messages .ngx-seller");
+
+    if (!header || !seller) {
+      return;
+    }
+
+    const image = header.querySelector("img");
+
+    const name = header.querySelector("h3");
+
+    const status = header.querySelector("span");
+
+    if (image) {
+      image.src = seller.avatar || "/assets/default-avatar.png";
+    }
+
+    if (name) {
+      name.textContent = seller.name || "Seller";
+    }
+
+    if (status) {
+      status.textContent = seller.online ? "Online" : "Offline";
+    }
+  }
+
+  function openSellerConversation(sellerId) {
+    sellerId = String(sellerId);
+
+    const conversation = state.chats.conversations.get(sellerId);
+
+    if (!conversation) {
+      console.warn("Conversation not found:", sellerId);
+
+      return;
+    }
+
+    state.chats.activeSellerId = sellerId;
+
+    conversation.unread = 0;
+
+    renderActiveSellerHeader(conversation.seller);
+
+    renderActiveConversationMessages();
+
+    transactionCenterAPI?.setOrders(conversation.orders);
+  }
+
+  function openMessagesView() {
+    els.navBtns.forEach((button) => {
+      button.classList.toggle("active", button.dataset.view === "messages");
+    });
+
+    Object.entries(els.views).forEach(([key, view]) => {
+      view?.classList.toggle("active", key === "messages");
+    });
+  }
+
+  function normalizeTransactionOrder(order) {
+    return {
+      ...order,
+
+      id: order.id || order._id,
+
+      product:
+        order.product || order.productName || order.product?.name || "Product",
+
+      image:
+        order.image ||
+        order.productImage ||
+        order.product?.image ||
+        "/assets/default-product.png",
+
+      variant: order.variant || order.variantName || "Default",
+
+      price: Number(order.price || order.total || 0),
+
+      payment: {
+        status: order.payment?.status || "waiting",
+
+        receiptId: order.payment?.receiptId || null,
+
+        receiptName: order.payment?.receiptName || null,
+
+        receiptUrl: order.payment?.receiptUrl || null,
+
+        uploadedAt: order.payment?.uploadedAt || null,
+      },
+
+      paymentMethods: order.paymentMethods || [],
+
+      orderStatus: order.orderStatus || "placed",
+    };
+  }
+  function consumeChatHandoff() {
+    const raw = sessionStorage.getItem("ngx_open_chat");
+
+    if (!raw) {
+      return;
+    }
+
+    try {
+      const data = JSON.parse(raw);
+
+      if (!data?.seller || !data?.order) {
+        console.warn("Invalid NgoXi chat handoff", data);
+
+        return;
+      }
+
+      const conversation = getOrCreateConversation(data.seller);
+
+      if (!conversation) {
+        return;
+      }
+
+      const incomingOrderId = String(data.order.id || data.order._id || "");
+
+      const exists = conversation.orders.some(
+        (order) => String(order.id || order._id || "") === incomingOrderId,
+      );
+
+      if (!exists) {
+        conversation.orders.push(normalizeTransactionOrder(data.order));
+      }
+
+      openMessagesView();
+
+      openSellerConversation(conversation.sellerId);
+    } catch (error) {
+      console.error("Failed to consume chat handoff", error);
+    } finally {
+      sessionStorage.removeItem("ngx_open_chat");
+    }
+  }
+  // =========================================================
+  // NGOXI CHAT COMPOSER V1
+  // =========================================================
+
+  function initChatComposer() {
+    const composer = document.querySelector(
+      "#view-messages .ngx-message-input",
+    );
+
+    const input = document.getElementById("chatMessageInput");
+
+    const sendBtn = document.getElementById("chatSendBtn");
+
+    const attachBtn = document.getElementById("chatAttachBtn");
+
+    const cameraBtn = document.getElementById("chatCameraBtn");
+
+    const emojiBtn = document.getElementById("chatEmojiBtn");
+
+    const chatBody = document.getElementById("chatBody");
+
+    if (
+      !composer ||
+      !input ||
+      !sendBtn ||
+      !attachBtn ||
+      !cameraBtn ||
+      !emojiBtn ||
+      !chatBody
+    ) {
+      console.warn("NgoXi Chat Composer elements missing");
+
+      return;
+    }
+
+    // -----------------------------------------
+    // STATE
+    // -----------------------------------------
+
+    let selectedFile = null;
+    let selectedFileURL = null;
+    let sending = false;
+
+    // -----------------------------------------
+    // HIDDEN FILE INPUTS
+    // -----------------------------------------
+
+    const attachmentInput = document.createElement("input");
+
+    attachmentInput.type = "file";
+    attachmentInput.hidden = true;
+
+    attachmentInput.accept = "image/*";
+
+    const cameraInput = document.createElement("input");
+
+    cameraInput.type = "file";
+    cameraInput.hidden = true;
+
+    cameraInput.accept = "image/*";
+
+    cameraInput.setAttribute("capture", "environment");
+
+    document.body.appendChild(attachmentInput);
+
+    document.body.appendChild(cameraInput);
+
+    // -----------------------------------------
+    // ATTACHMENT PREVIEW
+    // -----------------------------------------
+
+    const preview = document.createElement("div");
+
+    preview.className = "ngx-attachment-preview";
+
+    preview.hidden = true;
+
+    preview.innerHTML = `
+    <div class="ngx-attachment-preview-content">
+
+      <div
+        class="ngx-attachment-thumb"
+        id="ngxAttachmentThumb"
+      ></div>
+
+      <div class="ngx-attachment-meta">
+
+        <strong
+          id="ngxAttachmentName"
+        ></strong>
+
+        <span
+          id="ngxAttachmentSize"
+        ></span>
+
+      </div>
+
+      <button
+        id="ngxAttachmentRemove"
+        type="button"
+        aria-label="Remove attachment"
+      >
+        <i data-lucide="x"></i>
+      </button>
+
+    </div>
+  `;
+
+    composer.parentElement.insertBefore(preview, composer);
+
+    const attachmentThumb = preview.querySelector("#ngxAttachmentThumb");
+
+    const attachmentName = preview.querySelector("#ngxAttachmentName");
+
+    const attachmentSize = preview.querySelector("#ngxAttachmentSize");
+
+    const attachmentRemove = preview.querySelector("#ngxAttachmentRemove");
+
+    // -----------------------------------------
+    // EMOJI PICKER
+    // -----------------------------------------
+
+    const emojiPicker = document.createElement("div");
+
+    emojiPicker.className = "ngx-emoji-picker";
+
+    emojiPicker.hidden = true;
+
+    const emojiGroups = [
+      {
+        icon: "😀",
+        emojis: [
+          "😀",
+          "😃",
+          "😄",
+          "😁",
+          "😂",
+          "🤣",
+          "🥹",
+          "😊",
+          "😍",
+          "🥰",
+          "😘",
+          "😎",
+          "🤔",
+          "😐",
+          "🙄",
+          "😴",
+          "😭",
+          "😡",
+          "🤯",
+          "💀",
+        ],
+      },
+
+      {
+        icon: "👍",
+        emojis: [
+          "👍",
+          "👎",
+          "👌",
+          "✌️",
+          "🤞",
+          "🤝",
+          "👏",
+          "🙌",
+          "🙏",
+          "💪",
+          "👀",
+          "🫡",
+          "👊",
+          "✋",
+          "🤌",
+          "💯",
+        ],
+      },
+
+      {
+        icon: "❤️",
+        emojis: [
+          "❤️",
+          "🧡",
+          "💛",
+          "💚",
+          "💙",
+          "💜",
+          "🖤",
+          "🤍",
+          "💔",
+          "💕",
+          "💞",
+          "💓",
+          "🔥",
+          "✨",
+          "⭐",
+          "🎉",
+        ],
+      },
+
+      {
+        icon: "⚽",
+        emojis: [
+          "⚽",
+          "🏀",
+          "🏈",
+          "🎮",
+          "🎧",
+          "🎵",
+          "🍔",
+          "🍕",
+          "🍗",
+          "☕",
+          "🚗",
+          "🏍️",
+          "✈️",
+          "📱",
+          "💻",
+          "💡",
+        ],
+      },
+    ];
+
+    let activeEmojiGroup = 0;
+
+    emojiPicker.innerHTML = `
+    <div
+      class="ngx-emoji-grid"
+      id="ngxEmojiGrid"
+    ></div>
+
+    <div
+      class="ngx-emoji-tabs"
+      id="ngxEmojiTabs"
+    ></div>
+  `;
+
+    composer.appendChild(emojiPicker);
+
+    const emojiGrid = emojiPicker.querySelector("#ngxEmojiGrid");
+
+    const emojiTabs = emojiPicker.querySelector("#ngxEmojiTabs");
+
+    function renderEmojiPicker() {
+      const group = emojiGroups[activeEmojiGroup];
+
+      emojiGrid.innerHTML = group.emojis
+        .map(
+          (emoji) => `
+            <button
+              type="button"
+              class="ngx-emoji-item"
+              data-emoji="${emoji}"
+            >
+              ${emoji}
+            </button>
+          `,
+        )
+        .join("");
+
+      emojiTabs.innerHTML = emojiGroups
+        .map(
+          (groupItem, index) => `
+            <button
+              type="button"
+              class="${index === activeEmojiGroup ? "active" : ""}"
+              data-emoji-group="${index}"
+            >
+              ${groupItem.icon}
+            </button>
+          `,
+        )
+        .join("");
+    }
+
+    renderEmojiPicker();
+
+    // -----------------------------------------
+    // HELPERS
+    // -----------------------------------------
+
+    function humanFileSize(bytes) {
+      if (!bytes) return "0 KB";
+
+      const units = ["B", "KB", "MB", "GB"];
+
+      const index = Math.min(
+        Math.floor(Math.log(bytes) / Math.log(1024)),
+        units.length - 1,
+      );
+
+      const amount = bytes / Math.pow(1024, index);
+
+      return `${amount.toFixed(index === 0 ? 0 : 1)} ${units[index]}`;
+    }
+
+    function clearSelectedFile() {
+      if (selectedFileURL) {
+        URL.revokeObjectURL(selectedFileURL);
+      }
+
+      selectedFile = null;
+      selectedFileURL = null;
+
+      attachmentInput.value = "";
+      cameraInput.value = "";
+
+      preview.hidden = true;
+
+      attachmentThumb.innerHTML = "";
+      attachmentName.textContent = "";
+      attachmentSize.textContent = "";
+
+      updateSendState();
+    }
+
+    function setSelectedFile(file) {
+      clearSelectedFile();
+
+      if (!file) return;
+
+      selectedFile = file;
+
+      attachmentName.textContent = file.name;
+
+      attachmentSize.textContent = humanFileSize(file.size);
+
+      preview.hidden = false;
+
+      if (file.type.startsWith("image/")) {
+        selectedFileURL = URL.createObjectURL(file);
+
+        attachmentThumb.innerHTML = `
+        <img
+          src="${selectedFileURL}"
+          alt=""
+        >
+      `;
+      } else {
+        attachmentThumb.innerHTML = `
+        <i data-lucide="file"></i>
+      `;
+      }
+
+      if (window.lucide) {
+        lucide.createIcons();
+      }
+
+      updateSendState();
+
+      input.focus();
+    }
+
+    function hasContent() {
+      return Boolean(input.value.trim() || selectedFile);
+    }
+
+    function updateSendState() {
+      const active = hasContent() && !sending;
+
+      sendBtn.disabled = !active;
+
+      sendBtn.classList.toggle("ready", active);
+    }
+
+    function insertEmojiAtCursor(emoji) {
+      const start = input.selectionStart ?? input.value.length;
+
+      const end = input.selectionEnd ?? input.value.length;
+
+      const before = input.value.slice(0, start);
+
+      const after = input.value.slice(end);
+
+      input.value = before + emoji + after;
+
+      const cursor = start + emoji.length;
+
+      input.focus();
+
+      input.setSelectionRange(cursor, cursor);
+
+      updateSendState();
+    }
+
+    function scrollChatToBottom() {
+      requestAnimationFrame(() => {
+        chatBody.scrollTop = chatBody.scrollHeight;
+      });
+    }
+
+    // -----------------------------------------
+    // MESSAGE RENDERING
+    // -----------------------------------------
+
+    function renderOutgoingMessage({
+      text = "",
+      image = null,
+      file = null,
+      fileName = "",
+      time = new Date(),
+      status = "sent",
+    }) {
+      const bubble = document.createElement("div");
+
+      bubble.className = "ngx-message buyer ngx-message-v1";
+
+      let contentHTML = "";
+
+      if (image) {
+        contentHTML += `
+        <img
+          class="ngx-chat-image"
+          src="${escapeHTML(image)}"
+          alt="Attachment"
+        >
+      `;
+      }
+
+      if (file && !image) {
+        contentHTML += `
+        <a
+          class="ngx-chat-file"
+          href="${escapeHTML(file)}"
+          target="_blank"
+          rel="noopener"
+        >
+          <i data-lucide="file-text"></i>
+
+          <span>
+            ${escapeHTML(fileName || "Attachment")}
+          </span>
+        </a>
+      `;
+      }
+
+      if (text) {
+        contentHTML += `<div class="ngx-message-text">${escapeHTML(text)}</div>`;
+      }
+      const tick = getMessageTick(status);
+
+      bubble.innerHTML = `
+      ${contentHTML}
+
+      <div
+        class="ngx-message-meta"
+      >
+
+        <span>
+          ${formatChatTime(time)}
+        </span>
+
+       <i
+         data-lucide="${tick.icon}"
+         class="${tick.className}"
+       ></i>
+
+      </div>
+    `;
+
+      chatBody.appendChild(bubble);
+
+      if (window.lucide) {
+        lucide.createIcons();
+      }
+
+      scrollChatToBottom();
+
+      return bubble;
+    }
+
+    function renderIncomingMessage(payload) {
+      const bubble = document.createElement("div");
+
+      bubble.className = "ngx-message seller ngx-message-v1";
+
+      const text = payload?.text || "";
+
+      bubble.innerHTML = `
+  <div class="ngx-message-text">${escapeHTML(text)}</div>
+  <div class="ngx-message-meta">${formatChatTime(
+    payload?.createdAt || new Date(),
+  )}</div>
+`;
+
+      chatBody.appendChild(bubble);
+
+      scrollChatToBottom();
+    }
+
+    // -----------------------------------------
+    // FILE UPLOAD
+    // -----------------------------------------
+    async function uploadChatImage(file) {
+      if (!file) {
+        throw new Error("No image selected");
+      }
+
+      if (!file.type.startsWith("image/")) {
+        throw new Error("Only images are supported right now");
+      }
+
+      const form = new FormData();
+
+      form.append("file", file);
+
+      const response = await fetch(`${API_BASE}/api/upload/image`, {
+        method: "POST",
+        body: form,
+        credentials: "include",
+      });
+
+      if (!response.ok) {
+        const responseText = await response.text();
+
+        console.error(
+          "Chat image upload failed:",
+          response.status,
+          responseText,
+        );
+
+        throw new Error(`Upload failed: ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      const url = data.url || data.secure_url || data.imageUrl;
+
+      if (!url) {
+        console.error("Unexpected upload response:", data);
+
+        throw new Error("No image URL returned");
+      }
+
+      return url;
+    }
+
+    // -----------------------------------------
+    // SEND
+    // -----------------------------------------
+
+    async function sendMessage() {
+      if (sending || !hasContent()) {
+        return;
+      }
+
+      const text = input.value.trim();
+
+      const file = selectedFile;
+
+      sending = true;
+      updateSendState();
+
+      try {
+        let uploadedURL = null;
+
+        if (file) {
+          uploadedURL = await uploadChatImage(file);
+        }
+
+        const payload = {
+          text,
+          createdAt: new Date().toISOString(),
+        };
+
+        if (uploadedURL) {
+          payload.image = uploadedURL;
+        }
+
+        state.socket?.emit("message", payload);
+
+        renderOutgoingMessage({
+          text,
+          image: uploadedURL,
+          time: payload.createdAt,
+          status: "sent",
+        });
+
+        input.value = "";
+
+        clearSelectedFile();
+
+        emojiPicker.hidden = true;
+      } catch (error) {
+        console.error("Chat send failed", error);
+
+        toast("Message could not be sent");
+      } finally {
+        sending = false;
+
+        updateSendState();
+
+        input.focus();
+      }
+    }
+    function openChatImageViewer(src) {
+      let viewer = document.getElementById("ngxChatImageViewer");
+
+      if (!viewer) {
+        viewer = document.createElement("div");
+
+        viewer.id = "ngxChatImageViewer";
+
+        viewer.className = "ngx-chat-image-viewer";
+
+        viewer.innerHTML = `
+      <button
+        type="button"
+        class="ngx-chat-image-close"
+        aria-label="Close image"
+      >
+        <i data-lucide="x"></i>
+      </button>
+
+      <img
+        id="ngxChatImageViewerImage"
+        alt="Chat image"
+      >
+    `;
+
+        document.body.appendChild(viewer);
+
+        viewer
+          .querySelector(".ngx-chat-image-close")
+          .addEventListener("click", () => {
+            viewer.classList.remove("show");
+          });
+
+        viewer.addEventListener("click", (event) => {
+          if (event.target === viewer) {
+            viewer.classList.remove("show");
+          }
+        });
+      }
+
+      viewer.querySelector("#ngxChatImageViewerImage").src = src;
+
+      viewer.classList.add("show");
+
+      if (window.lucide) {
+        lucide.createIcons();
+      }
+    }
+    chatBody.addEventListener("click", (event) => {
+      const image = event.target.closest(".ngx-chat-image");
+
+      if (!image) return;
+
+      openChatImageViewer(image.src);
+    });
+    // -----------------------------------------
+    // COMPOSER EVENTS
+    // -----------------------------------------
+
+    input.addEventListener("input", updateSendState);
+
+    input.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" && !event.shiftKey) {
+        event.preventDefault();
+
+        sendMessage();
+      }
+    });
+
+    sendBtn.addEventListener("click", sendMessage);
+
+    attachBtn.addEventListener("click", () => {
+      attachmentInput.value = "";
+
+      attachmentInput.click();
+    });
+
+    cameraBtn.addEventListener("click", () => {
+      cameraInput.value = "";
+
+      cameraInput.click();
+    });
+
+    attachmentInput.addEventListener("change", () => {
+      setSelectedFile(attachmentInput.files?.[0]);
+    });
+
+    cameraInput.addEventListener("change", () => {
+      setSelectedFile(cameraInput.files?.[0]);
+    });
+
+    attachmentRemove.addEventListener("click", clearSelectedFile);
+
+    emojiBtn.addEventListener("click", (event) => {
+      event.stopPropagation();
+
+      emojiPicker.hidden = !emojiPicker.hidden;
+
+      if (!emojiPicker.hidden) {
+        input.focus();
+      }
+    });
+
+    emojiGrid.addEventListener("click", (event) => {
+      const button = event.target.closest("[data-emoji]");
+
+      if (!button) return;
+
+      event.stopPropagation();
+
+      insertEmojiAtCursor(button.dataset.emoji);
+    });
+
+    emojiTabs.addEventListener("click", (event) => {
+      const button = event.target.closest("[data-emoji-group]");
+
+      if (!button) return;
+
+      event.stopPropagation();
+
+      activeEmojiGroup = Number(button.dataset.emojiGroup);
+
+      renderEmojiPicker();
+    });
+
+    emojiPicker.addEventListener("click", (event) => {
+      event.stopPropagation();
+    });
+
+    document.addEventListener("click", () => {
+      emojiPicker.hidden = true;
+    });
+
+    // -----------------------------------------
+    // SOCKET RECEIVE
+    // -----------------------------------------
+
+    state.socket?.on("message", (payload) => {
+      /*
+        Prevent this listener from
+        rendering your own server echo
+        later by checking senderId
+        once your backend sends it.
+
+        For now only incoming text
+        messages are rendered here.
+      */
+
+      if (payload?.text) {
+        renderIncomingMessage(payload);
+      }
+    });
+
+    // -----------------------------------------
+    // INITIAL STATE
+    // -----------------------------------------
+
+    updateSendState();
+
+    if (window.lucide) {
+      lucide.createIcons();
+    }
+  }
+  // -----------------------------
+  // Messages Sidebar Navigation
+  // -----------------------------
+
+  function initMessagesSidebarNav() {
+    const nav = document.getElementById("bottomNav");
+
+    const messagesView = document.getElementById("view-messages");
+
+    const sidebar = document.querySelector("#view-messages .ngx-chat-sidebar");
+
+    if (!nav || !messagesView || !sidebar) {
+      console.warn("Messages sidebar nav elements missing");
+      return;
+    }
+
+    // Remember the nav's original parent + position
+    const originalParent = nav.parentElement;
+    const originalNextSibling = nav.nextSibling;
+
+    function moveNavIntoMessages() {
+      if (nav.parentElement === sidebar) return;
+
+      sidebar.appendChild(nav);
+
+      nav.classList.add("ngx-sidebar-nav");
+    }
+
+    function restoreNav() {
+      if (nav.parentElement !== sidebar) return;
+
+      nav.classList.remove("ngx-sidebar-nav");
+
+      if (
+        originalNextSibling &&
+        originalNextSibling.parentNode === originalParent
+      ) {
+        originalParent.insertBefore(nav, originalNextSibling);
+      } else {
+        originalParent.appendChild(nav);
+      }
+    }
+
+    function syncNavLocation() {
+      const messagesActive = messagesView.classList.contains("active");
+
+      if (messagesActive) {
+        moveNavIntoMessages();
+      } else {
+        restoreNav();
+      }
+    }
+
+    // Watch view changes
+    const observer = new MutationObserver(syncNavLocation);
+
+    document.querySelectorAll(".view").forEach((view) => {
+      observer.observe(view, {
+        attributes: true,
+        attributeFilter: ["class"],
+      });
+    });
+
+    syncNavLocation();
+  }
+
+  // -----------------------------
+  // Messages Sidebar Resizer
+  // -----------------------------
+
+  function initMessageSidebarResizer() {
+    const sidebar = document.querySelector("#view-messages .ngx-chat-sidebar");
+
+    const resizer = document.querySelector(
+      "#view-messages .ngx-sidebar-resizer",
+    );
+
+    if (!sidebar || !resizer) {
+      console.warn("Messages sidebar resizer not found");
+      return;
+    }
+
+    const MIN_WIDTH = 230;
+    const MAX_WIDTH = 470;
+
+    function updateSidebarMode() {
+      const width = sidebar.getBoundingClientRect().width;
+
+      sidebar.classList.remove(
+        "sidebar-compact",
+        "sidebar-medium",
+        "sidebar-wide",
+      );
+
+      if (width < 285) {
+        sidebar.classList.add("sidebar-compact");
+      } else if (width < 360) {
+        sidebar.classList.add("sidebar-medium");
+      } else {
+        sidebar.classList.add("sidebar-wide");
+      }
+    }
+
+    const savedWidth = Number(
+      localStorage.getItem("ngoxi_messages_sidebar_width"),
+    );
+
+    if (savedWidth >= MIN_WIDTH && savedWidth <= MAX_WIDTH) {
+      sidebar.style.width = `${savedWidth}px`;
+    } else {
+      sidebar.style.width = "330px";
+    }
+
+    updateSidebarMode();
+
+    let resizing = false;
+
+    resizer.addEventListener("mousedown", (event) => {
+      event.preventDefault();
+
+      resizing = true;
+
+      document.body.classList.add("ngx-resizing-sidebar");
+    });
+
+    document.addEventListener("mousemove", (event) => {
+      if (!resizing) return;
+
+      const parentRect = sidebar.parentElement.getBoundingClientRect();
+
+      let nextWidth = event.clientX - parentRect.left;
+
+      nextWidth = Math.max(MIN_WIDTH, Math.min(MAX_WIDTH, nextWidth));
+
+      sidebar.style.width = `${nextWidth}px`;
+
+      updateSidebarMode();
+    });
+
+    document.addEventListener("mouseup", () => {
+      if (!resizing) return;
+
+      resizing = false;
+
+      document.body.classList.remove("ngx-resizing-sidebar");
+
+      const finalWidth = Math.round(sidebar.getBoundingClientRect().width);
+
+      localStorage.setItem("ngoxi_messages_sidebar_width", String(finalWidth));
+
+      updateSidebarMode();
+    });
+
+    resizer.addEventListener("dblclick", () => {
+      sidebar.style.width = "330px";
+
+      localStorage.setItem("ngoxi_messages_sidebar_width", "330");
+
+      updateSidebarMode();
+    });
+  }
+  // -----------------------------
+  // Transaction Center V1
+  // -----------------------------
+  let transactionCenterAPI = null;
+  function initTransactionCenter() {
+    const center = document.getElementById("transactionCenter");
+
+    const ordersTab = document.getElementById("ordersTab");
+    const paymentTab = document.getElementById("paymentTab");
+
+    const ordersSlide = document.getElementById("ordersSlide");
+    const paymentSlide = document.getElementById("paymentSlide");
+
+    const orderIdEl = document.getElementById("transactionOrderId");
+    const productNameEl = document.getElementById("transactionProductName");
+    const variantEl = document.getElementById("transactionVariant");
+    const priceEl = document.getElementById("transactionPrice");
+    const productImageEl = document.getElementById("transactionProductImage");
+    const statusEl = document.getElementById("transactionStatus");
+
+    const paymentTitle = document.getElementById("paymentTitle");
+    const paymentProduct = document.getElementById("paymentProduct");
+    const paymentAmount = document.getElementById("paymentAmount");
+
+    const uploadReceiptBtn = document.getElementById("uploadReceiptBtn");
+    const cancelPaymentBtn = document.getElementById("cancelPaymentBtn");
+
+    if (!center || !ordersTab || !paymentTab || !ordersSlide || !paymentSlide) {
+      console.warn("NgoXi Transaction Center elements missing");
+      return;
+    }
+
+    let transactionOrders = [];
+
+    /* =====================================================
+     STATE
+  ===================================================== */
+
+    let activeOrderIndex = 0;
+    let activeSlide = "orders";
+
+    let userPauseUntil = 0;
+    let hoveringCenter = false;
+
+    const AUTO_SLIDE_TIME = 7000;
+    const USER_PAUSE_TIME = 12000;
+
+    /* =====================================================
+     RECEIPT FILE INPUT
+
+     Created automatically so you don't need another
+     HTML patch.
+  ===================================================== */
+
+    const receiptInput = document.createElement("input");
+
+    receiptInput.type = "file";
+    receiptInput.accept = "image/*";
+    receiptInput.hidden = true;
+    receiptInput.id = "transactionReceiptInput";
+
+    document.body.appendChild(receiptInput);
+
+    /* =====================================================
+     HELPERS
+  ===================================================== */
+
+    function currentOrder() {
+      return transactionOrders[activeOrderIndex];
+    }
+
+    function formatMoney(amount) {
+      return currency(Number(amount || 0));
+    }
+
+    function pauseAutoRotation() {
+      userPauseUntil = Date.now() + USER_PAUSE_TIME;
+    }
+
+    function createReceiptId() {
+      const random = Math.floor(100000 + Math.random() * 900000);
+
+      return `NGX-RCP-${random}`;
+    }
+
+    function paymentLabel(status) {
+      switch (status) {
+        case "receipt_uploaded":
+          return "Receipt Uploaded";
+
+        case "confirmed":
+          return "Payment Confirmed";
+
+        case "cancelled":
+          return "Order Cancelled";
+
+        default:
+          return "Payment Required";
+      }
+    }
+
+    /* =====================================================
+     SLIDE SYSTEM
+  ===================================================== */
+
+    function showTransactionSlide(slide, manual = false) {
+      activeSlide = slide;
+
+      const ordersActive = slide === "orders";
+
+      ordersSlide.classList.toggle("active", ordersActive);
+      paymentSlide.classList.toggle("active", !ordersActive);
+
+      ordersTab.classList.toggle("active", ordersActive);
+      paymentTab.classList.toggle("active", !ordersActive);
+
+      if (manual) {
+        pauseAutoRotation();
+      }
+
+      renderTransactionCenter();
+    }
+
+    /* =====================================================
+     ORDER PROGRESS
+
+     Order states:
+
+     placed
+     paid
+     preparing
+     shipping
+     delivered
+  ===================================================== */
+
+    function getOrderProgress(order) {
+      let step = 0;
+
+      if (order.payment.status === "confirmed") {
+        step = 1;
+      }
+
+      if (order.orderStatus === "preparing") {
+        step = 2;
+      }
+
+      if (order.orderStatus === "shipping") {
+        step = 3;
+      }
+
+      if (order.orderStatus === "delivered") {
+        step = 4;
+      }
+
+      return step;
+    }
+
+    function renderOrderTimeline(order) {
+      if (!statusEl) return;
+
+      const progress = getOrderProgress(order);
+
+      const steps = [
+        {
+          icon: "✓",
+          label: "Order placed",
+        },
+        {
+          icon: "💳",
+          label: "Payment",
+        },
+        {
+          icon: "📦",
+          label: "Preparing",
+        },
+        {
+          icon: "🚚",
+          label: "Delivery",
+        },
+        {
+          icon: "✓",
+          label: "Delivered",
+        },
+      ];
+
+      statusEl.innerHTML = steps
+        .map((step, index) => {
+          let stateClass = "";
+
+          if (index < progress) {
+            stateClass = "done";
+          } else if (index === progress) {
+            stateClass = "active";
+          }
+
+          return `
+          <div class="status-step ${stateClass}">
+            <span>${step.icon}</span>
+            <span>${step.label}</span>
+          </div>
+        `;
+        })
+        .join("");
+    }
+
+    /* =====================================================
+     ORDERS SLIDE
+  ===================================================== */
+
+    function renderOrderSlide(order) {
+      if (orderIdEl) {
+        orderIdEl.textContent = `Order #${order.id}`;
+      }
+
+      if (productNameEl) {
+        productNameEl.textContent = order.product;
+      }
+
+      if (variantEl) {
+        variantEl.textContent = order.variant;
+      }
+
+      if (priceEl) {
+        priceEl.textContent = formatMoney(order.price);
+      }
+
+      if (productImageEl) {
+        productImageEl.src = order.image || "/assets/default-product.png";
+      }
+
+      const count = ordersSlide.querySelector(".transaction-top span");
+
+      if (count) {
+        count.textContent = `${activeOrderIndex + 1} / ${transactionOrders.length}`;
+      }
+
+      renderOrderTimeline(order);
+    }
+
+    /* =====================================================
+     PAYMENT SLIDE
+  ===================================================== */
+
+    function renderPaymentSlide(order) {
+      const status = order.payment.status;
+
+      if (paymentProduct) {
+        paymentProduct.textContent = order.product;
+      }
+
+      if (paymentAmount) {
+        paymentAmount.textContent = formatMoney(order.price);
+      }
+
+      if (paymentTitle) {
+        paymentTitle.textContent = paymentLabel(status);
+      }
+
+      if (!uploadReceiptBtn || !cancelPaymentBtn) {
+        return;
+      }
+
+      uploadReceiptBtn.style.display = "";
+      cancelPaymentBtn.style.display = "";
+
+      if (status === "waiting") {
+        uploadReceiptBtn.textContent = "I have paid • Upload receipt";
+
+        uploadReceiptBtn.disabled = false;
+
+        cancelPaymentBtn.textContent = "Cancel order";
+
+        cancelPaymentBtn.disabled = false;
+      }
+
+      if (status === "receipt_uploaded") {
+        uploadReceiptBtn.textContent = "View receipt";
+
+        uploadReceiptBtn.disabled = false;
+
+        cancelPaymentBtn.textContent = "Waiting for seller";
+
+        cancelPaymentBtn.disabled = true;
+      }
+
+      if (status === "confirmed") {
+        uploadReceiptBtn.textContent = "Payment confirmed ✓";
+
+        uploadReceiptBtn.disabled = true;
+
+        cancelPaymentBtn.style.display = "none";
+      }
+
+      if (status === "cancelled") {
+        uploadReceiptBtn.style.display = "none";
+
+        cancelPaymentBtn.textContent = "Order cancelled";
+
+        cancelPaymentBtn.disabled = true;
+      }
+
+      renderReceiptDetails(order);
+      renderPaymentMethods(order);
+    }
+    let activePaymentMethod = 0;
+
+    const paymentMethodsTrack = document.getElementById("paymentMethodsTrack");
+
+    const paymentMethodPrev = document.getElementById("paymentMethodPrev");
+
+    const paymentMethodNext = document.getElementById("paymentMethodNext");
+
+    const paymentReceiptInfo = document.getElementById("paymentReceiptInfo");
+
+    function renderPaymentMethods(order) {
+      if (!paymentMethodsTrack) return;
+
+      const methods = Array.isArray(order.paymentMethods)
+        ? order.paymentMethods
+        : [];
+      paymentMethodsTrack.dataset.count = String(methods.length);
+
+      if (!methods.length) {
+        paymentMethodsTrack.innerHTML = `
+      <div class="payment-method-card">
+        <span>No payment method</span>
+      </div>
+    `;
+
+        return;
+      }
+
+      activePaymentMethod = Math.max(
+        0,
+        Math.min(activePaymentMethod, methods.length - 1),
+      );
+
+      paymentMethodsTrack.innerHTML = methods
+        .map(
+          (method, index) => `
+          <button
+            class="payment-method-card ${
+              index === activePaymentMethod ? "active" : ""
+            }"
+            data-payment-method="${index}"
+            data-payment-label="${escapeHTML(method.label || "")}"
+            data-payment-value="${escapeHTML(method.value || "")}"
+            data-payment-name="${escapeHTML(method.name || "")}"
+            type="button"
+          >
+
+            <span class="payment-method-label">
+              ${method.label}
+            </span>
+
+            <strong>
+              ${method.value}
+            </strong>
+
+            <small>
+              ${method.name || ""}
+            </small>
+
+          </button>
+        `,
+        )
+        .join("");
+
+      const activeCard = paymentMethodsTrack.querySelector(
+        ".payment-method-card.active",
+      );
+
+      activeCard?.scrollIntoView({
+        behavior: "smooth",
+        block: "nearest",
+        inline: "center",
+      });
+    }
+    paymentMethodPrev?.addEventListener("click", () => {
+      const methods = currentOrder().paymentMethods || [];
+
+      if (!methods.length) return;
+
+      activePaymentMethod =
+        activePaymentMethod === 0
+          ? methods.length - 1
+          : activePaymentMethod - 1;
+
+      renderPaymentMethods(currentOrder());
+    });
+    paymentMethodsTrack?.addEventListener("click", async (event) => {
+      const card = event.target.closest(".payment-method-card");
+
+      if (!card) return;
+
+      const index = Number(card.dataset.paymentMethod);
+
+      if (!Number.isNaN(index)) {
+        activePaymentMethod = index;
+
+        renderPaymentMethods(currentOrder());
+      }
+
+      const label = card.dataset.paymentLabel || "";
+
+      const value = card.dataset.paymentValue || "";
+
+      const name = card.dataset.paymentName || "";
+
+      const copyText = [label, value, name].filter(Boolean).join("\n");
+
+      try {
+        await navigator.clipboard.writeText(copyText);
+
+        toast("Payment details copied ✓");
+      } catch {
+        const textarea = document.createElement("textarea");
+
+        textarea.value = copyText;
+
+        textarea.style.position = "fixed";
+        textarea.style.opacity = "0";
+
+        document.body.appendChild(textarea);
+
+        textarea.select();
+
+        document.execCommand("copy");
+
+        textarea.remove();
+
+        toast("Payment details copied ✓");
+      }
+    });
+    paymentMethodNext?.addEventListener("click", () => {
+      const methods = currentOrder().paymentMethods || [];
+
+      if (!methods.length) return;
+
+      activePaymentMethod = (activePaymentMethod + 1) % methods.length;
+
+      renderPaymentMethods(currentOrder());
+    });
+    /* =====================================================
+     RECEIPT INFORMATION
+
+     Uses the existing bank-details box so no extra
+     HTML is required.
+  ===================================================== */
+
+    function renderReceiptDetails(order) {
+      const details = paymentSlide.querySelector(".bank-details");
+
+      if (!details) return;
+
+      const status = order.payment.status;
+
+      if (status === "waiting") {
+        details.innerHTML = `
+        <p>CRDB BANK PLC</p>
+
+        <b>0150 1234 5678 900</b>
+
+        <small>
+          Pay the exact amount shown above,
+          then upload your receipt.
+        </small>
+      `;
+
+        return;
+      }
+
+      if (status === "receipt_uploaded") {
+        details.innerHTML = `
+        <p>Receipt ID</p>
+
+        <b>${order.payment.receiptId}</b>
+
+        <small>
+          ${order.payment.receiptName || "Receipt uploaded"}
+          • Waiting for seller confirmation
+        </small>
+      `;
+
+        return;
+      }
+
+      if (status === "confirmed") {
+        details.innerHTML = `
+        <p>Payment status</p>
+
+        <b>Confirmed ✓</b>
+
+        <small>
+          The seller confirmed payment for
+          Order #${order.id}.
+        </small>
+      `;
+
+        return;
+      }
+
+      if (status === "cancelled") {
+        details.innerHTML = `
+        <p>Order status</p>
+
+        <b>Cancelled</b>
+
+        <small>
+          Order #${order.id} is no longer active.
+        </small>
+      `;
+      }
+    }
+
+    /* =====================================================
+     MASTER RENDERER
+  ===================================================== */
+
+    function renderTransactionCenter() {
+      const order = currentOrder();
+
+      if (!order) {
+        center.style.display = "none";
+        return;
+      }
+
+      center.style.display = "";
+
+      renderOrderSlide(order);
+      renderPaymentSlide(order);
+    }
+    /* =====================================================
+     ORDER CAROUSEL
+  ===================================================== */
+
+    const orderArrows = center.querySelectorAll(".order-arrow");
+
+    if (orderArrows.length >= 2) {
+      orderArrows[0].addEventListener("click", () => {
+        pauseAutoRotation();
+
+        activeOrderIndex =
+          activeOrderIndex === 0
+            ? transactionOrders.length - 1
+            : activeOrderIndex - 1;
+
+        renderTransactionCenter();
+      });
+
+      orderArrows[1].addEventListener("click", () => {
+        pauseAutoRotation();
+
+        activeOrderIndex = (activeOrderIndex + 1) % transactionOrders.length;
+
+        renderTransactionCenter();
+      });
+    }
+
+    /* =====================================================
+     TAB EVENTS
+  ===================================================== */
+
+    ordersTab.addEventListener("click", () => {
+      showTransactionSlide("orders", true);
+    });
+
+    paymentTab.addEventListener("click", () => {
+      showTransactionSlide("payment", true);
+    });
+    function openReceiptViewer(order) {
+      let viewer = document.getElementById("ngxReceiptViewer");
+
+      if (!viewer) {
+        viewer = document.createElement("div");
+
+        viewer.id = "ngxReceiptViewer";
+        viewer.className = "ngx-receipt-viewer";
+
+        viewer.innerHTML = `
+      <div class="ngx-receipt-modal">
+
+        <div class="ngx-receipt-modal-header">
+          <div>
+            <strong>Payment Receipt</strong>
+            <span id="ngxReceiptViewerId"></span>
+          </div>
+
+          <button
+            type="button"
+            id="ngxReceiptViewerClose"
+            aria-label="Close receipt"
+          >
+            ×
+          </button>
+        </div>
+
+        <div class="ngx-receipt-image-wrap">
+          <img
+            id="ngxReceiptViewerImage"
+            alt="Payment receipt"
+          >
+        </div>
+
+        <div class="ngx-receipt-modal-footer">
+          <span id="ngxReceiptViewerOrder"></span>
+
+          <button
+            type="button"
+            id="ngxReceiptViewerBack"
+          >
+            ← Back to chat
+          </button>
+        </div>
+
+      </div>
+    `;
+
+        document.body.appendChild(viewer);
+
+        const closeViewer = () => {
+          viewer.classList.remove("show");
+        };
+
+        viewer
+          .querySelector("#ngxReceiptViewerClose")
+          .addEventListener("click", closeViewer);
+
+        viewer
+          .querySelector("#ngxReceiptViewerBack")
+          .addEventListener("click", closeViewer);
+
+        viewer.addEventListener("click", (event) => {
+          if (event.target === viewer) {
+            closeViewer();
+          }
+        });
+      }
+
+      viewer.querySelector("#ngxReceiptViewerImage").src =
+        order.payment.receiptUrl;
+
+      viewer.querySelector("#ngxReceiptViewerId").textContent =
+        order.payment.receiptId || "";
+
+      viewer.querySelector("#ngxReceiptViewerOrder").textContent =
+        `Order #${order.id}`;
+
+      viewer.classList.add("show");
+    }
+    /* =====================================================
+     RECEIPT UPLOAD
+  ===================================================== */
+
+    uploadReceiptBtn?.addEventListener("click", () => {
+      const order = currentOrder();
+
+      if (!order) return;
+
+      // BEFORE PAYMENT RECEIPT IS UPLOADED
+      if (order.payment.status === "waiting") {
+        pauseAutoRotation();
+
+        // reset so selecting the same image again still triggers change
+        receiptInput.value = "";
+
+        receiptInput.click();
+
+        return;
+      }
+
+      // AFTER RECEIPT IS UPLOADED
+      if (order.payment.status === "receipt_uploaded") {
+        if (order.payment.receiptUrl) {
+          openReceiptViewer(order);
+        }
+
+        return;
+      }
+
+      // PAYMENT ALREADY CONFIRMED
+      if (order.payment.status === "confirmed") {
+        toast("Payment already confirmed.");
+
+        return;
+      }
+
+      // ORDER CANCELLED
+      if (order.payment.status === "cancelled") {
+        toast("This order has been cancelled.");
+      }
+    });
+
+    receiptInput.addEventListener("change", () => {
+      const file = receiptInput.files?.[0];
+
+      if (!file) return;
+
+      const order = currentOrder();
+
+      if (order.payment.receiptUrl) {
+        URL.revokeObjectURL(order.payment.receiptUrl);
+      }
+
+      order.payment.receiptUrl = URL.createObjectURL(file);
+
+      order.payment.receiptName = file.name;
+
+      order.payment.receiptId = createReceiptId();
+
+      order.payment.uploadedAt = new Date().toISOString();
+
+      order.payment.status = "receipt_uploaded";
+
+      pauseAutoRotation();
+
+      renderTransactionCenter();
+
+      toast(`Receipt uploaded for Order #${order.id}`);
+
+      /*
+      BACKEND HOOK
+
+      Later upload the actual receipt:
+
+      const form = new FormData();
+
+      form.append("receipt", file);
+      form.append("orderId", order.id);
+
+      fetch(
+        `${API_BASE}/api/orders/${order.id}/receipt`,
+        {
+          method: "POST",
+          body: form,
+          credentials: "include"
+        }
+      );
+    */
+    });
+
+    /* =====================================================
+     CANCEL ORDER
+  ===================================================== */
+
+    cancelPaymentBtn?.addEventListener("click", () => {
+      const order = currentOrder();
+
+      if (order.payment.status !== "waiting") {
+        return;
+      }
+
+      const confirmed = window.confirm(`Cancel Order #${order.id}?`);
+
+      if (!confirmed) return;
+
+      order.payment.status = "cancelled";
+      order.orderStatus = "cancelled";
+
+      pauseAutoRotation();
+
+      renderTransactionCenter();
+
+      toast(`Order #${order.id} cancelled`);
+
+      /*
+        BACKEND HOOK
+
+        await apiPost(
+          `${API_BASE}/api/orders/${order.id}/cancel`,
+          {}
+        );
+      */
+    });
+
+    /* =====================================================
+     AUTO HERO SWITCH
+
+     Continues automatically.
+
+     Pauses while:
+     - mouse is inside Transaction Center
+     - buyer recently clicked something
+  ===================================================== */
+
+    center.addEventListener("mouseenter", () => {
+      hoveringCenter = true;
+    });
+
+    center.addEventListener("mouseleave", () => {
+      hoveringCenter = false;
+    });
+
+    setInterval(() => {
+      if (hoveringCenter) return;
+
+      if (Date.now() < userPauseUntil) {
+        return;
+      }
+
+      showTransactionSlide(activeSlide === "orders" ? "payment" : "orders");
+    }, AUTO_SLIDE_TIME);
+
+    /* =====================================================
+     SOCKET HOOK
+
+     Seller can later confirm payment using Socket.IO.
+
+     Expected event:
+
+     {
+       orderId: "NGX001",
+       status: "confirmed"
+     }
+  ===================================================== */
+
+    state.socket?.on("payment-status", (payload) => {
+      const order = transactionOrders.find(
+        (item) => item.id === payload.orderId,
+      );
+
+      if (!order) return;
+
+      order.payment.status = payload.status;
+
+      if (payload.status === "confirmed") {
+        order.orderStatus = "preparing";
+      }
+
+      renderTransactionCenter();
+    });
+    transactionCenterAPI = {
+      setOrders(orders = []) {
+        transactionOrders = Array.isArray(orders) ? orders : [];
+
+        activeOrderIndex = 0;
+        activePaymentMethod = 0;
+
+        renderTransactionCenter();
+      },
+
+      getOrders() {
+        return transactionOrders;
+      },
+
+      refresh() {
+        renderTransactionCenter();
+      },
+    };
+    /* =====================================================
+     INITIAL STATE
+  ===================================================== */
+
+    showTransactionSlide("orders");
+
+    renderTransactionCenter();
+  }
 
   // -----------------------------
   // Boot
@@ -1245,15 +3240,22 @@
     initLocation();
     initNav();
     initSocket();
+    initTransactionCenter();
+    initChatComposer();
     initCategoryCarousel();
-
+    initMessageSidebarResizer();
+    initMessagesSidebarNav();
+    initMessageFilterOverflow();
+    consumeChatHandoff();
     // initial data
     await Promise.all([loadFavorites(), updateCartCount()]);
 
     await loadProducts(1);
     initInfiniteScroll();
   }
-
+  if (window.lucide) {
+    lucide.createIcons();
+  }
   // Kickoff
   document.addEventListener("DOMContentLoaded", boot);
 })();
@@ -1324,19 +3326,6 @@ uploadInput.onchange = (e) => {
   const url = URL.createObjectURL(file);
   previewImg.src = url;
   localStorage.setItem("profilePic", url);
-};
-
-document.getElementById("chatSend").onclick = () => {
-  const input = document.getElementById("chatInput");
-  const msg = input.value.trim();
-  if (!msg) return;
-  const bubble = document.createElement("div");
-  bubble.className = "chat-row me";
-  bubble.textContent = msg;
-  document.getElementById("chatBody").appendChild(bubble);
-  input.value = "";
-  document.getElementById("chatBody").scrollTop =
-    document.getElementById("chatBody").scrollHeight;
 };
 
 /* =========================================================

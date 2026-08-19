@@ -242,45 +242,537 @@
     </section>
 
     <section id="view-messages" class="view">
-      <header class="topbar mini">
-        <div class="brand-title tempus">💬 Messages</div>
-      </header>
-      <div class="chat-wrapper">
-        <!-- Left Sidebar -->
-        <aside class="chat-sidebar">
-          <div class="chat-sidebar-header">Messages</div>
-          <div class="chat-list">
-            <div class="chat-tab active">
-              <div class="chat-avatar"><img src="/assets/default-avatar.jpeg" /></div>
-              <div class="chat-info">
-                <div class="chat-title">NgoXi Support</div>
-                <div class="chat-last">Need help? Chat with us!</div>
-              </div>
+
+      <div class="ngx-chat-app">
+
+
+        <!-- LEFT CHAT SIDEBAR -->
+        <aside class="ngx-chat-sidebar">
+
+
+          <div class="ngx-chat-brand">
+
+            <div class="ngx-logo">
+              <span class="ngo">Ngo</span><span class="xi">Xi</span>
             </div>
-            <div class="chat-tab">
-              <div class="chat-avatar"><img src="/assets/default-avatar.jpeg" /></div>
-              <div class="chat-info">
-                <div class="chat-title">NgoXi Support</div>
-                <div class="chat-last">Ask anything here</div>
-              </div>
+
+            <div class="ngx-slogan">
+              You deserve better
             </div>
+
+            <button class="ngx-new-chat">
+              ✎
+            </button>
           </div>
+
+
+          <div class="ngx-search-box">
+            🔍
+            <input type="text" placeholder="Search messages" />
+          </div>
+
+
+          <div class="ngx-chat-filters">
+
+            <button id="ngxFilterAll" class="active">
+              All
+            </button>
+
+            <button id="ngxFilterUnread">
+              Unread
+              <span class="ngx-badge">2</span>
+            </button>
+
+            <button id="ngxFilterOrders">
+              Orders
+            </button>
+
+            <button id="ngxFilterFavorites">
+              Favorites
+            </button>
+            <div class="ngx-filter-more">
+              <button id="ngxFilterMoreBtn" class="ngx-filter-more-btn" type="button">
+                ▾
+              </button>
+
+              <div id="ngxFilterMoreMenu" class="ngx-filter-more-menu">
+                <button data-filter-proxy="orders">
+                  Orders
+                </button>
+
+                <button data-filter-proxy="favorites">
+                  Favorites
+                </button>
+              </div>
+            </div>
+
+          </div>
+
+
+
+          <div id="chatList" class="ngx-conversation-list">
+
+
+            <div class="ngx-conversation active">
+
+
+              <div class="ngx-avatar">
+                <img src="/assets/default-avatar.jpeg">
+              </div>
+
+
+              <div class="ngx-conversation-info">
+
+                <div class="ngx-conversation-top">
+
+                  <b>
+                    Nike Store TZ ✓
+                  </b>
+
+                  <span>
+                    12:32 PM
+                  </span>
+
+                </div>
+
+
+                <p>
+                  Your receipt has been uploaded
+                </p>
+
+
+              </div>
+
+
+              <span class="ngx-unread">
+                2
+              </span>
+
+
+            </div>
+
+
+
+
+
+            <div class="ngx-conversation">
+
+              <div class="ngx-avatar">
+                <img src="/assets/default-avatar.jpeg">
+              </div>
+
+
+              <div class="ngx-conversation-info">
+
+                <div class="ngx-conversation-top">
+
+                  <b>
+                    Tech World
+                  </b>
+
+                  <span>
+                    11:28 AM
+                  </span>
+
+                </div>
+
+
+                <p>
+                  Order shipped today
+                </p>
+
+              </div>
+
+
+              <span class="ngx-unread green">
+                1
+              </span>
+
+            </div>
+
+
+
+
+          </div>
+
+          <div class="ngx-sidebar-resizer"></div>
         </aside>
 
-        <!-- Right Chat Window -->
-        <section class="chat-window">
-          <div class="chat-top">
-            <span><strong>NgoXi Support</strong></span>
+
+
+
+
+        <!-- CHAT WINDOW -->
+
+        <section class="ngx-chat-window">
+
+
+          <!-- HEADER -->
+
+          <header class="ngx-chat-header">
+
+
+            <div class="ngx-seller">
+
+              <div class="ngx-avatar large">
+                <img src="/assets/default-avatar.jpeg">
+              </div>
+
+
+              <div>
+
+                <h3>
+                  Nike Store TZ ✓
+                </h3>
+
+                <span>
+                  🟢 Online
+                </span>
+
+              </div>
+
+
+            </div>
+
+
+
+
+            <div class="ngx-chat-actions">
+
+              <button id="chatCallBtn" class="ngx-header-action" type="button" title="Call seller"
+                aria-label="Call seller">
+                <i data-lucide="phone"></i>
+              </button>
+
+              <div class="chat-options-wrap">
+
+                <button id="chatOptionsBtn" class="ngx-header-action" type="button" title="Chat options"
+                  aria-label="Chat options" aria-expanded="false">
+                  <i data-lucide="more-vertical"></i>
+                </button>
+
+                <div id="chatOptionsMenu" class="chat-options-menu">
+                  <button id="toggleTransactionCard" type="button">
+                    <i data-lucide="panel-top-close"></i>
+
+                    <span>
+                      Hide transaction card
+                    </span>
+                  </button>
+                </div>
+
+              </div>
+
+            </div>
+
+
+          </header>
+
+
+          <!-- NGOXI TRANSACTION CENTER -->
+
+          <div id="transactionCenter" class="transaction-center">
+
+
+            <!-- HEADER -->
+
+            <div class="transaction-header">
+
+              <div>
+
+                <span class="transaction-icon">
+                  🛡
+                </span>
+
+                <b>
+                  Transaction Center
+                </b>
+
+              </div>
+
+
+              <div class="transaction-tabs">
+
+
+                <button class="active" id="ordersTab">
+
+                  Orders
+
+                </button>
+
+
+                <button id="paymentTab">
+
+                  Payment
+
+                </button>
+
+
+              </div>
+
+
+            </div>
+
+
+
+
+
+
+            <!-- ORDERS SLIDE -->
+
+
+            <div id="ordersSlide" class="transaction-slide active">
+
+
+              <div class="transaction-top">
+
+
+                <b>
+                  Active Orders
+                </b>
+
+
+                <span>
+                  2 Orders
+                </span>
+
+
+              </div>
+
+
+
+
+
+              <!-- ORDER SELECTOR -->
+
+
+              <div class="order-carousel">
+
+
+
+                <button class="order-arrow">
+                  ‹
+                </button>
+
+
+
+                <div class="transaction-order-card">
+
+
+                  <img id="transactionProductImage" src="/assets/default-product.png">
+
+
+
+                  <div class="order-info">
+
+
+                    <b id="transactionOrderId">
+                      Order #NGX001
+                    </b>
+
+
+                    <h4 id="transactionProductName">
+                      Nike SB Dunk Low
+                    </h4>
+
+
+                    <p id="transactionVariant">
+                      Black / Size 42
+                    </p>
+
+
+                    <strong id="transactionPrice">
+                      TSh 180,000
+                    </strong>
+
+
+                  </div>
+
+
+
+                  <div id="transactionStatus" class="order-status">
+
+
+                  </div>
+
+
+                </div>
+
+
+
+
+
+                <button class="order-arrow">
+                  ›
+                </button>
+
+
+
+              </div>
+
+
+
+
+            </div>
+
+
+
+
+
+
+
+
+
+            <!-- PAYMENT SLIDE -->
+
+
+            <div id="paymentSlide" class="transaction-slide">
+
+              <div class="ngx-payment-card">
+
+                <div class="ngx-payment-summary">
+
+                  <div class="ngx-payment-left">
+                    <div class="payment-icon">💳</div>
+
+                    <div>
+                      <h3 id="paymentTitle">
+                        Payment Required
+                      </h3>
+
+                      <p id="paymentProduct">
+                        Nike SB Dunk Low
+                      </p>
+                    </div>
+                  </div>
+
+                  <strong id="paymentAmount">
+                    TSh 180,000
+                  </strong>
+
+                </div>
+
+
+                <div class="ngx-payment-method-shell">
+
+                  <button id="paymentMethodPrev" class="payment-method-arrow" type="button">
+                    ‹
+                  </button>
+
+
+                  <div id="paymentMethodsTrack" class="payment-methods-track">
+                  </div>
+
+
+                  <button id="paymentMethodNext" class="payment-method-arrow" type="button">
+                    ›
+                  </button>
+
+                </div>
+
+
+                <div id="paymentReceiptInfo" class="payment-receipt-info"></div>
+
+
+                <div class="payment-actions">
+
+                  <button id="uploadReceiptBtn" class="pay-upload">
+                    I have paid • Upload receipt
+                  </button>
+
+                  <button id="cancelPaymentBtn" class="cancel-payment">
+                    Cancel
+                  </button>
+
+                </div>
+              </div>
+              <!-- end ngx-payment-card -->
+
+            </div>
+            <!-- end paymentSlide -->
+
           </div>
-          <div class="chat-body" id="chatBody">
-            <div class="chat-row them">Welcome to NgoXi Support 👋</div>
-            <div class="chat-row them">How can we help you today?</div>
+          <!-- end transactionCenter -->
+
+
+
+
+
+
+
+
+          <!-- CHAT BODY -->
+
+          <div id="chatBody" class="ngx-message-area">
+
+
+            <div class="ngx-date">
+              Today
+            </div>
+
+
+
+            <div class="ngx-message seller">
+
+              Hi! Thank you for your order 🙌
+
+            </div>
+
+
+
+
+            <div class="ngx-message buyer">
+
+              Thank you! I will make payment now.
+
+            </div>
+
+
+
+
           </div>
-          <div class="chat-input">
-            <input type="text" id="chatInput" placeholder="Type a message..." />
-            <button id="chatSend">Send</button>
+
+
+
+          <div class="ngx-message-input">
+
+            <button id="chatAttachBtn" class="ngx-composer-icon" type="button" title="Attach" aria-label="Attach file">
+              <i data-lucide="paperclip"></i>
+            </button>
+
+
+            <div class="ngx-composer-field">
+
+              <input id="chatMessageInput" type="text" placeholder="Type a message" autocomplete="off">
+
+
+              <button id="chatEmojiBtn" class="ngx-composer-inner-btn" type="button" title="Emoji" aria-label="Emoji">
+                <i data-lucide="smile"></i>
+              </button>
+
+
+              <button id="chatCameraBtn" class="ngx-composer-inner-btn" type="button" title="Photo"
+                aria-label="Send photo">
+                <i data-lucide="camera"></i>
+              </button>
+
+            </div>
+
+
+            <button id="chatSendBtn" class="ngx-send-btn" type="button" title="Send" aria-label="Send message">
+              <i data-lucide="send"></i>
+            </button>
+
           </div>
+
+
+
+
+
+
         </section>
+
+
       </div>
 
 
@@ -415,6 +907,7 @@
 
 
   <!-- App script (your existing file) -->
+  <script src="https://unpkg.com/lucide@latest"></script>
   <script src="/assets/home/script.js" defer></script>
 </body>
 

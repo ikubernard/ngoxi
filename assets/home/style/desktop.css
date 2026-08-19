@@ -497,198 +497,6 @@ body {
   margin-bottom: 8px;
 }
 
-/* ===========================================
-   WhatsApp-Style Chat UI (v12 REAL LOOK)
-   =========================================== */
-
-/* Layout container */
-.chat-wrapper {
-  display: grid;
-  grid-template-columns: 320px 1fr;
-  height: calc(100vh - 120px);
-  background: var(--bg);
-  border-radius: 12px;
-  overflow: hidden;
-  box-shadow: var(--shadow);
-}
-@media (max-width: 900px) {
-  .chat-wrapper {
-    grid-template-columns: 1fr;
-  }
-}
-
-/* Left Sidebar (Chat List) */
-.chat-sidebar {
-  background: var(--panel);
-  display: flex;
-  flex-direction: column;
-  border-right: 1px solid rgba(0, 0, 0, 0.1);
-}
-.chat-sidebar-header {
-  padding: 14px;
-  font-weight: 700;
-  font-size: 16px;
-  color: var(--text);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-}
-
-.chat-list {
-  flex: 1;
-  overflow-y: auto;
-  max-height: calc(100vh - 160px);
-}
-.chat-tab {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px 16px;
-  cursor: pointer;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-  transition: background 0.2s;
-}
-.chat-tab:hover {
-  background: var(--pill);
-}
-.chat-tab.active {
-  background: var(--accent);
-  color: #fff;
-  border-radius: 10px;
-}
-
-.chat-avatar {
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  overflow: hidden;
-  flex-shrink: 0;
-}
-.chat-avatar img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-.chat-info {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-}
-.chat-title {
-  font-weight: 700;
-  font-size: 14px;
-}
-.chat-last {
-  font-size: 12px;
-  color: var(--muted);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-/* Right Chat Window */
-.chat-window {
-  display: flex;
-  flex-direction: column;
-  background: var(--panel);
-  position: relative;
-}
-
-/* Chat header */
-.chat-top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 14px 20px;
-  background: var(--card);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-  font-weight: 700;
-}
-
-/* Chat body */
-.chat-body {
-  flex: 1;
-  padding: 20px 24px;
-  overflow-y: auto;
-  background: var(--panel);
-  background-image: url("assets/bg-pattern-light.png");
-  background-repeat: repeat;
-  background-size: 380px;
-  display: flex;
-  flex-direction: column;
-}
-
-/* Bubbles */
-.chat-row {
-  max-width: 75%;
-  margin-bottom: 10px;
-  border-radius: 12px;
-  padding: 10px 14px;
-  font-size: 14px;
-  line-height: 1.4;
-  position: relative;
-}
-.chat-row.them {
-  align-self: flex-start;
-  background: #ffffff;
-  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.05);
-}
-.chat-row.me {
-  align-self: flex-end;
-  background: #dcf8c6;
-  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.05);
-}
-.chat-row.me::after {
-  content: "";
-  position: absolute;
-  right: -6px;
-  bottom: 0;
-  width: 10px;
-  height: 10px;
-  background: #dcf8c6;
-  clip-path: polygon(100% 0, 0 100%, 100% 100%);
-}
-.chat-row.them::after {
-  content: "";
-  position: absolute;
-  left: -6px;
-  bottom: 0;
-  width: 10px;
-  height: 10px;
-  background: #fff;
-  clip-path: polygon(0 0, 100% 100%, 0 100%);
-}
-
-/* Input area */
-.chat-input {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 14px 20px;
-  background: var(--card);
-  border-top: 1px solid rgba(0, 0, 0, 0.05);
-}
-.chat-input input {
-  flex: 1;
-  border: none;
-  border-radius: 24px;
-  padding: 10px 14px;
-  outline: none;
-  background: var(--panel);
-  color: var(--text);
-}
-.chat-input button {
-  background: var(--green);
-  color: #fff;
-  border: none;
-  border-radius: 8px;
-  padding: 8px 18px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: opacity 0.25s;
-}
-.chat-input button:hover {
-  opacity: 0.85;
-}
-
 /* Packages / Me pills */
 .pills {
   display: flex;
@@ -2147,4 +1955,3482 @@ html[data-theme="dark"] .p-card[data-discounted="true"] {
   .p-price.p-new-price {
     font-size: 14px;
   }
+}
+
+/* ======================================================
+   NGOXI MESSAGING V3
+   WhatsApp Desktop Style Layout Foundation
+====================================================== */
+
+/* MAIN APP */
+
+.ngx-chat-app {
+  position: fixed;
+
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+
+  display: grid;
+
+  grid-template-columns: 360px 1fr;
+
+  background: #fff7ef;
+
+  overflow: hidden;
+
+  z-index: 20;
+}
+
+/* =========================
+ SIDEBAR
+========================= */
+
+.ngx-chat-sidebar {
+  background: #ffffff;
+
+  border-right: 1px solid #e9e0d6;
+
+  display: flex;
+
+  flex-direction: column;
+
+  height: 100vh;
+}
+
+.ngx-chat-brand {
+  height: 70px;
+
+  display: flex;
+
+  align-items: center;
+
+  padding: 0 20px;
+}
+
+.ngx-logo {
+  font-family: "Tempus Sans ITC";
+
+  font-size: 32px;
+
+  font-weight: bold;
+}
+
+.ngx-logo .ngo {
+  color: #07935f;
+}
+
+.ngx-logo .xi {
+  color: #8b5a2b;
+}
+
+.ngx-slogan {
+  position: absolute;
+
+  margin-top: 45px;
+
+  margin-left: 2px;
+
+  color: #ff6e5a;
+
+  font-size: 11px;
+}
+
+.ngx-new-chat {
+  margin-left: auto;
+
+  width: 38px;
+
+  height: 38px;
+
+  border-radius: 50%;
+
+  border: none;
+
+  background: #fff0dd;
+}
+
+/* SEARCH */
+
+.ngx-search-box {
+  margin: 10px 16px;
+
+  height: 42px;
+
+  background: #f5f5f5;
+
+  border-radius: 22px;
+
+  display: flex;
+
+  align-items: center;
+
+  padding: 0 15px;
+}
+
+.ngx-search-box input {
+  border: none;
+
+  outline: none;
+
+  background: transparent;
+
+  flex: 1;
+}
+
+/* FILTER BUTTONS */
+
+.ngx-chat-filters {
+  display: flex;
+
+  gap: 8px;
+
+  padding: 5px 16px 12px;
+}
+
+.ngx-chat-filters button {
+  border: none;
+
+  background: #fff0dd;
+
+  padding: 7px 14px;
+
+  border-radius: 18px;
+}
+
+.ngx-chat-filters .active {
+  background: #07935f;
+
+  color: white;
+}
+
+/* CHAT LIST */
+
+.ngx-conversation-list {
+  flex: 1;
+
+  overflow-y: auto;
+}
+
+.ngx-conversation {
+  height: 72px;
+
+  display: flex;
+
+  align-items: center;
+
+  gap: 12px;
+
+  padding: 0 16px;
+}
+
+.ngx-conversation:hover {
+  background: #fff8ef;
+}
+
+.ngx-conversation.active {
+  background: #fff0dd;
+}
+
+.ngx-avatar {
+  width: 48px;
+
+  height: 48px;
+
+  border-radius: 50%;
+
+  overflow: hidden;
+
+  flex-shrink: 0;
+}
+
+.ngx-avatar img {
+  width: 100%;
+
+  height: 100%;
+
+  object-fit: cover;
+}
+
+.ngx-conversation-info {
+  flex: 1;
+}
+
+.ngx-conversation-top {
+  display: flex;
+
+  justify-content: space-between;
+}
+
+.ngx-conversation p {
+  margin: 4px 0;
+
+  font-size: 13px;
+
+  color: #777;
+}
+
+/* ======================================================
+ CHAT AREA
+====================================================== */
+
+.ngx-chat-window {
+  height: 100vh;
+
+  display: flex;
+
+  flex-direction: column;
+
+  background: #fff7ef;
+}
+
+/* HEADER */
+
+.ngx-chat-header {
+  height: 70px;
+
+  min-height: 70px;
+
+  background: white;
+
+  border-bottom: 1px solid #eee;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: space-between;
+
+  padding: 0 20px;
+}
+
+.ngx-seller {
+  display: flex;
+
+  align-items: center;
+
+  gap: 12px;
+}
+
+.ngx-seller h3 {
+  margin: 0;
+
+  font-size: 16px;
+}
+
+.ngx-seller span {
+  color: #07935f;
+
+  font-size: 13px;
+}
+
+.ngx-chat-actions button {
+  width: 38px;
+
+  height: 38px;
+
+  border-radius: 50%;
+
+  border: none;
+
+  background: #fff0dd;
+
+  margin-left: 8px;
+}
+
+/* ======================================================
+ MESSAGE TIMELINE
+====================================================== */
+
+.ngx-message-area {
+  flex: 1;
+
+  overflow-y: auto;
+
+  padding: 25px 50px;
+
+  background: #fff7ef;
+}
+
+/* ======================================================
+ COMPOSER
+====================================================== */
+
+.ngx-message-input {
+  height: 65px;
+
+  min-height: 65px;
+
+  background: white;
+
+  border-top: 1px solid #eee;
+
+  display: flex;
+
+  align-items: center;
+
+  gap: 10px;
+
+  padding: 10px 20px;
+}
+
+.ngx-message-input input {
+  flex: 1;
+
+  height: 42px;
+
+  border: none;
+
+  outline: none;
+
+  background: #f5f5f5;
+
+  border-radius: 22px;
+
+  padding: 0 18px;
+}
+
+.ngx-message-input button {
+  border: none;
+
+  background: none;
+
+  font-size: 20px;
+}
+
+.ngx-message-input .send {
+  width: 42px;
+
+  height: 42px;
+
+  border-radius: 50%;
+
+  background: #07935f;
+
+  color: white;
+}
+/* =================================
+   NGOXI NAV IDLE / ACTIVE STATE
+   Keep original design
+================================= */
+
+.bottom-nav.pro {
+  opacity: 0.45;
+
+  transition:
+    opacity 0.25s ease,
+    filter 0.25s ease;
+}
+
+.bottom-nav.pro:hover,
+.bottom-nav.pro:focus-within {
+  opacity: 1;
+
+  filter: brightness(1.05);
+}
+
+/* keep active page visible */
+
+.bottom-nav.pro .nav-btn.active {
+  opacity: 1;
+}
+
+/* ===========================
+   SIDEBAR RESIZER
+=========================== */
+
+.ngx-chat-sidebar {
+  position: relative;
+}
+
+.ngx-sidebar-resizer {
+  position: absolute;
+
+  top: 0;
+
+  right: -3px;
+
+  width: 6px;
+
+  height: 100%;
+
+  cursor: col-resize;
+
+  background: transparent;
+
+  z-index: 50;
+}
+
+.ngx-sidebar-resizer:hover {
+  background: #07935f;
+}
+/* ==================================================
+   NGOXI TRANSACTION CENTER V1
+================================================== */
+
+.transaction-center {
+  margin: 12px 20px;
+
+  background: white;
+
+  border-radius: 22px;
+
+  border: 1px solid #eee1d3;
+
+  overflow: hidden;
+
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.06);
+}
+
+/* HEADER */
+
+.transaction-header {
+  height: 55px;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: space-between;
+
+  padding: 0 18px;
+
+  background: #fffaf4;
+
+  border-bottom: 1px solid #eee;
+}
+
+.transaction-icon {
+  color: #07935f;
+
+  margin-right: 8px;
+}
+
+.transaction-tabs {
+  display: flex;
+
+  background: #f4eadf;
+
+  border-radius: 20px;
+
+  padding: 3px;
+}
+
+.transaction-tabs button {
+  border: none;
+
+  background: transparent;
+
+  padding: 7px 18px;
+
+  border-radius: 18px;
+
+  cursor: pointer;
+
+  color: #777;
+}
+
+.transaction-tabs button.active {
+  background: #07935f;
+
+  color: white;
+}
+
+/* SLIDES */
+
+.transaction-slide {
+  display: none;
+
+  padding: 16px;
+}
+
+.transaction-slide.active {
+  display: block;
+}
+
+/* ORDERS */
+
+.transaction-top {
+  display: flex;
+
+  justify-content: space-between;
+
+  margin-bottom: 12px;
+}
+
+.transaction-top span {
+  color: #888;
+
+  font-size: 13px;
+}
+
+.order-carousel {
+  display: flex;
+
+  align-items: center;
+
+  gap: 10px;
+}
+
+.order-arrow {
+  width: 34px;
+
+  height: 34px;
+
+  border-radius: 50%;
+
+  border: none;
+
+  background: #fff0dd;
+
+  font-size: 22px;
+
+  cursor: pointer;
+}
+
+.transaction-order-card {
+  flex: 1;
+
+  display: grid;
+
+  grid-template-columns: 70px 1fr;
+
+  gap: 14px;
+
+  padding: 14px;
+
+  border-radius: 18px;
+
+  border: 1px solid #f1ddc7;
+}
+
+.transaction-order-card img {
+  width: 70px;
+
+  height: 70px;
+
+  border-radius: 14px;
+
+  object-fit: cover;
+}
+
+.order-info h4 {
+  margin: 5px 0;
+}
+
+.order-info strong {
+  color: #ff6e5a;
+
+  font-size: 18px;
+}
+
+/* STATUS */
+
+.order-status {
+  grid-column: 1/-1;
+
+  display: flex;
+
+  gap: 10px;
+
+  margin-top: 8px;
+}
+
+.status-step {
+  flex: 1;
+
+  padding: 8px;
+
+  border-radius: 12px;
+
+  background: #f5f5f5;
+
+  text-align: center;
+
+  font-size: 12px;
+
+  color: #888;
+}
+
+.status-step.done {
+  background: #dff5e9;
+
+  color: #07935f;
+}
+
+.status-step.active {
+  background: #fff0dd;
+
+  color: #ff8a00;
+}
+
+/* PAYMENT */
+
+.payment-state {
+  display: flex;
+
+  align-items: center;
+
+  gap: 15px;
+
+  background: #f0faf4;
+
+  padding: 15px;
+
+  border-radius: 18px;
+}
+
+.payment-icon {
+  width: 55px;
+
+  height: 55px;
+
+  border-radius: 50%;
+
+  background: #07935f;
+
+  color: white;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  font-size: 25px;
+}
+
+.payment-state h3 {
+  margin: 0;
+
+  color: #07935f;
+}
+
+.payment-state strong {
+  color: #ff6e5a;
+
+  font-size: 20px;
+}
+
+.bank-details {
+  margin-top: 15px;
+
+  padding: 14px;
+
+  border-radius: 15px;
+
+  background: #fffaf4;
+}
+
+.bank-details p {
+  margin: 0;
+
+  color: #777;
+}
+
+.bank-details b {
+  font-size: 18px;
+}
+
+.payment-actions {
+  display: flex;
+
+  gap: 10px;
+
+  margin-top: 15px;
+}
+
+.payment-actions button {
+  flex: 1;
+
+  padding: 12px;
+
+  border-radius: 20px;
+
+  cursor: pointer;
+
+  font-weight: bold;
+}
+
+.pay-upload {
+  background: #07935f;
+
+  color: white;
+
+  border: none;
+}
+
+.cancel-payment {
+  background: white;
+
+  color: #ff6e5a;
+
+  border: 1px solid #ff6e5a;
+}
+/* ================================
+   NGOXI RECEIPT VIEWER
+================================ */
+
+.ngx-receipt-viewer {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 30px;
+
+  background: rgba(18, 18, 18, 0.68);
+  backdrop-filter: blur(8px);
+
+  opacity: 0;
+  visibility: hidden;
+
+  transition:
+    opacity 0.2s ease,
+    visibility 0.2s ease;
+}
+
+.ngx-receipt-viewer.show {
+  opacity: 1;
+  visibility: visible;
+}
+
+.ngx-receipt-modal {
+  width: min(520px, 92vw);
+  max-height: 90vh;
+
+  display: flex;
+  flex-direction: column;
+
+  background: #fff;
+
+  border-radius: 20px;
+  overflow: hidden;
+
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.3);
+}
+
+.ngx-receipt-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  padding: 14px 18px;
+
+  border-bottom: 1px solid #eee;
+}
+
+.ngx-receipt-modal-header > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ngx-receipt-modal-header strong {
+  font-size: 15px;
+}
+
+.ngx-receipt-modal-header span {
+  font-size: 11px;
+  color: #888;
+}
+
+.ngx-receipt-modal-header button {
+  width: 34px;
+  height: 34px;
+
+  border: 0;
+  border-radius: 50%;
+
+  background: #f3f3f3;
+
+  font-size: 23px;
+  line-height: 1;
+
+  cursor: pointer;
+}
+
+.ngx-receipt-image-wrap {
+  flex: 1;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  min-height: 300px;
+  padding: 18px;
+
+  overflow: auto;
+
+  background: #f5f5f5;
+}
+
+.ngx-receipt-image-wrap img {
+  display: block;
+
+  max-width: 100%;
+  max-height: 65vh;
+
+  object-fit: contain;
+
+  border-radius: 10px;
+}
+
+.ngx-receipt-modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 15px;
+
+  padding: 12px 18px;
+
+  border-top: 1px solid #eee;
+}
+
+.ngx-receipt-modal-footer span {
+  font-size: 12px;
+  color: #777;
+}
+
+#ngxReceiptViewerBack {
+  border: 0;
+  border-radius: 999px;
+
+  padding: 9px 16px;
+
+  background: #087b57;
+  color: #fff;
+
+  font-weight: 700;
+  cursor: pointer;
+}
+/* ============================================================
+   NGOXI MESSAGES DESKTOP V2
+   Sidebar + Navigation + Transaction Center
+   ============================================================ */
+
+/* ============================================================
+   1. MESSAGES WORKSPACE
+   ============================================================ */
+
+#view-messages {
+  height: 100vh;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--bg);
+}
+
+#view-messages .ngx-chat-app {
+  width: 100%;
+  height: 100%;
+
+  display: flex;
+  align-items: stretch;
+
+  overflow: hidden;
+
+  background: var(--bg);
+}
+
+/* ============================================================
+   2. RESIZABLE LEFT SIDEBAR
+   ============================================================ */
+
+#view-messages .ngx-chat-sidebar {
+  position: relative;
+
+  width: 330px;
+  min-width: 230px;
+  max-width: 470px;
+  height: 100%;
+
+  flex: 0 0 auto;
+
+  display: flex;
+  flex-direction: column;
+
+  min-height: 0;
+
+  background: var(--panel);
+  border-right: 1px solid var(--line);
+
+  overflow: hidden;
+}
+
+/* Brand / search / filters stay fixed */
+
+#view-messages .ngx-chat-brand,
+#view-messages .ngx-search-box,
+#view-messages .ngx-chat-filters {
+  flex: 0 0 auto;
+}
+
+/* ============================================================
+   3. BRAND
+   ============================================================ */
+
+#view-messages .ngx-chat-brand {
+  min-height: 66px;
+
+  display: flex;
+  align-items: center;
+
+  padding: 11px 14px 8px;
+}
+
+#view-messages .ngx-logo {
+  line-height: 1;
+}
+
+#view-messages .ngx-logo .ngo {
+  color: var(--green);
+}
+
+#view-messages .ngx-logo .xi {
+  color: #8b5a35;
+}
+
+#view-messages .ngx-slogan {
+  opacity: 0.68;
+}
+
+/* ============================================================
+   4. SEARCH
+   ============================================================ */
+
+#view-messages .ngx-search-box {
+  margin: 2px 12px 8px;
+}
+
+#view-messages .ngx-search-box input {
+  width: 100%;
+}
+
+/* ============================================================
+   5. FILTERS
+   ============================================================ */
+
+#view-messages .ngx-chat-filters {
+  display: flex;
+  align-items: center;
+
+  gap: 6px;
+
+  padding: 2px 12px 9px;
+
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+#view-messages .ngx-chat-filters::-webkit-scrollbar {
+  display: none;
+}
+
+#view-messages .ngx-chat-filters button {
+  flex: 0 0 auto;
+}
+
+/* ============================================================
+   6. ONLY CONVERSATIONS SCROLL
+   ============================================================ */
+
+#view-messages .ngx-conversation-list {
+  flex: 1 1 auto;
+
+  min-height: 0;
+
+  overflow-y: auto;
+  overflow-x: hidden;
+
+  padding-bottom: 12px;
+
+  overscroll-behavior: contain;
+
+  scrollbar-width: thin;
+}
+
+#view-messages .ngx-conversation-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+#view-messages .ngx-conversation-list::-webkit-scrollbar-thumb {
+  background: rgba(120, 120, 120, 0.24);
+  border-radius: 999px;
+}
+
+#view-messages .ngx-conversation-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* Conversation density */
+
+#view-messages .ngx-conversation {
+  min-height: 66px;
+
+  padding: 8px 12px;
+
+  border-radius: 0;
+}
+
+#view-messages .ngx-conversation-info {
+  min-width: 0;
+}
+
+#view-messages .ngx-conversation-info p {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* ============================================================
+   7. SIDEBAR RESIZER
+   ============================================================ */
+
+#view-messages .ngx-sidebar-resizer {
+  position: absolute;
+
+  top: 0;
+  right: -3px;
+  bottom: 0;
+
+  width: 6px;
+
+  z-index: 40;
+
+  cursor: col-resize;
+
+  background: transparent;
+}
+
+#view-messages .ngx-sidebar-resizer::after {
+  content: "";
+
+  position: absolute;
+
+  top: 0;
+  bottom: 0;
+  left: 2px;
+
+  width: 1px;
+
+  background: transparent;
+
+  transition: background 0.18s ease;
+}
+
+#view-messages .ngx-sidebar-resizer:hover::after {
+  background: var(--green);
+}
+
+/* ============================================================
+   8. CHAT WINDOW
+   ============================================================ */
+
+#view-messages .ngx-chat-window {
+  flex: 1 1 auto;
+
+  width: 0;
+  min-width: 0;
+  height: 100%;
+
+  display: flex;
+  flex-direction: column;
+
+  overflow: hidden;
+
+  background: var(--bg);
+}
+
+#view-messages .ngx-chat-header {
+  flex: 0 0 auto;
+}
+
+#view-messages .ngx-message-area {
+  flex: 1 1 auto;
+
+  min-height: 0;
+
+  overflow-y: auto;
+  overflow-x: hidden;
+
+  overscroll-behavior: contain;
+}
+
+#view-messages .ngx-message-input {
+  flex: 0 0 auto;
+}
+
+/* ============================================================
+   9. TRANSACTION CENTER
+   ============================================================ */
+
+#view-messages .transaction-center {
+  position: relative;
+
+  flex: 0 0 auto;
+
+  width: calc(100% - 32px);
+
+  margin: 10px 16px 8px;
+
+  border: 1px solid var(--line);
+  border-radius: 16px;
+
+  overflow: hidden;
+
+  background: var(--card);
+
+  box-shadow: 0 4px 16px rgba(20, 24, 22, 0.055);
+
+  transition:
+    box-shadow 0.2s ease,
+    border-color 0.2s ease;
+}
+
+#view-messages .transaction-center:hover {
+  border-color: rgba(16, 132, 92, 0.22);
+
+  box-shadow: 0 7px 22px rgba(20, 24, 22, 0.075);
+}
+
+/* ============================================================
+   10. TRANSACTION HEADER
+   ============================================================ */
+
+#view-messages .transaction-header {
+  min-height: 43px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 14px;
+
+  padding: 6px 10px 6px 13px;
+
+  border-bottom: 1px solid var(--line);
+
+  background: var(--card);
+}
+
+#view-messages .transaction-header > div:first-child {
+  display: flex;
+  align-items: center;
+
+  min-width: 0;
+}
+
+#view-messages .transaction-icon {
+  margin-right: 7px;
+
+  font-size: 14px;
+}
+
+#view-messages .transaction-header b {
+  font-size: 13px;
+  font-weight: 750;
+
+  white-space: nowrap;
+}
+
+/* ============================================================
+   11. ORDERS / PAYMENT TABS
+   ============================================================ */
+
+#view-messages .transaction-tabs {
+  display: flex;
+  align-items: center;
+
+  gap: 2px;
+
+  padding: 2px;
+
+  border-radius: 999px;
+
+  background: var(--soft);
+}
+
+#view-messages .transaction-tabs button {
+  min-width: 70px;
+
+  padding: 5px 11px;
+
+  border: 0;
+  border-radius: 999px;
+
+  background: transparent;
+  color: var(--muted);
+
+  font-size: 11px;
+  font-weight: 700;
+
+  cursor: pointer;
+
+  transition:
+    background 0.18s ease,
+    color 0.18s ease,
+    transform 0.18s ease;
+}
+
+#view-messages .transaction-tabs button:hover {
+  color: var(--text);
+}
+
+#view-messages .transaction-tabs button.active {
+  background: var(--green);
+  color: #fff;
+
+  box-shadow: 0 2px 7px rgba(16, 132, 92, 0.17);
+}
+
+/* ============================================================
+   12. SLIDES
+   ============================================================ */
+
+#view-messages .transaction-slide {
+  display: none;
+
+  padding: 10px 13px 12px;
+}
+
+#view-messages .transaction-slide.active {
+  display: block;
+
+  animation: ngxTransactionIn 0.22s ease;
+}
+
+@keyframes ngxTransactionIn {
+  from {
+    opacity: 0;
+    transform: translateY(3px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ============================================================
+   13. ORDERS HEADER
+   ============================================================ */
+
+#view-messages .transaction-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  margin-bottom: 7px;
+}
+
+#view-messages .transaction-top b {
+  font-size: 11px;
+  font-weight: 750;
+}
+
+#view-messages .transaction-top span {
+  padding: 3px 7px;
+
+  border-radius: 999px;
+
+  background: var(--soft);
+  color: var(--muted);
+
+  font-size: 10px;
+  font-weight: 700;
+}
+
+/* ============================================================
+   14. ORDER CAROUSEL
+   ============================================================ */
+
+#view-messages .order-carousel {
+  display: grid;
+
+  grid-template-columns: 28px minmax(0, 1fr) 28px;
+
+  align-items: center;
+
+  gap: 7px;
+}
+
+#view-messages .order-arrow {
+  width: 28px;
+  height: 28px;
+
+  display: grid;
+  place-items: center;
+
+  padding: 0;
+
+  border: 1px solid var(--line);
+  border-radius: 50%;
+
+  background: var(--panel);
+  color: var(--text);
+
+  font-size: 18px;
+  line-height: 1;
+
+  cursor: pointer;
+
+  transition:
+    background 0.16s ease,
+    border-color 0.16s ease,
+    transform 0.16s ease;
+}
+
+#view-messages .order-arrow:hover {
+  border-color: rgba(16, 132, 92, 0.3);
+  background: var(--soft);
+
+  transform: scale(1.05);
+}
+
+/* ============================================================
+   15. SINGLE ORDER CARD
+   ============================================================ */
+
+#view-messages .transaction-order-card {
+  min-width: 0;
+
+  display: grid;
+
+  grid-template-columns: 56px minmax(0, 1fr);
+
+  column-gap: 10px;
+  row-gap: 8px;
+
+  padding: 9px;
+
+  border: 1px solid var(--line);
+  border-radius: 12px;
+
+  background: var(--panel);
+}
+
+#view-messages .transaction-order-card > img {
+  width: 56px;
+  height: 56px;
+
+  border-radius: 10px;
+
+  object-fit: cover;
+
+  background: var(--soft);
+}
+
+#view-messages .order-info {
+  min-width: 0;
+}
+
+#view-messages .order-info > b {
+  display: block;
+
+  margin-bottom: 1px;
+
+  color: var(--green);
+
+  font-size: 9px;
+  font-weight: 800;
+
+  letter-spacing: 0.03em;
+}
+
+#view-messages .order-info h4 {
+  margin: 0;
+
+  overflow: hidden;
+
+  color: var(--text);
+
+  font-size: 13px;
+  font-weight: 760;
+
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+#view-messages .order-info p {
+  margin: 2px 0;
+
+  overflow: hidden;
+
+  color: var(--muted);
+
+  font-size: 10px;
+
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+#view-messages .order-info strong {
+  display: block;
+
+  margin-top: 3px;
+
+  color: var(--accent);
+
+  font-size: 13px;
+  font-weight: 800;
+}
+
+/* ============================================================
+   16. ORDER TIMELINE
+   ============================================================ */
+
+#view-messages .order-status {
+  position: relative;
+
+  grid-column: 1 / -1;
+
+  display: grid;
+
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+
+  gap: 4px;
+
+  margin-top: 1px;
+}
+
+#view-messages .order-status::before {
+  content: "";
+
+  position: absolute;
+
+  top: 11px;
+  left: 9%;
+  right: 9%;
+
+  height: 2px;
+
+  background: var(--line);
+
+  z-index: 0;
+}
+
+#view-messages .status-step {
+  position: relative;
+  z-index: 1;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  gap: 3px;
+
+  min-width: 0;
+
+  padding: 0;
+
+  background: transparent;
+
+  color: var(--muted);
+
+  font-size: 8px;
+  text-align: center;
+}
+
+#view-messages .status-step span:first-child {
+  width: 22px;
+  height: 22px;
+
+  display: grid;
+  place-items: center;
+
+  border: 2px solid var(--line);
+  border-radius: 50%;
+
+  background: var(--card);
+
+  font-size: 9px;
+}
+
+#view-messages .status-step.done {
+  color: var(--green);
+}
+
+#view-messages .status-step.done span:first-child {
+  border-color: var(--green);
+
+  background: var(--green);
+  color: #fff;
+}
+
+#view-messages .status-step.active {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+#view-messages .status-step.active span:first-child {
+  border-color: var(--accent);
+
+  background: var(--card);
+  color: var(--accent);
+
+  box-shadow: 0 0 0 3px rgba(255, 115, 86, 0.09);
+}
+
+/* ============================================================
+   17. PAYMENT SLIDE
+   ============================================================ */
+
+#view-messages .payment-state {
+  display: grid;
+
+  grid-template-columns: 42px minmax(0, 1fr);
+
+  align-items: center;
+
+  gap: 10px;
+
+  padding: 8px 10px;
+
+  border: 1px solid rgba(16, 132, 92, 0.13);
+  border-radius: 12px;
+
+  background: linear-gradient(
+    135deg,
+    rgba(16, 132, 92, 0.07),
+    rgba(16, 132, 92, 0.015)
+  );
+}
+
+#view-messages .payment-icon {
+  width: 38px;
+  height: 38px;
+
+  display: grid;
+  place-items: center;
+
+  border-radius: 11px;
+
+  background: var(--green);
+  color: #fff;
+
+  font-size: 17px;
+
+  box-shadow: 0 4px 12px rgba(16, 132, 92, 0.15);
+}
+
+#view-messages .payment-state h3 {
+  margin: 0;
+
+  color: var(--green);
+
+  font-size: 12px;
+  font-weight: 800;
+}
+
+#view-messages .payment-state p {
+  margin: 2px 0 1px;
+
+  color: var(--muted);
+
+  font-size: 10px;
+}
+
+#view-messages .payment-state strong {
+  color: var(--accent);
+
+  font-size: 14px;
+  font-weight: 850;
+}
+
+/* ============================================================
+   18. BANK / RECEIPT DETAILS
+   ============================================================ */
+
+#view-messages .bank-details {
+  display: grid;
+
+  gap: 2px;
+
+  margin-top: 8px;
+  padding: 9px 11px;
+
+  border: 1px solid var(--line);
+  border-radius: 11px;
+
+  background: var(--panel);
+}
+
+#view-messages .bank-details p {
+  margin: 0;
+
+  color: var(--muted);
+
+  font-size: 9px;
+  font-weight: 700;
+
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+#view-messages .bank-details b {
+  color: var(--text);
+
+  font-size: 12px;
+}
+
+#view-messages .bank-details small {
+  display: block;
+
+  margin-top: 2px;
+
+  color: var(--muted);
+
+  font-size: 9px;
+  line-height: 1.35;
+}
+
+/* ============================================================
+   19. PAYMENT ACTIONS
+   ============================================================ */
+
+#view-messages .payment-actions {
+  display: flex;
+
+  justify-content: flex-end;
+
+  gap: 7px;
+
+  margin-top: 8px;
+}
+
+#view-messages .payment-actions button {
+  min-height: 31px;
+
+  padding: 6px 13px;
+
+  border-radius: 999px;
+
+  font-size: 10px;
+  font-weight: 800;
+
+  cursor: pointer;
+
+  transition:
+    transform 0.15s ease,
+    opacity 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+#view-messages .payment-actions button:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+#view-messages .pay-upload {
+  border: 1px solid var(--green);
+
+  background: var(--green);
+  color: #fff;
+
+  box-shadow: 0 3px 9px rgba(16, 132, 92, 0.14);
+}
+
+#view-messages .cancel-payment {
+  border: 1px solid var(--line);
+
+  background: var(--panel);
+  color: var(--muted);
+}
+
+#view-messages .payment-actions button:disabled {
+  cursor: default;
+
+  opacity: 0.55;
+}
+
+/* ============================================================
+   20. RECEIPT VIEWER
+   ============================================================ */
+
+.ngx-receipt-viewer {
+  position: fixed;
+
+  inset: 0;
+
+  z-index: 99999;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 28px;
+
+  background: rgba(12, 16, 14, 0.68);
+
+  backdrop-filter: blur(8px);
+
+  opacity: 0;
+  visibility: hidden;
+
+  transition:
+    opacity 0.18s ease,
+    visibility 0.18s ease;
+}
+
+.ngx-receipt-viewer.show {
+  opacity: 1;
+  visibility: visible;
+}
+
+.ngx-receipt-modal {
+  width: min(500px, 92vw);
+  max-height: 90vh;
+
+  display: flex;
+  flex-direction: column;
+
+  overflow: hidden;
+
+  border: 1px solid var(--line);
+  border-radius: 17px;
+
+  background: var(--card);
+
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.28);
+}
+
+.ngx-receipt-modal-header,
+.ngx-receipt-modal-footer {
+  flex: 0 0 auto;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 12px;
+
+  padding: 11px 14px;
+}
+
+.ngx-receipt-modal-header {
+  border-bottom: 1px solid var(--line);
+}
+
+.ngx-receipt-modal-footer {
+  border-top: 1px solid var(--line);
+}
+
+.ngx-receipt-modal-header > div {
+  display: flex;
+  flex-direction: column;
+}
+
+.ngx-receipt-modal-header strong {
+  color: var(--text);
+
+  font-size: 13px;
+}
+
+.ngx-receipt-modal-header span,
+.ngx-receipt-modal-footer span {
+  color: var(--muted);
+
+  font-size: 9px;
+}
+
+#ngxReceiptViewerClose {
+  width: 30px;
+  height: 30px;
+
+  display: grid;
+  place-items: center;
+
+  padding: 0;
+
+  border: 0;
+  border-radius: 50%;
+
+  background: var(--soft);
+  color: var(--text);
+
+  font-size: 20px;
+
+  cursor: pointer;
+}
+
+.ngx-receipt-image-wrap {
+  flex: 1;
+
+  min-height: 280px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 14px;
+
+  overflow: auto;
+
+  background: var(--soft);
+}
+
+.ngx-receipt-image-wrap img {
+  display: block;
+
+  max-width: 100%;
+  max-height: 65vh;
+
+  border-radius: 9px;
+
+  object-fit: contain;
+}
+
+#ngxReceiptViewerBack {
+  padding: 7px 13px;
+
+  border: 0;
+  border-radius: 999px;
+
+  background: var(--green);
+  color: #fff;
+
+  font-size: 10px;
+  font-weight: 800;
+
+  cursor: pointer;
+}
+/* =========================================================
+   MESSAGES SIDEBAR NAV
+   ========================================================= */
+
+#view-messages .ngx-chat-sidebar .bottom-nav.pro.ngx-sidebar-nav {
+  position: relative !important;
+
+  left: auto !important;
+  right: auto !important;
+  bottom: auto !important;
+
+  transform: none !important;
+
+  width: 100% !important;
+  height: 62px !important;
+
+  flex: 0 0 62px;
+
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+
+  margin: 0 !important;
+  padding: 5px 6px !important;
+
+  border-radius: 0 !important;
+
+  border-top: 1px solid var(--line) !important;
+  border-left: 0 !important;
+  border-right: 0 !important;
+  border-bottom: 0 !important;
+
+  box-shadow: none !important;
+
+  background: var(--card) !important;
+
+  opacity: 0.5;
+
+  transition:
+    opacity 0.2s ease,
+    background 0.2s ease;
+}
+
+/* wake nav on interaction */
+
+#view-messages .ngx-chat-sidebar .bottom-nav.pro.ngx-sidebar-nav:hover,
+#view-messages .ngx-chat-sidebar .bottom-nav.pro.ngx-sidebar-nav:focus-within {
+  opacity: 1;
+}
+
+/* nav buttons */
+
+#view-messages .ngx-sidebar-nav .nav-btn {
+  min-width: 0;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  gap: 2px;
+
+  padding: 4px 2px;
+
+  background: transparent;
+
+  border-radius: 9px;
+}
+
+/* icon sizing */
+
+#view-messages .ngx-sidebar-nav .nav-ic {
+  width: 20px;
+  height: 20px;
+}
+
+/* labels */
+
+#view-messages .ngx-sidebar-nav .nav-btn span {
+  max-width: 100%;
+
+  overflow: hidden;
+
+  font-size: 9px;
+
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* active state */
+
+#view-messages .ngx-sidebar-nav .nav-btn.active {
+  background: rgba(14, 163, 109, 0.1);
+}
+
+/* narrow sidebar: hide labels */
+
+@media (min-width: 701px) {
+  #view-messages
+    .ngx-chat-sidebar[style*="width: 23"]
+    .ngx-sidebar-nav
+    .nav-btn
+    span,
+  #view-messages
+    .ngx-chat-sidebar[style*="width: 24"]
+    .ngx-sidebar-nav
+    .nav-btn
+    span,
+  #view-messages
+    .ngx-chat-sidebar[style*="width: 25"]
+    .ngx-sidebar-nav
+    .nav-btn
+    span {
+    display: none;
+  }
+}
+#view-messages .ngx-conversation-top {
+  min-width: 0;
+  gap: 8px;
+}
+
+#view-messages .ngx-conversation-top b {
+  flex: 1;
+  min-width: 0;
+
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+#view-messages .ngx-conversation-top > span {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+#view-messages .ngx-conversation-info p {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+/* =========================================================
+   MESSAGE SIDEBAR RESPONSIVE CONTENT
+   ========================================================= */
+
+/* Compact sidebar spacing */
+#view-messages .ngx-chat-sidebar.sidebar-compact .ngx-conversation {
+  padding-left: 9px;
+  padding-right: 9px;
+}
+
+#view-messages .ngx-chat-sidebar .ngx-avatar {
+  width: 48px;
+  height: 48px;
+  flex: 0 0 48px;
+}
+/* KEEP SELLER / CONTACT NAME SIZE CONSTANT */
+#view-messages .ngx-chat-sidebar .ngx-conversation-top b {
+  font-size: 14px;
+}
+
+/* KEEP MESSAGE PREVIEW SIZE CONSTANT */
+#view-messages .ngx-chat-sidebar .ngx-conversation-info p {
+  font-size: 12px;
+}
+.ngx-filter-more {
+  position: relative;
+  display: none;
+}
+
+.ngx-filter-more-btn {
+  width: 34px;
+  height: 34px;
+
+  display: grid;
+  place-items: center;
+
+  padding: 0 !important;
+
+  border: 1px solid var(--line) !important;
+  border-radius: 50% !important;
+
+  background: var(--card) !important;
+}
+
+.ngx-filter-more-menu {
+  position: absolute;
+
+  top: calc(100% + 6px);
+  right: 0;
+
+  width: 145px;
+
+  display: none;
+
+  padding: 6px;
+
+  border: 1px solid var(--line);
+  border-radius: 10px;
+
+  background: var(--card);
+
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+
+  z-index: 100;
+}
+
+.ngx-filter-more-menu.open {
+  display: grid;
+}
+
+.ngx-filter-more-menu button {
+  width: 100%;
+
+  padding: 9px 10px !important;
+
+  border-radius: 7px !important;
+
+  text-align: left;
+
+  background: transparent !important;
+}
+
+.ngx-filter-more-menu button:hover {
+  background: var(--soft) !important;
+}
+/* Compact sidebar: hide lower priority filters */
+
+#view-messages .ngx-chat-sidebar.sidebar-compact #ngxFilterOrders,
+#view-messages .ngx-chat-sidebar.sidebar-compact #ngxFilterFavorites {
+  display: none;
+}
+
+#view-messages .ngx-chat-sidebar.sidebar-compact .ngx-filter-more {
+  display: block;
+}
+
+/* Medium + wide: show normal filters */
+
+#view-messages .ngx-chat-sidebar.sidebar-medium #ngxFilterOrders,
+#view-messages .ngx-chat-sidebar.sidebar-medium #ngxFilterFavorites,
+#view-messages .ngx-chat-sidebar.sidebar-wide #ngxFilterOrders,
+#view-messages .ngx-chat-sidebar.sidebar-wide #ngxFilterFavorites {
+  display: inline-flex;
+}
+
+#view-messages .ngx-chat-sidebar.sidebar-medium .ngx-filter-more,
+#view-messages .ngx-chat-sidebar.sidebar-wide .ngx-filter-more {
+  display: none;
+}
+#view-messages .ngx-payment-card {
+  display: grid;
+  gap: 8px;
+}
+
+#view-messages .ngx-payment-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 16px;
+
+  min-height: 56px;
+
+  padding: 8px 10px;
+
+  border: 1px solid rgba(16, 132, 92, 0.13);
+  border-radius: 12px;
+
+  background: linear-gradient(
+    135deg,
+    rgba(16, 132, 92, 0.07),
+    rgba(16, 132, 92, 0.015)
+  );
+}
+
+#view-messages .ngx-payment-left {
+  min-width: 0;
+
+  display: flex;
+  align-items: center;
+
+  gap: 10px;
+}
+
+#view-messages .ngx-payment-summary > strong {
+  flex: 0 0 auto;
+
+  color: var(--accent);
+
+  font-size: 15px;
+  font-weight: 850;
+
+  white-space: nowrap;
+}
+#view-messages .ngx-payment-method-shell {
+  display: grid;
+
+  grid-template-columns:
+    28px
+    minmax(0, 1fr)
+    28px;
+
+  align-items: center;
+
+  gap: 6px;
+}
+
+#view-messages .payment-methods-track {
+  display: flex;
+
+  gap: 7px;
+
+  min-width: 0;
+
+  overflow-x: auto;
+  overflow-y: hidden;
+
+  scroll-behavior: smooth;
+  scrollbar-width: none;
+}
+
+#view-messages .payment-methods-track::-webkit-scrollbar {
+  display: none;
+}
+
+#view-messages .payment-method-card {
+  flex: 0 0 180px;
+
+  display: grid;
+
+  gap: 2px;
+
+  padding: 8px 10px;
+
+  border: 1px solid var(--line);
+  border-radius: 10px;
+
+  background: var(--panel);
+  color: var(--text);
+
+  text-align: left;
+
+  cursor: pointer;
+}
+
+#view-messages .payment-method-card.active {
+  border-color: rgba(14, 163, 109, 0.48);
+
+  background: rgba(14, 163, 109, 0.07);
+}
+
+#view-messages .payment-method-label {
+  color: var(--muted);
+
+  font-size: 8px;
+  font-weight: 800;
+}
+
+#view-messages .payment-method-card strong {
+  font-size: 11px;
+}
+
+#view-messages .payment-method-card small {
+  overflow: hidden;
+
+  color: var(--muted);
+
+  font-size: 8px;
+
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+/* =========================================================
+   CHAT OPTIONS MENU
+   ========================================================= */
+
+#view-messages .chat-options-wrap {
+  position: relative;
+}
+
+#view-messages .chat-options-menu {
+  position: absolute;
+
+  top: calc(100% + 7px);
+  right: 0;
+
+  min-width: 190px;
+
+  display: none;
+
+  padding: 6px;
+
+  border: 1px solid var(--line);
+  border-radius: 10px;
+
+  background: var(--card);
+
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.14);
+
+  z-index: 500;
+}
+
+#view-messages .chat-options-menu.open {
+  display: block;
+}
+
+#view-messages .chat-options-menu button {
+  width: 100%;
+
+  padding: 9px 10px;
+
+  border: 0;
+  border-radius: 7px;
+
+  background: transparent;
+  color: var(--text);
+
+  font-size: 12px;
+  text-align: left;
+
+  cursor: pointer;
+}
+
+#view-messages .chat-options-menu button:hover {
+  background: var(--soft);
+}
+
+/* User manually hides transaction center */
+
+#view-messages .transaction-center.user-hidden {
+  display: none !important;
+}
+/* =========================================================
+   CHAT HEADER ACTIONS
+   ========================================================= */
+
+#view-messages .ngx-chat-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+
+  gap: 8px;
+
+  flex: 0 0 auto;
+}
+
+#view-messages .ngx-chat-actions > button,
+#view-messages .chat-options-wrap > button {
+  width: 38px;
+  height: 38px;
+
+  display: grid;
+  place-items: center;
+
+  margin: 0;
+
+  border: 0;
+  border-radius: 50%;
+
+  background: #fff0dd;
+
+  cursor: pointer;
+}
+
+#view-messages .chat-options-wrap {
+  position: relative;
+
+  display: flex;
+  align-items: center;
+}
+/* =========================================================
+   TRANSACTION CENTER FINAL DENSITY
+   Orders + Payment matched height
+   ========================================================= */
+
+/* Keep both slides compact */
+#view-messages .transaction-slide {
+  padding: 9px 13px 11px;
+}
+
+/* ==========================
+   PAYMENT SUMMARY
+   ========================== */
+
+#view-messages .ngx-payment-card {
+  display: grid;
+
+  grid-template-rows:
+    auto
+    auto
+    auto;
+
+  gap: 7px;
+}
+
+/* product + amount same row */
+
+#view-messages .ngx-payment-summary {
+  min-height: 58px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 18px;
+
+  padding: 7px 10px;
+
+  border-radius: 11px;
+}
+
+#view-messages .ngx-payment-left {
+  min-width: 0;
+
+  display: flex;
+  align-items: center;
+
+  gap: 10px;
+}
+
+#view-messages .payment-icon {
+  width: 36px;
+  height: 36px;
+
+  flex: 0 0 36px;
+
+  border-radius: 10px;
+}
+
+#view-messages .ngx-payment-summary h3 {
+  margin: 0;
+
+  font-size: 13px;
+  line-height: 1.2;
+}
+
+#view-messages .ngx-payment-summary p {
+  margin: 2px 0 0;
+
+  overflow: hidden;
+
+  font-size: 10px;
+
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* PRICE STAYS RIGHT */
+
+#view-messages .ngx-payment-summary > strong {
+  flex: 0 0 auto;
+
+  margin-left: auto;
+
+  color: var(--accent);
+
+  font-size: 14px;
+  font-weight: 850;
+
+  white-space: nowrap;
+}
+
+/* ==========================
+   PAYMENT METHODS RAIL
+   ========================== */
+
+#view-messages .ngx-payment-method-shell {
+  display: grid;
+
+  grid-template-columns:
+    26px
+    minmax(0, 1fr)
+    26px;
+
+  align-items: center;
+
+  gap: 6px;
+
+  min-width: 0;
+}
+
+#view-messages .payment-method-arrow {
+  width: 26px;
+  height: 26px;
+
+  display: grid;
+  place-items: center;
+
+  padding: 0;
+
+  border: 1px solid var(--line);
+  border-radius: 50%;
+
+  background: var(--card);
+  color: var(--text);
+
+  font-size: 15px;
+
+  cursor: pointer;
+}
+
+#view-messages .payment-methods-track {
+  min-width: 0;
+
+  display: flex;
+
+  gap: 6px;
+
+  overflow-x: auto;
+  overflow-y: hidden;
+
+  scroll-behavior: smooth;
+  scrollbar-width: none;
+}
+
+#view-messages .payment-methods-track::-webkit-scrollbar {
+  display: none;
+}
+
+/* individual payment method */
+
+#view-messages .payment-methods-track {
+  min-width: 0;
+
+  display: flex;
+  align-items: stretch;
+
+  gap: 6px;
+
+  overflow-x: auto;
+  overflow-y: hidden;
+
+  scroll-behavior: smooth;
+  scrollbar-width: none;
+}
+
+#view-messages .payment-method-card {
+  flex: 1 1 180px;
+
+  min-width: 130px;
+  max-width: 320px;
+
+  min-height: 46px;
+
+  display: grid;
+  gap: 1px;
+
+  padding: 6px 9px;
+
+  border: 1px solid var(--line);
+  border-radius: 9px;
+
+  background: var(--panel);
+  color: var(--text);
+
+  text-align: left;
+
+  cursor: pointer;
+
+  transition:
+    border-color 0.16s ease,
+    background 0.16s ease,
+    transform 0.16s ease;
+}
+
+#view-messages .payment-method-card:hover {
+  border-color: rgba(14, 163, 109, 0.35);
+
+  background: rgba(14, 163, 109, 0.055);
+
+  transform: translateY(-1px);
+}
+
+#view-messages .payment-method-card:active {
+  transform: scale(0.985);
+}
+
+#view-messages .payment-method-card.active {
+  border-color: rgba(14, 163, 109, 0.4);
+
+  background: rgba(14, 163, 109, 0.07);
+}
+
+#view-messages .payment-method-label {
+  color: var(--muted);
+
+  font-size: 7px;
+  font-weight: 800;
+
+  letter-spacing: 0.03em;
+}
+
+#view-messages .payment-method-card strong {
+  overflow: hidden;
+
+  color: var(--text);
+
+  font-size: 10px;
+
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+#view-messages .payment-method-card small {
+  overflow: hidden;
+
+  color: var(--muted);
+
+  font-size: 7px;
+
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* ==========================
+   RECEIPT STATE
+   ========================== */
+
+#view-messages .payment-receipt-info {
+  min-height: 0;
+
+  color: var(--muted);
+
+  font-size: 9px;
+}
+
+/* Don't waste height when empty */
+
+#view-messages .payment-receipt-info:empty {
+  display: none;
+}
+
+/* ==========================
+   PAYMENT BUTTONS
+   ========================== */
+
+#view-messages .payment-actions {
+  display: grid;
+
+  grid-template-columns:
+    minmax(0, 1fr)
+    minmax(110px, 0.45fr);
+
+  gap: 7px;
+
+  margin-top: 0;
+}
+
+#view-messages .payment-actions button {
+  min-height: 30px;
+
+  padding: 5px 12px;
+
+  border-radius: 999px;
+
+  font-size: 10px;
+  font-weight: 800;
+}
+
+/* ==========================
+   KEEP CENTER TIGHT
+   ========================== */
+
+#view-messages .transaction-center {
+  margin-top: 10px;
+  margin-bottom: 8px;
+}
+
+#view-messages .transaction-header {
+  min-height: 41px;
+}
+
+/* Order and payment should visually
+   occupy approximately the same space */
+
+#view-messages #ordersSlide,
+#view-messages #paymentSlide {
+  min-height: 145px;
+}
+/* 1 payment method: use the whole useful width */
+#view-messages .payment-methods-track[data-count="1"] .payment-method-card {
+  flex-basis: 100%;
+  max-width: none;
+}
+
+/* 2 payment methods */
+#view-messages .payment-methods-track[data-count="2"] .payment-method-card {
+  flex-basis: calc(50% - 3px);
+  max-width: none;
+}
+
+/* 3 payment methods */
+#view-messages .payment-methods-track[data-count="3"] .payment-method-card {
+  flex-basis: calc(33.333% - 4px);
+  max-width: none;
+}
+
+/* 4+ becomes the horizontal rail */
+#view-messages .payment-methods-track[data-count="4"] .payment-method-card,
+#view-messages .payment-methods-track[data-count="5"] .payment-method-card,
+#view-messages .payment-methods-track[data-count="6"] .payment-method-card {
+  flex: 0 0 165px;
+}
+#view-messages .payment-method-card::after {
+  content: "Click to copy";
+
+  justify-self: end;
+
+  margin-top: 2px;
+
+  color: var(--muted);
+
+  font-size: 7px;
+
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+#view-messages .payment-method-card:hover::after {
+  opacity: 0.7;
+}
+/* =========================================================
+   NGOXI CHAT HEADER V2
+   ========================================================= */
+
+#view-messages .ngx-chat-header {
+  min-height: 64px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 16px;
+
+  padding: 8px 16px;
+
+  border-bottom: 1px solid var(--line);
+
+  background: var(--card);
+}
+
+/* SELLER */
+
+#view-messages .ngx-seller {
+  min-width: 0;
+
+  display: flex;
+  align-items: center;
+
+  gap: 10px;
+}
+
+#view-messages .ngx-seller img {
+  width: 42px;
+  height: 42px;
+
+  flex: 0 0 42px;
+
+  border-radius: 50%;
+
+  object-fit: cover;
+}
+
+#view-messages .ngx-seller > div {
+  min-width: 0;
+}
+
+#view-messages .ngx-seller h3 {
+  margin: 0;
+
+  overflow: hidden;
+
+  color: var(--text);
+
+  font-size: 14px;
+  font-weight: 750;
+
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+#view-messages .ngx-seller span {
+  display: block;
+
+  margin-top: 1px;
+
+  color: var(--green);
+
+  font-size: 10px;
+}
+
+/* ACTIONS */
+
+#view-messages .ngx-chat-actions {
+  flex: 0 0 auto;
+
+  display: flex;
+  align-items: center;
+
+  gap: 4px;
+}
+
+#view-messages .chat-options-wrap {
+  position: relative;
+
+  display: flex;
+  align-items: center;
+}
+
+#view-messages .ngx-header-action {
+  width: 36px;
+  height: 36px;
+
+  display: grid;
+  place-items: center;
+
+  margin: 0;
+  padding: 0;
+
+  border: 0;
+  border-radius: 50%;
+
+  background: transparent;
+  color: var(--text);
+
+  cursor: pointer;
+
+  transition:
+    background 0.15s ease,
+    color 0.15s ease;
+}
+
+#view-messages .ngx-header-action:hover {
+  background: var(--soft);
+}
+
+#view-messages .ngx-header-action svg {
+  width: 19px;
+  height: 19px;
+
+  stroke-width: 1.8;
+}
+/* =========================================================
+   NGOXI MESSAGE COMPOSER V2
+   ========================================================= */
+
+#view-messages .ngx-message-input {
+  flex: 0 0 auto;
+
+  min-height: 62px;
+
+  display: flex;
+  align-items: center;
+
+  gap: 8px;
+
+  padding: 9px 14px;
+
+  border-top: 1px solid var(--line);
+
+  background: var(--card);
+}
+
+/* OUTSIDE ICON */
+
+#view-messages .ngx-composer-icon {
+  width: 38px;
+  height: 38px;
+
+  flex: 0 0 38px;
+
+  display: grid;
+  place-items: center;
+
+  padding: 0;
+
+  border: 0;
+  border-radius: 50%;
+
+  background: transparent;
+  color: var(--muted);
+
+  cursor: pointer;
+}
+
+#view-messages .ngx-composer-icon:hover {
+  background: var(--soft);
+  color: var(--text);
+}
+
+/* INPUT CAPSULE */
+
+#view-messages .ngx-composer-field {
+  flex: 1 1 auto;
+
+  min-width: 0;
+  min-height: 42px;
+
+  display: flex;
+  align-items: center;
+
+  padding: 0 5px 0 14px;
+
+  border: 1px solid var(--line);
+  border-radius: 22px;
+
+  background: var(--panel);
+
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+#view-messages .ngx-composer-field:focus-within {
+  border-color: rgba(14, 163, 109, 0.4);
+
+  box-shadow: 0 0 0 3px rgba(14, 163, 109, 0.06);
+}
+
+#view-messages .ngx-composer-field input {
+  flex: 1;
+
+  min-width: 0;
+
+  padding: 9px 5px 9px 0;
+
+  border: 0;
+  outline: 0;
+
+  background: transparent;
+  color: var(--text);
+
+  font: inherit;
+  font-size: 13px;
+}
+
+#view-messages .ngx-composer-field input::placeholder {
+  color: var(--muted);
+}
+
+/* EMOJI + CAMERA */
+
+#view-messages .ngx-composer-inner-btn {
+  width: 32px;
+  height: 32px;
+
+  flex: 0 0 32px;
+
+  display: grid;
+  place-items: center;
+
+  padding: 0;
+
+  border: 0;
+  border-radius: 50%;
+
+  background: transparent;
+  color: var(--muted);
+
+  cursor: pointer;
+}
+
+#view-messages .ngx-composer-inner-btn:hover {
+  background: var(--soft);
+  color: var(--text);
+}
+
+/* SEND */
+
+#view-messages .ngx-send-btn {
+  width: 40px;
+  height: 40px;
+
+  flex: 0 0 40px;
+
+  display: grid;
+  place-items: center;
+
+  padding: 0;
+
+  border: 0;
+  border-radius: 50%;
+
+  background: var(--green);
+  color: #fff;
+
+  cursor: pointer;
+
+  box-shadow: 0 3px 10px rgba(14, 163, 109, 0.18);
+
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+#view-messages .ngx-send-btn:hover {
+  transform: scale(1.04);
+
+  box-shadow: 0 5px 14px rgba(14, 163, 109, 0.24);
+}
+
+#view-messages .ngx-send-btn:active {
+  transform: scale(0.96);
+}
+
+/* ALL COMPOSER LUCIDE ICONS */
+
+#view-messages .ngx-message-input svg {
+  width: 19px;
+  height: 19px;
+
+  stroke-width: 1.8;
+}
+/* =========================================================
+   NGOXI COMPOSER V1
+   Attachments + Emoji + Message Meta
+   ========================================================= */
+
+/* SEND DISABLED */
+
+#view-messages .ngx-send-btn:disabled {
+  opacity: 0.35;
+
+  cursor: default;
+
+  transform: none;
+
+  box-shadow: none;
+}
+
+#view-messages .ngx-send-btn.ready {
+  opacity: 1;
+}
+
+/* =========================================================
+   ATTACHMENT PREVIEW
+   ========================================================= */
+
+#view-messages .ngx-attachment-preview {
+  flex: 0 0 auto;
+
+  padding: 7px 14px 0;
+
+  background: var(--card);
+}
+
+#view-messages .ngx-attachment-preview[hidden] {
+  display: none;
+}
+
+#view-messages .ngx-attachment-preview-content {
+  width: min(440px, 100%);
+
+  display: flex;
+  align-items: center;
+
+  gap: 10px;
+
+  padding: 7px 9px;
+
+  border: 1px solid var(--line);
+  border-radius: 11px;
+
+  background: var(--panel);
+}
+
+#view-messages .ngx-attachment-thumb {
+  width: 42px;
+  height: 42px;
+
+  flex: 0 0 42px;
+
+  display: grid;
+  place-items: center;
+
+  overflow: hidden;
+
+  border-radius: 8px;
+
+  background: var(--soft);
+}
+
+#view-messages .ngx-attachment-thumb img {
+  width: 100%;
+  height: 100%;
+
+  object-fit: cover;
+}
+
+#view-messages .ngx-attachment-thumb svg {
+  width: 20px;
+  height: 20px;
+}
+
+#view-messages .ngx-attachment-meta {
+  flex: 1;
+
+  min-width: 0;
+
+  display: grid;
+
+  gap: 2px;
+}
+
+#view-messages .ngx-attachment-meta strong {
+  overflow: hidden;
+
+  font-size: 11px;
+
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+#view-messages .ngx-attachment-meta span {
+  color: var(--muted);
+
+  font-size: 9px;
+}
+
+#view-messages #ngxAttachmentRemove {
+  width: 30px;
+  height: 30px;
+
+  display: grid;
+  place-items: center;
+
+  flex: 0 0 30px;
+
+  padding: 0;
+
+  border: 0;
+  border-radius: 50%;
+
+  background: transparent;
+  color: var(--muted);
+
+  cursor: pointer;
+}
+
+#view-messages #ngxAttachmentRemove:hover {
+  background: var(--soft);
+  color: var(--text);
+}
+
+/* =========================================================
+   EMOJI PICKER
+   ========================================================= */
+
+#view-messages .ngx-message-input {
+  position: relative;
+}
+
+#view-messages .ngx-emoji-picker {
+  position: absolute;
+
+  right: 58px;
+  bottom: calc(100% + 7px);
+
+  width: 300px;
+
+  overflow: hidden;
+
+  border: 1px solid var(--line);
+  border-radius: 14px;
+
+  background: var(--card);
+
+  box-shadow: 0 16px 45px rgba(0, 0, 0, 0.16);
+
+  z-index: 700;
+}
+
+#view-messages .ngx-emoji-picker[hidden] {
+  display: none;
+}
+
+#view-messages .ngx-emoji-grid {
+  display: grid;
+
+  grid-template-columns: repeat(8, 1fr);
+
+  gap: 2px;
+
+  max-height: 190px;
+
+  padding: 10px;
+
+  overflow-y: auto;
+}
+
+#view-messages .ngx-emoji-item {
+  width: 32px;
+  height: 32px;
+
+  display: grid;
+  place-items: center;
+
+  padding: 0;
+
+  border: 0;
+  border-radius: 7px;
+
+  background: transparent;
+
+  font-size: 20px;
+
+  cursor: pointer;
+}
+
+#view-messages .ngx-emoji-item:hover {
+  background: var(--soft);
+
+  transform: scale(1.08);
+}
+
+#view-messages .ngx-emoji-tabs {
+  display: grid;
+
+  grid-template-columns: repeat(4, 1fr);
+
+  gap: 2px;
+
+  padding: 6px;
+
+  border-top: 1px solid var(--line);
+
+  background: var(--panel);
+}
+
+#view-messages .ngx-emoji-tabs button {
+  height: 30px;
+
+  border: 0;
+  border-radius: 7px;
+
+  background: transparent;
+
+  font-size: 16px;
+
+  cursor: pointer;
+}
+
+#view-messages .ngx-emoji-tabs button:hover,
+#view-messages .ngx-emoji-tabs button.active {
+  background: var(--soft);
+}
+
+/* =========================================================
+   MESSAGE V1
+   ========================================================= */
+
+#view-messages .ngx-message-text {
+  white-space: pre-wrap;
+
+  word-break: break-word;
+}
+
+#view-messages .ngx-message-meta {
+  display: flex;
+
+  align-items: center;
+  justify-content: flex-end;
+
+  gap: 3px;
+
+  color: var(--muted);
+
+  font-size: 8px;
+
+  line-height: 1;
+}
+
+#view-messages .ngx-message-meta svg {
+  width: 12px;
+  height: 12px;
+
+  stroke-width: 2;
+}
+
+#view-messages .ngx-message-meta svg.read {
+  color: #1687ff;
+}
+
+/* CHAT IMAGE */
+
+#view-messages .ngx-chat-image {
+  width: min(300px, 100%);
+
+  max-height: 310px;
+
+  display: block;
+
+  border-radius: 9px;
+
+  object-fit: cover;
+}
+
+/* FILE MESSAGE */
+
+#view-messages .ngx-chat-file {
+  display: flex;
+  align-items: center;
+
+  gap: 8px;
+
+  padding: 8px;
+
+  border-radius: 8px;
+
+  background: rgba(0, 0, 0, 0.055);
+
+  color: inherit;
+
+  text-decoration: none;
+}
+
+#view-messages .ngx-chat-file svg {
+  width: 20px;
+  height: 20px;
+
+  flex: 0 0 20px;
+}
+
+#view-messages .ngx-chat-file span {
+  overflow: hidden;
+
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* =========================================================
+   NGOXI CHAT BUBBLES V2
+   ========================================================= */
+
+#view-messages .ngx-message {
+  position: relative;
+
+  width: fit-content;
+  min-width: 0;
+  max-width: min(430px, 72%);
+
+  margin: 0 0 5px;
+  padding: 6px 8px 5px;
+
+  border-radius: 10px;
+
+  font-size: 13px;
+  line-height: 1.32;
+}
+
+/* SELLER */
+
+#view-messages .ngx-message.seller {
+  margin-right: auto;
+
+  border-top-left-radius: 3px;
+
+  background: #ffffff;
+
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
+}
+
+/* BUYER */
+
+#view-messages .ngx-message.buyer {
+  margin-left: auto;
+
+  border-top-right-radius: 3px;
+
+  background: #dcf8c6;
+
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
+}
+
+/* TEXT */
+
+#view-messages .ngx-message-text {
+  display: inline;
+
+  margin: 0;
+  padding: 0;
+
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* TIME + TICKS */
+
+#view-messages .ngx-message-meta {
+  display: inline-flex;
+
+  align-items: center;
+
+  gap: 2px;
+
+  margin-left: 6px;
+
+  color: rgba(70, 70, 70, 0.68);
+
+  font-size: 8px;
+  line-height: 1;
+
+  vertical-align: -1px;
+
+  white-space: nowrap;
+}
+
+/* tick icon */
+
+#view-messages .ngx-message-meta svg {
+  width: 11px;
+  height: 11px;
+
+  stroke-width: 2;
+}
+
+/* actual read state */
+
+#view-messages .ngx-message-meta svg.read {
+  color: #1687ff;
+}
+
+/* consecutive messages feel tighter */
+
+#view-messages .ngx-message.buyer + .ngx-message.buyer,
+#view-messages .ngx-message.seller + .ngx-message.seller {
+  margin-top: -2px;
+}
+
+/* LONG MESSAGE */
+
+#view-messages .ngx-message-text {
+  max-width: 100%;
+}
+
+/* DARK MODE */
+
+html[data-theme="dark"] #view-messages .ngx-message.seller {
+  background: #16483a;
+  color: #ecfff7;
+}
+
+html[data-theme="dark"] #view-messages .ngx-message.buyer {
+  background: #087557;
+  color: #f1fff9;
+}
+
+html[data-theme="dark"] #view-messages .ngx-message-meta {
+  color: rgba(235, 255, 247, 0.65);
+}
+/* =========================================================
+   CHAT IMAGE MESSAGE
+   ========================================================= */
+
+#view-messages .ngx-message:has(.ngx-chat-image) {
+  padding: 4px;
+
+  border-radius: 11px;
+
+  overflow: hidden;
+}
+
+#view-messages .ngx-chat-image {
+  width: auto;
+
+  min-width: 120px;
+  max-width: 260px;
+
+  max-height: 320px;
+
+  display: block;
+
+  border-radius: 8px;
+
+  object-fit: cover;
+
+  cursor: pointer;
+}
+
+#view-messages .ngx-message:has(.ngx-chat-image) .ngx-message-meta {
+  display: flex;
+
+  justify-content: flex-end;
+
+  margin: 4px 3px 1px 0;
+}
+#view-messages .ngx-chat-image-viewer {
+  position: fixed;
+
+  inset: 0;
+
+  display: none;
+
+  align-items: center;
+  justify-content: center;
+
+  padding: 40px;
+
+  background: rgba(10, 15, 13, 0.9);
+
+  z-index: 5000;
+}
+
+#view-messages .ngx-chat-image-viewer.show {
+  display: flex;
+}
+
+#view-messages .ngx-chat-image-viewer img {
+  max-width: min(1000px, 90vw);
+  max-height: 88vh;
+
+  border-radius: 10px;
+
+  object-fit: contain;
+}
+
+#view-messages .ngx-chat-image-close {
+  position: absolute;
+
+  top: 18px;
+  right: 18px;
+
+  width: 40px;
+  height: 40px;
+
+  display: grid;
+  place-items: center;
+
+  border: 0;
+  border-radius: 50%;
+
+  background: rgba(255, 255, 255, 0.12);
+
+  color: white;
+
+  cursor: pointer;
 }

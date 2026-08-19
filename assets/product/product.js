@@ -116,7 +116,9 @@
   }
 
   function getSellerId() {
-    return sellerObject()?._id || state.product?.sellerId || "";
+    const seller = sellerObject();
+
+    return seller?._id || seller?.id || state.product?.sellerId || "";
   }
 
   function getVariantImage(variant) {
@@ -522,10 +524,56 @@
 
       createdAt: new Date().toISOString(),
     };
+    const orderDraft = {
+      seller: {
+        id: selection.sellerId,
 
-    sessionStorage.setItem("ngoxi_pending_purchase", JSON.stringify(selection));
+        name:
+          state.product.sellerName ||
+          sellerObject()?.storeName ||
+          sellerObject()?.name ||
+          "NgoXi Seller",
 
-    window.location.href = `/home.html?chat=${encodeURIComponent(selection.sellerId)}&buy=1`;
+        avatar:
+          sellerObject()?.avatar ||
+          sellerObject()?.profileImage ||
+          "/assets/default-avatar.png",
+      },
+
+      order: {
+        id: "TEMP-" + Date.now(),
+
+        productId: selection.productId,
+
+        product: selection.productName,
+
+        image: selection.cover,
+
+        variant: selection.variant?.name || "Default",
+
+        size: selection.size?.label || "",
+
+        price: selection.total,
+
+        quantity: selection.quantity,
+
+        payment: {
+          status: "waiting",
+
+          receiptId: null,
+
+          receiptUrl: null,
+        },
+
+        orderStatus: "placed",
+
+        createdAt: selection.createdAt,
+      },
+    };
+
+    sessionStorage.setItem("ngx_open_chat", JSON.stringify(orderDraft));
+
+    window.location.href = `/home.html?view=messages`;
   }
 
   function updateFavoriteButton() {
