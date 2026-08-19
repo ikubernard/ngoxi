@@ -1341,6 +1341,39 @@
     }
   }
 
+  function renderActiveConversationMessages() {
+    const conversation = getActiveConversation();
+
+    const chatBody = document.getElementById("chatBody");
+
+    if (!conversation || !chatBody) {
+      return;
+    }
+
+    chatBody.innerHTML = "";
+
+    conversation.messages.forEach((message) => {
+      const bubble = document.createElement("div");
+
+      bubble.className =
+        message.sender === "buyer" ? "ngx-message buyer" : "ngx-message seller";
+
+      bubble.innerHTML = `
+        <div class="ngx-message-text">
+          ${escapeHTML(message.text || "")}
+        </div>
+
+        <small>
+          ${formatChatTime(message.createdAt)}
+        </small>
+      `;
+
+      chatBody.appendChild(bubble);
+    });
+
+    chatBody.scrollTop = chatBody.scrollHeight;
+  }
+
   function openSellerConversation(sellerId) {
     sellerId = String(sellerId);
 
@@ -1364,12 +1397,18 @@
   }
 
   function openMessagesView() {
-    els.navBtns.forEach((button) => {
-      button.classList.toggle("active", button.dataset.view === "messages");
+    const messagesView = document.getElementById("view-messages");
+
+    if (!messagesView) return;
+
+    document.querySelectorAll(".ngx-view").forEach((view) => {
+      view.classList.remove("active");
     });
 
-    Object.entries(els.views).forEach(([key, view]) => {
-      view?.classList.toggle("active", key === "messages");
+    messagesView.classList.add("active");
+
+    document.querySelectorAll("[data-view]").forEach((btn) => {
+      btn.classList.toggle("active", btn.dataset.view === "messages");
     });
   }
 
