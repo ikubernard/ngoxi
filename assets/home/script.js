@@ -57,6 +57,7 @@
     chats: {
       activeSellerId: null,
       conversations: new Map(),
+      seller: [],
     },
   };
 
@@ -1049,7 +1050,64 @@
       pushChat("system", msg.text || JSON.stringify(msg)),
     );
   }
+  async function loadConversations() {
+    try {
+      const res = await apiGet(`${API_BASE}/api/chat/conversations`);
 
+      state.chats.sellers = res;
+
+      renderConversationList();
+    } catch (err) {
+      console.error("Failed loading conversations", err);
+    }
+  }
+
+  function renderConversationList() {
+    if (!els.chatList) return;
+
+    els.chatList.innerHTML = "";
+
+    state.chats.sellers.forEach((chat) => {
+      const div = document.createElement("div");
+
+      div.className = "ngx-conversation";
+
+      div.innerHTML = `
+
+        <div class="ngx-avatar">
+
+        <img src="${chat.avatar || "/assets/default-avatar.jpeg"}">
+
+        </div>
+
+
+        <div class="ngx-conversation-info">
+
+
+        <div class="ngx-conversation-top">
+
+        <b>${chat.name}</b>
+
+        <span>${chat.time || ""}</span>
+
+        </div>
+
+
+        <p>${chat.lastMessage || "Start conversation"}</p>
+
+
+        </div>
+
+
+        `;
+
+      div.onclick = () => {
+        openConversation(chat.sellerId);
+      };
+
+      els.chatList.appendChild(div);
+    });
+  }
   function pushChat(who, text) {
     if (!els.chatBody) return;
     const row = document.createElement("div");
@@ -1280,22 +1338,27 @@
         seller: {
           id: sellerId,
 
-          name:
-            seller?.storeName || seller?.name || seller?.shopName || "Seller",
+          name: seller.name || "Seller",
 
-          avatar:
-            seller?.avatar ||
-            seller?.profileImage ||
-            seller?.profilePicture ||
-            "/assets/default-avatar.png",
+          storeName: seller.storeName || "",
 
-          online: false,
+          avatar: seller.avatar || "/assets/default-avatar.jpeg",
+
+          verified: seller.verified || false,
+
+          rating: seller.rating || 0,
+
+          location: seller.location || "",
         },
 
+        paymentDetails: seller.paymentDetails || [],
+
         messages: [],
+
         orders: [],
 
         unread: 0,
+
         lastMessageAt: null,
       };
 
@@ -1321,7 +1384,17 @@
     if (!header || !seller) {
       return;
     }
+    const sellerName = document.getElementById("activeSellerName");
 
+    const sellerAvatar = document.getElementById("activeSellerAvatar");
+
+    if (sellerName) {
+      sellerName.textContent = seller.storeName || seller.name || "Seller";
+    }
+
+    if (sellerAvatar) {
+      sellerAvatar.src = seller.avatar || "/assets/default-avatar.jpeg";
+    }
     const image = header.querySelector("img");
 
     const name = header.querySelector("h3");
@@ -3288,7 +3361,7 @@
     consumeChatHandoff();
     // initial data
     await Promise.all([loadFavorites(), updateCartCount()]);
-
+    await loadConversations();
     await loadProducts(1);
     initInfiniteScroll();
   }

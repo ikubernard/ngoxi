@@ -312,87 +312,6 @@
 
           <div id="chatList" class="ngx-conversation-list">
 
-
-            <div class="ngx-conversation active">
-
-
-              <div class="ngx-avatar">
-                <img src="/assets/default-avatar.jpeg">
-              </div>
-
-
-              <div class="ngx-conversation-info">
-
-                <div class="ngx-conversation-top">
-
-                  <b>
-                    Nike Store TZ ✓
-                  </b>
-
-                  <span>
-                    12:32 PM
-                  </span>
-
-                </div>
-
-
-                <p>
-                  Your receipt has been uploaded
-                </p>
-
-
-              </div>
-
-
-              <span class="ngx-unread">
-                2
-              </span>
-
-
-            </div>
-
-
-
-
-
-            <div class="ngx-conversation">
-
-              <div class="ngx-avatar">
-                <img src="/assets/default-avatar.jpeg">
-              </div>
-
-
-              <div class="ngx-conversation-info">
-
-                <div class="ngx-conversation-top">
-
-                  <b>
-                    Tech World
-                  </b>
-
-                  <span>
-                    11:28 AM
-                  </span>
-
-                </div>
-
-
-                <p>
-                  Order shipped today
-                </p>
-
-              </div>
-
-
-              <span class="ngx-unread green">
-                1
-              </span>
-
-            </div>
-
-
-
-
           </div>
 
           <div class="ngx-sidebar-resizer"></div>
@@ -421,9 +340,8 @@
 
               <div>
 
-                <h3>
-                  Nike Store TZ ✓
-                </h3>
+                <h3 id="activeSellerName">
+                  Seller</h3>
 
                 <span>
                   🟢 Online
@@ -566,25 +484,13 @@
                   <div class="order-info">
 
 
-                    <b id="transactionOrderId">
-                      Order #NGX001
-                    </b>
+                    <b id="transactionOrderId"> </b>
 
+                    <h4 id="transactionProductName"></h4>
 
-                    <h4 id="transactionProductName">
-                      Nike SB Dunk Low
-                    </h4>
+                    <p id="transactionVariant"></p>
 
-
-                    <p id="transactionVariant">
-                      Black / Size 42
-                    </p>
-
-
-                    <strong id="transactionPrice">
-                      TSh 180,000
-                    </strong>
-
+                    <strong id="transactionPrice"></strong>
 
                   </div>
 
@@ -636,19 +542,13 @@
                     <div class="payment-icon">💳</div>
 
                     <div>
-                      <h3 id="paymentTitle">
-                        Payment Required
-                      </h3>
+                      <h3 id="paymentTitle"></h3>
 
-                      <p id="paymentProduct">
-                        Nike SB Dunk Low
-                      </p>
+                      <p id="paymentProduct"> </p>
                     </div>
                   </div>
 
-                  <strong id="paymentAmount">
-                    TSh 180,000
-                  </strong>
+                  <strong id="paymentAmount"> </strong>
 
                 </div>
 
@@ -704,31 +604,6 @@
           <!-- CHAT BODY -->
 
           <div id="chatBody" class="ngx-message-area">
-
-
-            <div class="ngx-date">
-              Today
-            </div>
-
-
-
-            <div class="ngx-message seller">
-
-              Hi! Thank you for your order 🙌
-
-            </div>
-
-
-
-
-            <div class="ngx-message buyer">
-
-              Thank you! I will make payment now.
-
-            </div>
-
-
-
 
           </div>
 
