@@ -872,76 +872,158 @@
   // Bottom Nav / Views / Pills
   // -----------------------------
   function initNav() {
+    // =====================================================
+    // CENTRAL VIEW SWITCHER
+    // =====================================================
+
+    function showView(view) {
+      if (!els.views[view]) {
+        view = "home";
+      }
+
+      // Navigation buttons
+      els.navBtns.forEach((btn) => {
+        btn.classList.toggle("active", btn.dataset.view === view);
+      });
+
+      // Actual views
+      Object.entries(els.views).forEach(([key, element]) => {
+        if (!element) return;
+
+        element.classList.toggle("active", key === view);
+      });
+
+      // Messages-specific layout state
+      document.body.classList.toggle("messages-active", view === "messages");
+
+      return view;
+    }
+
+    // =====================================================
+    // BOTTOM NAVIGATION
+    // =====================================================
+
     els.navBtns.forEach((btn) => {
       btn.addEventListener("click", () => {
-        els.navBtns.forEach((b) => b.classList.remove("active"));
-        btn.classList.add("active");
         const view = btn.dataset.view;
-        Object.entries(els.views).forEach(([k, el]) =>
-          el.classList.toggle("active", k === view),
-        );
-        if (view === "me") {
-          // default to Profile shown via pills; ensure map only when Settings tab opened
-        }
+
+        showView(view);
+
+        // Keep URL aware of active view
+        const url = new URL(window.location.href);
+
+        url.searchParams.set("view", view);
+
+        window.history.replaceState({}, "", url);
       });
     });
-    // --- Location and Cart Redirects ---
+
+    // =====================================================
+    // INITIAL VIEW FROM URL
+    // =====================================================
+
+    const params = new URLSearchParams(window.location.search);
+
+    const requestedView = params.get("view");
+
+    if (requestedView && els.views[requestedView]) {
+      showView(requestedView);
+    } else {
+      showView("home");
+    }
+
+    // =====================================================
+    // LOCATION BUTTON
+    // Home → Me → Settings
+    // =====================================================
+
     if (els.locBtn) {
       els.locBtn.addEventListener("click", () => {
-        // Switch to Me → Settings
-        els.navBtns.forEach((b) => b.classList.remove("active"));
-        const meBtn = els.navBtns.find((b) => b.dataset.view === "me");
-        if (meBtn) meBtn.classList.add("active");
-        Object.entries(els.views).forEach(([k, el]) =>
-          el.classList.toggle("active", k === "me"),
-        );
+        showView("me");
+
         showMeSection("settings");
+
         ensureSettingsMap();
+
+        const url = new URL(window.location.href);
+
+        url.searchParams.set("view", "me");
+
+        window.history.replaceState({}, "", url);
       });
     }
 
+    // =====================================================
+    // CART BUTTON
+    // Home → Packages
+    // =====================================================
+
     if (els.cartBtn) {
       els.cartBtn.addEventListener("click", () => {
-        // Switch to Packages → My Cart
-        els.navBtns.forEach((b) => b.classList.remove("active"));
-        const pkgBtn = els.navBtns.find((b) => b.dataset.view === "packages");
-        if (pkgBtn) pkgBtn.classList.add("active");
-        Object.entries(els.views).forEach(([k, el]) =>
-          el.classList.toggle("active", k === "packages"),
-        );
+        showView("packages");
+
+        const url = new URL(window.location.href);
+
+        url.searchParams.set("view", "packages");
+
+        window.history.replaceState({}, "", url);
+
         toast("Opening your cart…");
       });
     }
 
-    // Packages pills
-    els.pkgPills.forEach((p) =>
-      p.addEventListener("click", () => {
-        els.pkgPills.forEach((b) => b.classList.remove("active"));
-        p.classList.add("active");
-        const key = p.dataset.pkg;
-        els.pkgProgress.style.display = key === "progress" ? "" : "none";
-        els.pkgReady.style.display = key === "ready" ? "" : "none";
-        // 'cart' lives in Me -> My Cart per your flow
-        if (key === "cart") gotoCartTab();
-      }),
-    );
+    // =====================================================
+    // PACKAGES PILLS
+    // =====================================================
 
-    // Me pills
-    els.mePills.forEach((p) =>
-      p.addEventListener("click", () => {
-        els.mePills.forEach((b) => b.classList.remove("active"));
-        p.classList.add("active");
-        const key = p.dataset.me;
-        showMeSection(key);
-      }),
-    );
-    // Display messages when empty
-    if (!els.pkgProgress.innerHTML.trim())
+    els.pkgPills.forEach((pill) => {
+      pill.addEventListener("click", () => {
+        els.pkgPills.forEach((button) => button.classList.remove("active"));
+
+        pill.classList.add("active");
+
+        const key = pill.dataset.pkg;
+
+        if (els.pkgProgress) {
+          els.pkgProgress.style.display = key === "progress" ? "" : "none";
+        }
+
+        if (els.pkgReady) {
+          els.pkgReady.style.display = key === "ready" ? "" : "none";
+        }
+
+        if (key === "cart") {
+          gotoCartTab();
+        }
+      });
+    });
+
+    // =====================================================
+    // ME PILLS
+    // =====================================================
+
+    els.mePills.forEach((pill) => {
+      pill.addEventListener("click", () => {
+        els.mePills.forEach((button) => button.classList.remove("active"));
+
+        pill.classList.add("active");
+
+        showMeSection(pill.dataset.me);
+      });
+    });
+
+    // =====================================================
+    // PACKAGE EMPTY STATES
+    // =====================================================
+
+    if (els.pkgProgress && !els.pkgProgress.innerHTML.trim()) {
       els.pkgProgress.textContent = "No products in progress.";
-    if (!els.pkgReady.innerHTML.trim())
-      els.pkgReady.textContent = "No products ready for pickup.";
-  }
+    }
 
+    if (els.pkgReady && !els.pkgReady.innerHTML.trim()) {
+      els.pkgReady.textContent = "No products ready for pickup.";
+    }
+  }
   function gotoCartTab() {
     const cartPill = els.mePills.find((p) => p.dataset.me === "cart");
     if (cartPill) {
