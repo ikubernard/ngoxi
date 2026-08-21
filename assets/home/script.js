@@ -2028,7 +2028,28 @@
     // -----------------------------------------
     // MESSAGE RENDERING
     // -----------------------------------------
+    function getMessageTick(status) {
+      switch (status) {
+        case "read":
+          return {
+            icon: "check-check",
+            className: "read",
+          };
 
+        case "delivered":
+          return {
+            icon: "check-check",
+            className: "",
+          };
+
+        case "sent":
+        default:
+          return {
+            icon: "check",
+            className: "",
+          };
+      }
+    }
     function renderOutgoingMessage({
       text = "",
       image = null,
