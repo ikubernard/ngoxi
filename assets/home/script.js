@@ -1552,21 +1552,12 @@
   }
 
   function openMessagesView() {
-    const messagesView = document.getElementById("view-messages");
+    const messagesBtn = els.navBtns.find(
+      (button) => button.dataset.view === "messages",
+    );
 
-    if (!messagesView) return;
-
-    document.querySelectorAll(".ngx-view").forEach((view) => {
-      view.classList.remove("active");
-    });
-
-    messagesView.classList.add("active");
-
-    document.querySelectorAll("[data-view]").forEach((btn) => {
-      btn.classList.toggle("active", btn.dataset.view === "messages");
-    });
+    messagesBtn?.click();
   }
-
   function normalizeTransactionOrder(order) {
     return {
       ...order,
