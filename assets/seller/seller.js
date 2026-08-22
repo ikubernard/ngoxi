@@ -300,7 +300,7 @@ document.getElementById("saveOrderUpdateBtn")?.addEventListener("click", () => {
     const chat = CHAT_STORE.find((c) => c.id === updated.chatId);
     if (chat) {
       chat.orderState = updated.status === "done" ? "completed" : "completed"; // orange either way once confirmed/shipping
-      renderChatList();
+      loadSellerConversations();
     }
   }
 
@@ -766,7 +766,7 @@ photoInput?.addEventListener("change", () => {
   reader.onload = () => {
     localStorage.setItem(PROFILE_PHOTO_KEY, reader.result);
     loadProfilePhoto();
-    renderChatList(); // update chat DPs
+    loadSellerConversations(); // update chat DPs
   };
   reader.readAsDataURL(file);
 });
@@ -1738,46 +1738,74 @@ function updateOverview() {
 
 let activeChatId = null;
 
-// Simple local chat store (can be wired to backend later)
-const CHAT_STORE = [
-  {
-    id: "support",
-    name: "NgoXi Support",
-    isSupport: true,
-    phone: "+255000000000", // support hotline or leave null
-    lastMessage: "Welcome to NgoXi seller chat 💚",
-    lastTs: Date.now() - 1000 * 60 * 5,
-    messages: [
-      {
-        from: "system",
-        text: "Payment and order updates will appear here.",
-        ts: Date.now() - 1000 * 60 * 8,
-      },
-      {
-        from: "buyer",
-        text: "Hi, I need help with my order.",
-        ts: Date.now() - 1000 * 60 * 5,
-      },
-    ],
-    paymentCard: null,
-  },
-  {
-    id: "buyer1",
-    name: "Amina • Buyer",
-    phone: "+255712345678", // demo; later fill from backend buyer/seller data
-    isSupport: false,
-    lastMessage: "Is size 42 still available?",
-    lastTs: Date.now() - 1000 * 60 * 45,
-    messages: [
-      {
-        from: "buyer",
-        text: "Is size 42 still available?",
-        ts: Date.now() - 1000 * 60 * 45,
-      },
-    ],
-    paymentCard: null,
-  },
-];
+/* =========================================================
+   SELLER CHAT STATE
+
+   This is temporary frontend state only.
+   MongoDB remains the source of truth.
+========================================================= */
+
+const sellerChatState = {
+  conversations: [],
+  activeConversation: null,
+  loading: false,
+  filter: "all",
+  search: "",
+};
+
+async function loadSellerConversations() {
+  const listEl = document.getElementById("sellerConversationList");
+
+  const emptyEl = document.getElementById("sellerChatEmpty");
+
+  if (!listEl) return;
+
+  sellerChatState.loading = true;
+
+  listEl.innerHTML = `
+    <div class="ngx-chat-list-empty">
+      Loading conversations...
+    </div>
+  `;
+
+  try {
+    const response = await authorizedFetch(`${API_BASE}/api/chats`);
+
+    if (!response.ok) {
+      throw new Error(`Chat request failed: ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    sellerChatState.conversations = Array.isArray(data)
+      ? data
+      : data.conversations || [];
+
+    sellerChatState.loading = false;
+
+    renderSellerConversationList();
+
+    if (emptyEl) {
+      emptyEl.hidden = sellerChatState.conversations.length > 0;
+    }
+  } catch (error) {
+    console.error("❌ Failed to load seller conversations:", error);
+
+    sellerChatState.loading = false;
+
+    sellerChatState.conversations = [];
+
+    listEl.innerHTML = `
+      <div class="ngx-chat-list-empty">
+        Could not load conversations.
+      </div>
+    `;
+
+    if (emptyEl) {
+      emptyEl.hidden = true;
+    }
+  }
+}
 
 function formatTime(ts) {
   if (!ts) return "";
@@ -1785,67 +1813,206 @@ function formatTime(ts) {
   return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 }
 
-function renderChatList() {
-  const listEl = document.getElementById("contactList");
-  if (!listEl) return;
-  listEl.innerHTML = "";
+function escapeHtml(value = "") {
+  return String(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
 
-  // Support pinned on top
-  const ordered = [...CHAT_STORE].sort((a, b) => {
-    if (a.isSupport && !b.isSupport) return -1;
-    if (!a.isSupport && b.isSupport) return 1;
-    return (b.lastTs || 0) - (a.lastTs || 0);
+function escapeHtmlAttribute(value = "") {
+  return escapeHtml(value);
+}
+
+function getConversationPreview(conversation) {
+  const messages = conversation.messages || [];
+
+  const last = messages[messages.length - 1];
+
+  if (last?.text) {
+    return last.text;
+  }
+
+  if (last?.image) {
+    return "📷 Photo";
+  }
+
+  return "Conversation started";
+}
+
+function formatSellerChatTime(timestamp) {
+  if (!timestamp) {
+    return "";
+  }
+
+  const date = new Date(timestamp);
+
+  if (Number.isNaN(date.getTime())) {
+    return "";
+  }
+
+  return date.toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
+}
+
+function renderSellerConversationList() {
+  const listEl = document.getElementById("sellerConversationList");
+
+  if (!listEl) return;
+
+  const search = sellerChatState.search.trim().toLowerCase();
+
+  let conversations = [...sellerChatState.conversations];
+
+  if (search) {
+    conversations = conversations.filter((conversation) => {
+      const buyerName = conversation?.buyer?.name || "Buyer";
+
+      return buyerName.toLowerCase().includes(search);
+    });
+  }
+
+  if (sellerChatState.filter === "unread") {
+    conversations = conversations.filter(
+      (conversation) => Number(conversation.unreadCount || 0) > 0,
+    );
+  }
+
+  if (sellerChatState.filter === "orders") {
+    conversations = conversations.filter(
+      (conversation) =>
+        Number(conversation.orderCount || conversation.orders?.length || 0) > 0,
+    );
+  }
+
+  conversations.sort(
+    (a, b) =>
+      new Date(b.lastMessageAt || b.updatedAt || 0) -
+      new Date(a.lastMessageAt || a.updatedAt || 0),
+  );
+
+  if (!conversations.length) {
+    listEl.innerHTML = `
+      <div class="ngx-chat-list-empty">
+        No conversations found.
+      </div>
+    `;
+
+    return;
+  }
+
+  listEl.innerHTML = conversations
+    .map((conversation) => {
+      const buyer = conversation.buyer || {};
+
+      const buyerName = buyer.name || "Buyer";
+
+      const avatar =
+        buyer.avatar || buyer.profileImage || "../assets/default-avatar.jpeg";
+
+      const lastMessage = getConversationPreview(conversation);
+
+      const time = formatSellerChatTime(
+        conversation.lastMessageAt || conversation.updatedAt,
+      );
+
+      const active =
+        String(activeChatId || "") === String(conversation._id || "");
+
+      const unread = Number(conversation.unreadCount || 0);
+
+      return `
+          <div
+            class="ngx-conversation ${active ? "active" : ""}"
+            data-conversation-id="${conversation._id}"
+          >
+
+            <img
+              class="ngx-conversation-avatar"
+              src="${escapeHtmlAttribute(avatar)}"
+              alt=""
+            >
+
+            <div class="ngx-conversation-info">
+
+              <div class="ngx-conversation-top">
+
+                <strong>
+                  ${escapeHtml(buyerName)}
+                </strong>
+
+                <time>
+                  ${time}
+                </time>
+
+              </div>
+
+              <div class="ngx-conversation-preview">
+                ${escapeHtml(lastMessage)}
+              </div>
+
+            </div>
+
+            ${
+              unread > 0
+                ? `
+                  <span class="ngx-unread-count">
+                    ${unread > 99 ? "99+" : unread}
+                  </span>
+                `
+                : ""
+            }
+
+          </div>
+        `;
+    })
+    .join("");
+
+  listEl.querySelectorAll(".ngx-conversation").forEach((row) => {
+    row.addEventListener("click", () => {
+      const conversationId = row.dataset.conversationId;
+
+      openSellerConversation(conversationId);
+    });
   });
 
-  ordered.forEach((chat) => {
-    const row = document.createElement("div");
-    row.className = "contact-row";
-    row.dataset.chatId = chat.id;
-    if (chat.id === activeChatId) row.classList.add("active");
+  if (window.lucide?.createIcons) {
+    window.lucide.createIcons();
+  }
+}
 
-    const initials = getInitials(chat.name);
+function initSellerConversationControls() {
+  const searchInput = document.getElementById("sellerChatSearch");
 
-    const contactPhoto =
-      chat.profilePhoto || chat.avatar || "/assets/default-avatar.jpeg";
-    const lastKind = chat.lastKind || "message";
-    const orderState = chat.orderState || null;
+  const refreshBtn = document.getElementById("sellerRefreshChats");
 
-    let dotClass = "";
-    if (orderState === "open") {
-      dotClass = "notif-dot notif-dot-order";
-    } else if (orderState === "completed") {
-      dotClass = "notif-dot notif-dot-done";
-    } else if (lastKind === "message") {
-      dotClass = "notif-dot notif-dot-message";
-    }
+  const filterButtons = document.querySelectorAll("[data-seller-chat-filter]");
 
-    row.innerHTML = `
- <div class="avatar">
-  <img
-    src="${sanitize(contactPhoto)}"
-    alt="${sanitize(chat.name)}"
-    onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
-  />
+  searchInput?.addEventListener("input", () => {
+    sellerChatState.search = searchInput.value || "";
 
-  <span class="avatar-fallback">
-    ${chat.isSupport ? "N" : initials}
-  </span>
-</div>
-  <div class="contact-main">
-    <div class="contact-name">${sanitize(chat.name)}</div>
-    <div class="contact-last">${sanitize(chat.lastMessage || "")}</div>
-  </div>
-  <div class="contact-time">
-    ${formatTime(chat.lastTs)}
-    ${dotClass ? `<span class="${dotClass}"></span>` : ""}
-  </div>
-`;
+    renderSellerConversationList();
+  });
 
-    row.addEventListener("click", () => {
-      setActiveChat(chat.id);
+  refreshBtn?.addEventListener("click", () => {
+    loadSellerConversations();
+  });
+
+  filterButtons.forEach((button) => {
+    button.addEventListener("click", () => {
+      filterButtons.forEach((item) => item.classList.remove("active"));
+
+      button.classList.add("active");
+
+      sellerChatState.filter = button.dataset.sellerChatFilter || "all";
+
+      renderSellerConversationList();
     });
-
-    listEl.appendChild(row);
   });
 }
 
@@ -1856,7 +2023,7 @@ function renderChatList() {
 
 function ensureChatForBuyer(buyerId, buyerName) {
   // Try find existing chat
-  let chat = CHAT_STORE.find((c) => c.buyerId === buyerId);
+  let chat = sellerChatState.conversations.find((c) => c.buyerId === buyerId);
 
   if (!chat) {
     // Create new chat
@@ -1877,7 +2044,7 @@ function ensureChatForBuyer(buyerId, buyerName) {
 
       messages: [],
     };
-    CHAT_STORE.push(chat);
+    sellerChatState.conversations.push(chat);
   }
 
   return chat;
@@ -1900,7 +2067,7 @@ function receiveIncomingOrder(payload) {
     const existing = findOrderById(chat.orderId);
     if (existing && existing.status !== "done") {
       chat.orderState = "open";
-      renderChatList();
+      loadSellerConversations();
       return existing;
     }
   }
@@ -1945,7 +2112,7 @@ function receiveIncomingOrder(payload) {
   // Refresh UI
   updateOverview();
   renderOrders("unfilled");
-  renderChatList();
+  loadSellerConversations();
 
   return o;
 }
@@ -1965,7 +2132,7 @@ function receiveReceiptUploaded(payload) {
   if (!updated) return;
 
   // Update chat indicator
-  const chat = CHAT_STORE.find(
+  const chat = sellerChatState.conversations.find(
     (c) => c.orderId === orderId || c.id === updated.chatId,
   );
   if (chat) {
@@ -1983,7 +2150,7 @@ function receiveReceiptUploaded(payload) {
 
   updateOverview();
   renderOrders("filled");
-  renderChatList();
+  loadSellerConversations();
 }
 
 // Optional helper when seller confirms (standardized)
@@ -1991,7 +2158,7 @@ function receiveSellerConfirm(orderId) {
   const updated = confirmOrder(orderId);
   if (!updated) return;
 
-  const chat = CHAT_STORE.find(
+  const chat = sellerChatState.conversations.find(
     (c) => c.orderId === orderId || c.id === updated.chatId,
   );
   if (chat) {
@@ -2009,7 +2176,7 @@ function receiveSellerConfirm(orderId) {
 
   updateOverview();
   renderOrders("completed");
-  renderChatList();
+  loadSellerConversations();
 }
 // DEV TEST (run in console)
 // receiveIncomingOrder({ type:"intercity", buyerId:"b1", buyerName:"Asha", buyerCity:"Mbeya", sellerCity:"Dar", productId:"p1", productName:"iPhone 13", price:850000, busCompany:"ABOOD", busStation:"Magufuli", receiverName:"Asha John", receiverPhone:"0756xxxxxx" })
@@ -2070,7 +2237,7 @@ function buildPinnedPaymentCard(chat) {
 function setActiveChat(id) {
   activeChatId = id;
 
-  const chat = CHAT_STORE.find((item) => item.id === id);
+  const chat = sellerChatState.conversations.find((item) => item.id === id);
 
   const titleElement = document.getElementById("chatWith");
 
@@ -2097,7 +2264,7 @@ function setActiveChat(id) {
     };
   }
 
-  renderChatList();
+  loadSellerConversations();
   renderChatMessages();
   syncChatOptions();
 
@@ -2124,7 +2291,7 @@ function renderChatMessages() {
   body.innerHTML = "";
   cardHost.innerHTML = "";
 
-  const chat = CHAT_STORE.find((c) => c.id === activeChatId);
+  const chat = sellerChatState.conversations.find((c) => c.id === activeChatId);
 
   cardHost.hidden = Boolean(chat?.paymentCardHidden);
 
@@ -2210,7 +2377,7 @@ function renderChatMessages() {
                 "order",
               );
 
-              renderChatList();
+              loadSellerConversations();
               renderChatMessages();
             };
             reader.readAsDataURL(file);
@@ -2237,7 +2404,7 @@ function renderChatMessages() {
 
           addSystemMessage(chat.id, "Buyer cancelled the order.", "order");
           updateOverview();
-          renderChatList();
+          loadSellerConversations();
           renderChatMessages();
         }
       });
@@ -2293,7 +2460,7 @@ function renderChatMessages() {
         );
 
         showToast("Payment confirmed ✅", "success");
-        renderChatList();
+        loadSellerConversations();
         renderChatMessages();
         return;
       }
@@ -2311,7 +2478,7 @@ function renderChatMessages() {
       }
 
       localStorage.setItem(ORDERS_KEY, JSON.stringify(all));
-      updateOverview();
+      loadSellerConversations();
       renderChatMessages();
     });
   }
@@ -2356,7 +2523,7 @@ function addMessage(chatId, from, text) {
   chat.lastMessage = text;
   chat.lastTs = now;
   chat.lastKind = "message";
-  renderChatMessages();
+  loadSellerConversations();
 }
 
 function addSystemMessage(chatId, text, kind = "system") {
@@ -2367,7 +2534,7 @@ function addSystemMessage(chatId, text, kind = "system") {
   chat.lastMessage = text;
   chat.lastTs = now;
   chat.lastKind = kind === "order" ? "order" : "message";
-  renderChatMessages();
+  loadSellerConversations();
 }
 
 // Send message button
@@ -2487,14 +2654,14 @@ document.getElementById("callContact")?.addEventListener("click", () => {
 
 // Refresh contacts list
 document.getElementById("refreshContacts")?.addEventListener("click", () => {
-  renderChatList();
+  loadSellerConversations();
 });
 
 // Initial chat render
 if (window.matchMedia("(max-width: 760px)").matches) {
   // WhatsApp mobile opens on the chat list
   activeChatId = null;
-  renderChatList();
+  loadSellerConversations();
 
   document.querySelector(".chat-layout")?.classList.remove("conversation-open");
 } else {
@@ -2694,3 +2861,9 @@ function printLabel(order) {
   window.print();
 }
 initDashboard();
+initSellerConversationControls();
+loadSellerConversations();
+
+if (window.lucide?.createIcons) {
+  window.lucide.createIcons();
+}

@@ -5,12 +5,13 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>NgoXi Seller Dashboard</title>
-  <link rel="stylesheet" href="../assets/seller.css" />
+  <link rel="stylesheet" href="../assets/seller/seller.css" />
   <link rel="icon" href="../assets/logo.png" type="image/png" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
     integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
     integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 
 <body>
@@ -273,69 +274,361 @@
       </div>
     </section>
 
-    <!-- CHAT -->
+    <!-- =====================================================
+     SELLER MESSAGES V2
+===================================================== -->
+
     <section id="chat" class="tab">
-      <div class="chat-layout">
-        <!-- Contacts -->
-        <aside class="contacts card">
-          <div class="contacts-head">
-            <h4>Contacts</h4>
-            <button id="refreshContacts" class="btn btn-ghost sm">↻</button>
+
+      <div class="ngx-seller-messages">
+
+        <!-- ================================================
+         LEFT CONVERSATION SIDEBAR
+    ================================================= -->
+
+        <aside class="ngx-chat-sidebar">
+
+          <div class="ngx-sidebar-head">
+
+            <div>
+              <h2>Messages</h2>
+              <small>Buyer conversations</small>
+            </div>
+
+            <button id="sellerRefreshChats" type="button" class="ngx-icon-btn" aria-label="Refresh conversations">
+              <i data-lucide="refresh-cw"></i>
+            </button>
+
           </div>
-          <div id="contactList" class="contact-list"></div>
-          <div class="notifications">
-            <h5>Notifications</h5>
-            <ul id="notifList" class="notif-list"></ul>
+
+
+          <div class="ngx-chat-search">
+
+            <i data-lucide="search"></i>
+
+            <input id="sellerChatSearch" type="search" placeholder="Search buyers">
+
           </div>
+
+
+          <div class="ngx-message-filters">
+
+            <button class="active" data-seller-chat-filter="all" type="button">
+              All
+            </button>
+
+            <button data-seller-chat-filter="unread" type="button">
+              Unread
+            </button>
+
+            <button data-seller-chat-filter="orders" type="button">
+              Orders
+            </button>
+
+          </div>
+
+
+          <div id="sellerConversationList" class="ngx-conversation-list">
+          </div>
+
+
+          <div id="sellerChatEmpty" class="ngx-chat-list-empty" hidden>
+            No buyer conversations yet.
+          </div>
+
         </aside>
 
-        <!-- Conversation -->
-        <section class="chat-box card">
-          <div id="chatHeader" class="chat-header">
-            <!-- Active contact -->
-            <div class="chat-person">
-              <button id="mobileChatBack" class="mobile-chat-back" type="button" aria-label="Back to conversations">
-                ‹
+
+        <!-- draggable width bar -->
+
+        <div class="ngx-sidebar-resizer" id="sellerSidebarResizer"></div>
+
+
+        <!-- ================================================
+         RIGHT CONVERSATION AREA
+    ================================================= -->
+
+        <section class="ngx-chat-main">
+
+
+          <!-- CHAT HEADER -->
+
+          <header class="ngx-chat-header">
+
+            <div class="ngx-chat-person">
+
+              <button id="sellerMobileChatBack" type="button" class="ngx-mobile-back" aria-label="Back">
+                <i data-lucide="arrow-left"></i>
               </button>
 
-              <img id="chatDp" class="chat-dp" src="/assets/default-avatar.jpeg" alt="Contact profile" />
-              <div class="chat-person-copy">
-                <strong id="chatWith">Select a contact</strong>
-                <small id="chatPresence">online</small>
+
+              <img id="sellerBuyerAvatar" class="ngx-chat-avatar" src="../assets/default-avatar.jpeg" alt="Buyer">
+
+
+              <div class="ngx-chat-person-copy">
+
+                <strong id="sellerBuyerName">
+                  Select a buyer
+                </strong>
+
+                <small id="sellerBuyerPresence">
+                </small>
+
               </div>
+
             </div>
 
-            <!-- WhatsApp-style options -->
-            <div class="chat-options-wrap">
-              <button id="chatOptionsBtn" class="chat-options-btn" type="button" aria-label="Conversation options"
-                aria-expanded="false">
-                ⋮
+
+            <div class="ngx-chat-header-actions">
+
+              <button id="sellerCallBuyer" type="button" class="ngx-chat-action" aria-label="Call buyer">
+                <i data-lucide="phone"></i>
               </button>
 
-              <div id="chatOptionsMenu" class="chat-options-menu" hidden>
-                <button id="callContact" type="button">
-                  <span>Call</span>
+
+              <div class="ngx-chat-options-wrap">
+
+                <button id="sellerChatOptionsBtn" class="ngx-chat-action" type="button"
+                  aria-label="Conversation options" aria-expanded="false">
+                  <i data-lucide="more-vertical"></i>
                 </button>
 
-                <button id="togglePaymentCard" type="button">
-                  <span>Hide payment card</span>
-                </button>
+
+                <div id="sellerChatOptionsMenu" class="ngx-chat-options-menu" hidden>
+
+                  <button id="sellerToggleTransaction" type="button">
+                    Hide transaction card
+                  </button>
+
+                  <button id="sellerBuyerDetailsBtn" type="button">
+                    Buyer details
+                  </button>
+
+                </div>
+
               </div>
+
             </div>
+
+          </header>
+
+
+          <!-- =================================================
+           TRANSACTION CENTER
+      ================================================== -->
+
+          <section id="sellerTransactionCenter" class="ngx-transaction-center" hidden>
+
+            <div class="ngx-transaction-tabs">
+
+              <button id="sellerOrdersTab" class="active" type="button">
+                Orders
+              </button>
+
+              <button id="sellerPaymentTab" type="button">
+                Payment
+              </button>
+
+            </div>
+
+
+            <div class="ngx-transaction-stage">
+
+
+              <!-- =============================
+               ORDERS SLIDE
+          ============================== -->
+
+              <div id="sellerOrdersSlide" class="ngx-transaction-slide active">
+
+                <div class="ngx-transaction-top">
+
+                  <button id="sellerPrevOrder" type="button" class="order-arrow" aria-label="Previous order">
+                    <i data-lucide="chevron-left"></i>
+                  </button>
+
+
+                  <span id="sellerOrderCounter">
+                    0 / 0
+                  </span>
+
+
+                  <button id="sellerNextOrder" type="button" class="order-arrow" aria-label="Next order">
+                    <i data-lucide="chevron-right"></i>
+                  </button>
+
+                </div>
+
+
+                <div class="ngx-order-summary">
+
+                  <img id="sellerTransactionProductImage" alt="Product">
+
+
+                  <div class="ngx-order-copy">
+
+                    <small id="sellerTransactionOrderId">
+                    </small>
+
+                    <h3 id="sellerTransactionProductName">
+                    </h3>
+
+                    <p id="sellerTransactionVariant">
+                    </p>
+
+                  </div>
+
+
+                  <strong id="sellerTransactionPrice" class="ngx-transaction-price">
+                  </strong>
+
+                </div>
+
+
+                <div id="sellerTransactionStatus" class="ngx-order-progress">
+                </div>
+
+
+                <!-- seller order actions -->
+
+                <div id="sellerOrderActions" class="ngx-seller-order-actions">
+                </div>
+
+              </div>
+
+
+              <!-- =============================
+               PAYMENT SLIDE
+          ============================== -->
+
+              <div id="sellerPaymentSlide" class="ngx-transaction-slide">
+
+                <div class="ngx-payment-heading">
+
+                  <div>
+
+                    <small>Payment</small>
+
+                    <h3 id="sellerPaymentTitle">
+                      Waiting for payment
+                    </h3>
+
+                  </div>
+
+
+                  <strong id="sellerPaymentAmount">
+                  </strong>
+
+                </div>
+
+
+                <p id="sellerPaymentProduct" class="ngx-payment-product">
+                </p>
+
+
+                <div id="sellerPaymentDetails" class="ngx-payment-details">
+                </div>
+
+
+                <!-- RECEIPT -->
+
+                <div id="sellerReceiptPanel" class="ngx-seller-receipt-panel" hidden>
+
+                  <div>
+
+                    <small>Buyer receipt</small>
+
+                    <strong id="sellerReceiptId">
+                    </strong>
+
+                  </div>
+
+
+                  <button id="sellerViewReceiptBtn" type="button" class="ngx-secondary-btn">
+                    View receipt
+                  </button>
+
+                </div>
+
+
+                <!-- SELLER PAYMENT ACTIONS -->
+
+                <div id="sellerPaymentActions" class="ngx-payment-actions">
+
+                  <button id="sellerConfirmPaymentBtn" type="button" class="ngx-primary-btn" hidden>
+                    Confirm payment
+                  </button>
+
+
+                  <button id="sellerRejectPaymentBtn" type="button" class="ngx-secondary-btn" hidden>
+                    Report problem
+                  </button>
+
+                </div>
+
+              </div>
+
+            </div>
+
+          </section>
+
+
+          <!-- ================================================
+           EMPTY CONVERSATION
+      ================================================= -->
+
+          <div id="sellerConversationEmpty" class="ngx-conversation-empty">
+
+            <i data-lucide="messages-square"></i>
+
+            <h3>Select a buyer</h3>
+
+            <p>
+              Messages and orders will appear here.
+            </p>
+
           </div>
-          <div id="paymentCardHost"></div>
-          <div id="chatMessages" class="chat-messages"></div>
-          <div class="chat-input">
-            <input type="text" id="chatInput" placeholder="Type a message..." />
-            <button id="sendChat" class="chat-send-btn" type="button" aria-label="Send message">
-              ➤
+
+
+          <!-- ================================================
+           MESSAGE BODY
+      ================================================= -->
+
+          <div id="sellerChatMessages" class="ngx-message-area">
+          </div>
+
+
+          <!-- ================================================
+           COMPOSER
+      ================================================= -->
+
+          <div id="sellerMessageComposer" class="ngx-message-input">
+
+            <button id="sellerEmojiBtn" type="button" aria-label="Emoji">
+              <i data-lucide="smile"></i>
             </button>
+
+
+            <button id="sellerAttachBtn" type="button" aria-label="Attach image">
+              <i data-lucide="paperclip"></i>
+            </button>
+
+
+            <input id="sellerMessageInput" type="text" autocomplete="off" placeholder="Type a message">
+
+
+            <button id="sellerSendMessageBtn" type="button" class="ngx-send-btn" aria-label="Send">
+              <i data-lucide="send"></i>
+            </button>
+
           </div>
+
 
         </section>
-      </div>
-    </section>
 
+      </div>
+
+    </section>
     <!-- ME -->
     <section id="me" class="tab">
       <div class="card">
@@ -574,7 +867,7 @@
     </div>
   </div>
   <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
-  <script src="../assets/seller.js"></script>
+  <script src="../assets/seller/seller.js"></script>
 </body>
 
 </html>

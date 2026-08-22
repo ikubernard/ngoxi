@@ -3392,3 +3392,1485 @@ body.dark #chat .bubble.system {
     background: #111b21;
   }
 }
+/* ============================================================
+   NGOXI SELLER MESSAGES V2
+   Buyer-matching WhatsApp layout
+   ============================================================ */
+
+#chat {
+  padding: 0;
+}
+
+#chat.active {
+  display: block;
+}
+
+/* ============================================================
+   1. ROOT MESSAGES LAYOUT
+   ============================================================ */
+
+#chat .ngx-seller-messages {
+  --ngx-chat-bg: #f5f7f6;
+  --ngx-chat-panel: #ffffff;
+  --ngx-chat-line: rgba(31, 41, 37, 0.1);
+  --ngx-chat-muted: #6f7975;
+  --ngx-chat-green: #16875f;
+  --ngx-chat-green-soft: rgba(22, 135, 95, 0.1);
+
+  position: relative;
+
+  display: flex;
+
+  width: 100%;
+
+  height: calc(100vh - 145px);
+
+  min-height: 560px;
+
+  overflow: hidden;
+
+  border: 1px solid var(--ngx-chat-line);
+
+  border-radius: 16px;
+
+  background: var(--ngx-chat-panel);
+
+  box-shadow: 0 8px 28px rgba(20, 30, 25, 0.06);
+}
+
+/* ============================================================
+   2. LEFT SIDEBAR
+   ============================================================ */
+
+#chat .ngx-chat-sidebar {
+  position: relative;
+
+  flex: 0 0 auto;
+
+  width: 330px;
+
+  min-width: 230px;
+  max-width: 470px;
+
+  height: 100%;
+
+  display: flex;
+  flex-direction: column;
+
+  overflow: hidden;
+
+  background: var(--ngx-chat-panel);
+
+  border-right: 1px solid var(--ngx-chat-line);
+}
+
+/* ============================================================
+   3. SIDEBAR HEADER
+   ============================================================ */
+
+#chat .ngx-sidebar-head {
+  flex: 0 0 auto;
+
+  min-height: 67px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 12px;
+
+  padding: 12px 14px;
+}
+
+#chat .ngx-sidebar-head h2 {
+  margin: 0;
+
+  font-size: 20px;
+  line-height: 1.15;
+
+  color: #17231e;
+}
+
+#chat .ngx-sidebar-head small {
+  display: block;
+
+  margin-top: 3px;
+
+  font-size: 11px;
+
+  color: var(--ngx-chat-muted);
+}
+
+#chat .ngx-icon-btn,
+#chat .ngx-chat-action,
+#chat .ngx-mobile-back,
+#chat .order-arrow {
+  width: 36px;
+  height: 36px;
+
+  flex: 0 0 36px;
+
+  display: grid;
+  place-items: center;
+
+  padding: 0;
+
+  border: 0;
+  border-radius: 50%;
+
+  background: transparent;
+
+  color: #53605a;
+
+  cursor: pointer;
+
+  transition:
+    background 0.18s ease,
+    color 0.18s ease,
+    transform 0.18s ease;
+}
+
+#chat .ngx-icon-btn:hover,
+#chat .ngx-chat-action:hover,
+#chat .ngx-mobile-back:hover,
+#chat .order-arrow:hover {
+  background: rgba(22, 135, 95, 0.09);
+
+  color: var(--ngx-chat-green);
+}
+
+#chat .ngx-icon-btn svg,
+#chat .ngx-chat-action svg,
+#chat .ngx-mobile-back svg,
+#chat .order-arrow svg {
+  width: 19px;
+  height: 19px;
+
+  stroke-width: 1.9;
+}
+
+/* ============================================================
+   4. SEARCH
+   ============================================================ */
+
+#chat .ngx-chat-search {
+  flex: 0 0 auto;
+
+  margin: 0 12px 8px;
+
+  min-height: 38px;
+
+  display: flex;
+  align-items: center;
+
+  gap: 8px;
+
+  padding: 0 11px;
+
+  border-radius: 9px;
+
+  background: #f1f4f3;
+}
+
+#chat .ngx-chat-search svg {
+  width: 17px;
+  height: 17px;
+
+  flex: 0 0 17px;
+
+  color: #78827e;
+}
+
+#chat .ngx-chat-search input {
+  width: 100%;
+
+  min-width: 0;
+
+  margin: 0;
+  padding: 0;
+
+  border: 0;
+  outline: 0;
+
+  background: transparent;
+
+  font-size: 13px;
+
+  color: #26322d;
+}
+
+#chat .ngx-chat-search input::placeholder {
+  color: #929a96;
+}
+
+/* ============================================================
+   5. FILTER PILLS
+   ============================================================ */
+
+#chat .ngx-message-filters {
+  flex: 0 0 auto;
+
+  display: flex;
+
+  gap: 7px;
+
+  padding: 2px 12px 10px;
+
+  overflow-x: auto;
+
+  scrollbar-width: none;
+}
+
+#chat .ngx-message-filters::-webkit-scrollbar {
+  display: none;
+}
+
+#chat .ngx-message-filters button {
+  flex: 0 0 auto;
+
+  padding: 6px 11px;
+
+  border: 1px solid var(--ngx-chat-line);
+
+  border-radius: 999px;
+
+  background: #fff;
+
+  color: #5e6964;
+
+  font-size: 11px;
+  font-weight: 600;
+
+  cursor: pointer;
+}
+
+#chat .ngx-message-filters button.active {
+  border-color: rgba(22, 135, 95, 0.16);
+
+  background: var(--ngx-chat-green-soft);
+
+  color: var(--ngx-chat-green);
+}
+
+/* ============================================================
+   6. CONVERSATION LIST
+   ============================================================ */
+
+#chat .ngx-conversation-list {
+  flex: 1 1 auto;
+
+  min-height: 0;
+
+  overflow-y: auto;
+  overflow-x: hidden;
+
+  padding-bottom: 12px;
+
+  overscroll-behavior: contain;
+
+  scrollbar-width: thin;
+}
+
+#chat .ngx-conversation-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+#chat .ngx-conversation-list::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+
+  background: rgba(120, 120, 120, 0.22);
+}
+
+/* JS will create these rows next */
+
+#chat .ngx-conversation {
+  min-height: 66px;
+
+  display: flex;
+  align-items: center;
+
+  gap: 10px;
+
+  padding: 8px 12px;
+
+  border-bottom: 1px solid rgba(20, 30, 25, 0.045);
+
+  cursor: pointer;
+
+  transition: background 0.16s ease;
+}
+
+#chat .ngx-conversation:hover {
+  background: rgba(22, 135, 95, 0.045);
+}
+
+#chat .ngx-conversation.active {
+  background: rgba(22, 135, 95, 0.09);
+}
+
+#chat .ngx-conversation-avatar {
+  width: 44px;
+  height: 44px;
+
+  flex: 0 0 44px;
+
+  border-radius: 50%;
+
+  object-fit: cover;
+
+  background: #edf2ef;
+}
+
+#chat .ngx-conversation-info {
+  min-width: 0;
+
+  flex: 1;
+}
+
+#chat .ngx-conversation-top {
+  display: flex;
+
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 8px;
+}
+
+#chat .ngx-conversation-top strong {
+  min-width: 0;
+
+  overflow: hidden;
+
+  white-space: nowrap;
+  text-overflow: ellipsis;
+
+  font-size: 13px;
+  font-weight: 650;
+
+  color: #202c27;
+}
+
+#chat .ngx-conversation-top time {
+  flex: 0 0 auto;
+
+  font-size: 9px;
+
+  color: #87908c;
+}
+
+#chat .ngx-conversation-preview {
+  margin-top: 3px;
+
+  overflow: hidden;
+
+  white-space: nowrap;
+  text-overflow: ellipsis;
+
+  font-size: 11px;
+
+  color: #737d78;
+}
+
+#chat .ngx-chat-list-empty {
+  padding: 30px 18px;
+
+  text-align: center;
+
+  color: #8a938f;
+
+  font-size: 12px;
+}
+
+/* ============================================================
+   7. SIDEBAR RESIZER
+   ============================================================ */
+
+#chat .ngx-sidebar-resizer {
+  position: relative;
+
+  flex: 0 0 6px;
+
+  width: 6px;
+
+  height: 100%;
+
+  margin-left: -3px;
+  margin-right: -3px;
+
+  z-index: 40;
+
+  cursor: col-resize;
+
+  background: transparent;
+}
+
+#chat .ngx-sidebar-resizer::after {
+  content: "";
+
+  position: absolute;
+
+  top: 0;
+  bottom: 0;
+
+  left: 2px;
+
+  width: 1px;
+
+  background: transparent;
+
+  transition: background 0.18s ease;
+}
+
+#chat .ngx-sidebar-resizer:hover::after {
+  background: var(--ngx-chat-green);
+}
+
+/* ============================================================
+   8. RIGHT CHAT PANEL
+   ============================================================ */
+
+#chat .ngx-chat-main {
+  flex: 1 1 auto;
+
+  width: 0;
+  min-width: 0;
+
+  height: 100%;
+
+  display: flex;
+  flex-direction: column;
+
+  overflow: hidden;
+
+  background: var(--ngx-chat-bg);
+}
+
+/* ============================================================
+   9. CHAT HEADER
+   ============================================================ */
+
+#chat .ngx-chat-header {
+  position: relative;
+
+  z-index: 20;
+
+  flex: 0 0 auto;
+
+  min-height: 64px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 16px;
+
+  padding: 8px 13px;
+
+  border-bottom: 1px solid var(--ngx-chat-line);
+
+  background: rgba(255, 255, 255, 0.96);
+
+  backdrop-filter: blur(10px);
+}
+
+#chat .ngx-chat-person {
+  min-width: 0;
+
+  display: flex;
+  align-items: center;
+
+  gap: 10px;
+}
+
+#chat .ngx-chat-avatar {
+  width: 42px;
+  height: 42px;
+
+  flex: 0 0 42px;
+
+  border-radius: 50%;
+
+  object-fit: cover;
+
+  background: #edf2ef;
+}
+
+#chat .ngx-chat-person-copy {
+  min-width: 0;
+}
+
+#chat .ngx-chat-person-copy strong {
+  display: block;
+
+  overflow: hidden;
+
+  white-space: nowrap;
+  text-overflow: ellipsis;
+
+  font-size: 14px;
+
+  color: #1e2924;
+}
+
+#chat .ngx-chat-person-copy small {
+  display: block;
+
+  margin-top: 2px;
+
+  font-size: 10px;
+
+  color: var(--ngx-chat-muted);
+}
+
+#chat .ngx-chat-header-actions {
+  display: flex;
+
+  align-items: center;
+
+  gap: 3px;
+}
+
+#chat .ngx-mobile-back {
+  display: none;
+}
+
+/* ============================================================
+   10. OPTIONS MENU
+   ============================================================ */
+
+#chat .ngx-chat-options-wrap {
+  position: relative;
+}
+
+#chat .ngx-chat-options-menu {
+  position: absolute;
+
+  top: 43px;
+  right: 0;
+
+  width: 190px;
+
+  padding: 6px;
+
+  border: 1px solid var(--ngx-chat-line);
+
+  border-radius: 10px;
+
+  background: #fff;
+
+  box-shadow: 0 12px 32px rgba(20, 30, 25, 0.13);
+
+  z-index: 100;
+}
+
+#chat .ngx-chat-options-menu[hidden] {
+  display: none;
+}
+
+#chat .ngx-chat-options-menu button {
+  width: 100%;
+
+  padding: 9px 10px;
+
+  border: 0;
+  border-radius: 7px;
+
+  background: transparent;
+
+  text-align: left;
+
+  color: #39443f;
+
+  font-size: 12px;
+
+  cursor: pointer;
+}
+
+#chat .ngx-chat-options-menu button:hover {
+  background: rgba(22, 135, 95, 0.075);
+}
+
+/* ============================================================
+   11. TRANSACTION CENTER
+   ============================================================ */
+
+#chat .ngx-transaction-center {
+  position: relative;
+
+  flex: 0 0 auto;
+
+  width: calc(100% - 28px);
+
+  margin: 10px 14px 7px;
+
+  overflow: hidden;
+
+  border: 1px solid var(--ngx-chat-line);
+
+  border-radius: 15px;
+
+  background: #fff;
+
+  box-shadow: 0 4px 16px rgba(20, 24, 22, 0.055);
+}
+
+#chat .ngx-transaction-center[hidden] {
+  display: none;
+}
+
+/* ============================================================
+   12. TRANSACTION TABS
+   ============================================================ */
+
+#chat .ngx-transaction-tabs {
+  height: 40px;
+
+  display: flex;
+
+  align-items: stretch;
+
+  border-bottom: 1px solid var(--ngx-chat-line);
+}
+
+#chat .ngx-transaction-tabs button {
+  position: relative;
+
+  flex: 1;
+
+  border: 0;
+
+  background: transparent;
+
+  color: #78817d;
+
+  font-size: 11px;
+  font-weight: 650;
+
+  cursor: pointer;
+}
+
+#chat .ngx-transaction-tabs button.active {
+  color: var(--ngx-chat-green);
+}
+
+#chat .ngx-transaction-tabs button.active::after {
+  content: "";
+
+  position: absolute;
+
+  left: 30%;
+  right: 30%;
+  bottom: 0;
+
+  height: 2px;
+
+  border-radius: 999px;
+
+  background: var(--ngx-chat-green);
+}
+
+/* ============================================================
+   13. TRANSACTION SLIDES
+   ============================================================ */
+
+#chat .ngx-transaction-stage {
+  position: relative;
+}
+
+#chat .ngx-transaction-slide {
+  display: none;
+
+  padding: 10px 13px 12px;
+}
+
+#chat .ngx-transaction-slide.active {
+  display: block;
+}
+
+/* ============================================================
+   14. ORDER CAROUSEL TOP
+   ============================================================ */
+
+#chat .ngx-transaction-top {
+  min-height: 24px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  gap: 10px;
+
+  margin-bottom: 6px;
+}
+
+#chat .ngx-transaction-top span {
+  min-width: 48px;
+
+  text-align: center;
+
+  font-size: 9px;
+
+  color: #818a86;
+}
+
+#chat .ngx-transaction-top .order-arrow {
+  width: 27px;
+  height: 27px;
+
+  flex-basis: 27px;
+}
+
+#chat .ngx-transaction-top .order-arrow svg {
+  width: 15px;
+  height: 15px;
+}
+
+/* ============================================================
+   15. ORDER SUMMARY
+   ============================================================ */
+
+#chat .ngx-order-summary {
+  display: grid;
+
+  grid-template-columns:
+    54px
+    minmax(0, 1fr)
+    auto;
+
+  align-items: center;
+
+  gap: 10px;
+}
+
+#chat .ngx-order-summary img {
+  width: 54px;
+  height: 54px;
+
+  border-radius: 9px;
+
+  object-fit: cover;
+
+  background: #eff2f1;
+}
+
+#chat .ngx-order-copy {
+  min-width: 0;
+}
+
+#chat .ngx-order-copy small {
+  display: block;
+
+  margin-bottom: 2px;
+
+  font-size: 8px;
+
+  color: #89928e;
+}
+
+#chat .ngx-order-copy h3 {
+  margin: 0;
+
+  overflow: hidden;
+
+  white-space: nowrap;
+  text-overflow: ellipsis;
+
+  font-size: 13px;
+
+  color: #1f2c26;
+}
+
+#chat .ngx-order-copy p {
+  margin: 3px 0 0;
+
+  overflow: hidden;
+
+  white-space: nowrap;
+  text-overflow: ellipsis;
+
+  font-size: 10px;
+
+  color: #77807c;
+}
+
+#chat .ngx-transaction-price {
+  align-self: center;
+
+  padding-left: 10px;
+
+  white-space: nowrap;
+
+  font-size: 13px;
+
+  color: #17281f;
+}
+
+/* ============================================================
+   16. ORDER PROGRESS
+   ============================================================ */
+
+#chat .ngx-order-progress {
+  display: flex;
+
+  gap: 5px;
+
+  margin-top: 10px;
+}
+
+#chat .status-step {
+  flex: 1;
+
+  min-width: 0;
+
+  padding: 6px 5px;
+
+  border-radius: 7px;
+
+  background: #f0f3f2;
+
+  text-align: center;
+
+  color: #818a86;
+
+  font-size: 9px;
+}
+
+#chat .status-step.done {
+  background: rgba(22, 135, 95, 0.1);
+
+  color: var(--ngx-chat-green);
+}
+
+#chat .status-step.active {
+  background: rgba(245, 197, 66, 0.16);
+
+  color: #7e6819;
+}
+
+/* ============================================================
+   17. SELLER ORDER ACTIONS
+   ============================================================ */
+
+#chat .ngx-seller-order-actions {
+  display: flex;
+
+  flex-wrap: wrap;
+
+  gap: 7px;
+
+  margin-top: 10px;
+}
+
+/* ============================================================
+   18. PAYMENT SLIDE
+   ============================================================ */
+
+#chat .ngx-payment-heading {
+  display: flex;
+
+  align-items: flex-start;
+  justify-content: space-between;
+
+  gap: 14px;
+}
+
+#chat .ngx-payment-heading small {
+  display: block;
+
+  margin-bottom: 2px;
+
+  font-size: 8px;
+
+  color: #909894;
+
+  text-transform: uppercase;
+
+  letter-spacing: 0.07em;
+}
+
+#chat .ngx-payment-heading h3 {
+  margin: 0;
+
+  font-size: 14px;
+
+  color: #1e2b25;
+}
+
+#chat .ngx-payment-heading > strong {
+  white-space: nowrap;
+
+  font-size: 14px;
+
+  color: #17281f;
+}
+
+#chat .ngx-payment-product {
+  margin: 4px 0 8px;
+
+  font-size: 10px;
+
+  color: #78827d;
+}
+
+/* ============================================================
+   19. PAYMENT DETAILS
+   ============================================================ */
+
+#chat .ngx-payment-details {
+  display: flex;
+
+  gap: 7px;
+
+  overflow-x: auto;
+
+  padding-bottom: 4px;
+
+  scrollbar-width: none;
+}
+
+#chat .ngx-payment-details::-webkit-scrollbar {
+  display: none;
+}
+
+#chat .ngx-payment-method {
+  flex: 1 0 155px;
+
+  min-width: 155px;
+
+  padding: 8px 9px;
+
+  border: 1px solid rgba(20, 30, 25, 0.08);
+
+  border-radius: 9px;
+
+  background: #f7f9f8;
+}
+
+#chat .ngx-payment-method small {
+  display: block;
+
+  margin-bottom: 3px;
+
+  font-size: 8px;
+
+  color: #87908c;
+}
+
+#chat .ngx-payment-method strong {
+  display: block;
+
+  font-size: 11px;
+
+  color: #25312c;
+}
+
+/* ============================================================
+   20. RECEIPT PANEL
+   ============================================================ */
+
+#chat .ngx-seller-receipt-panel {
+  display: flex;
+
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 12px;
+
+  margin-top: 8px;
+
+  padding: 8px 9px;
+
+  border-radius: 9px;
+
+  background: rgba(22, 135, 95, 0.065);
+}
+
+#chat .ngx-seller-receipt-panel[hidden] {
+  display: none;
+}
+
+#chat .ngx-seller-receipt-panel small {
+  display: block;
+
+  margin-bottom: 2px;
+
+  font-size: 8px;
+
+  color: #7c8581;
+}
+
+#chat .ngx-seller-receipt-panel strong {
+  display: block;
+
+  font-size: 10px;
+
+  color: #22302a;
+}
+
+/* ============================================================
+   21. BUTTON SYSTEM
+   ============================================================ */
+
+#chat .ngx-primary-btn,
+#chat .ngx-secondary-btn {
+  min-height: 34px;
+
+  padding: 7px 12px;
+
+  border-radius: 8px;
+
+  font-size: 10px;
+  font-weight: 650;
+
+  cursor: pointer;
+}
+
+#chat .ngx-primary-btn {
+  border: 1px solid var(--ngx-chat-green);
+
+  background: var(--ngx-chat-green);
+
+  color: white;
+}
+
+#chat .ngx-secondary-btn {
+  border: 1px solid rgba(20, 30, 25, 0.12);
+
+  background: white;
+
+  color: #46514c;
+}
+
+#chat .ngx-primary-btn:hover {
+  filter: brightness(0.97);
+}
+
+#chat .ngx-secondary-btn:hover {
+  background: #f4f6f5;
+}
+
+#chat .ngx-payment-actions {
+  display: flex;
+
+  gap: 7px;
+
+  margin-top: 9px;
+}
+
+/* ============================================================
+   22. EMPTY CONVERSATION
+   ============================================================ */
+
+#chat .ngx-conversation-empty {
+  flex: 1 1 auto;
+
+  display: flex;
+  flex-direction: column;
+
+  align-items: center;
+  justify-content: center;
+
+  text-align: center;
+
+  color: #8a938f;
+}
+
+#chat .ngx-conversation-empty svg {
+  width: 38px;
+  height: 38px;
+
+  margin-bottom: 10px;
+
+  stroke-width: 1.4;
+
+  color: rgba(22, 135, 95, 0.55);
+}
+
+#chat .ngx-conversation-empty h3 {
+  margin: 0;
+
+  font-size: 15px;
+
+  color: #49534f;
+}
+
+#chat .ngx-conversation-empty p {
+  margin: 5px 0 0;
+
+  font-size: 11px;
+}
+
+/* ============================================================
+   23. MESSAGE AREA
+   ============================================================ */
+
+#chat .ngx-message-area {
+  flex: 1 1 auto;
+
+  min-height: 0;
+
+  overflow-y: auto;
+  overflow-x: hidden;
+
+  padding: 13px 7%;
+
+  overscroll-behavior: contain;
+
+  background: linear-gradient(
+    rgba(244, 247, 245, 0.92),
+    rgba(244, 247, 245, 0.92)
+  );
+
+  scrollbar-width: thin;
+}
+
+#chat .ngx-message-area::-webkit-scrollbar {
+  width: 6px;
+}
+
+#chat .ngx-message-area::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+
+  background: rgba(100, 110, 105, 0.18);
+}
+
+/* ============================================================
+   24. MESSAGE BUBBLES
+   ============================================================ */
+
+#chat .ngx-message {
+  position: relative;
+
+  width: fit-content;
+
+  min-width: 0;
+
+  max-width: min(430px, 72%);
+
+  margin: 0 0 5px;
+
+  padding: 6px 8px 5px;
+
+  border-radius: 10px;
+
+  font-size: 13px;
+  line-height: 1.32;
+}
+
+/*
+  Seller is the current logged-in user,
+  therefore seller bubbles go RIGHT.
+*/
+
+#chat .ngx-message.seller {
+  margin-left: auto;
+
+  border-top-right-radius: 3px;
+
+  background: #dcf8c6;
+
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
+}
+
+/*
+  Buyer is the other person,
+  therefore buyer bubbles go LEFT.
+*/
+
+#chat .ngx-message.buyer {
+  margin-right: auto;
+
+  border-top-left-radius: 3px;
+
+  background: #ffffff;
+
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
+}
+
+#chat .ngx-message-text {
+  display: inline;
+
+  margin: 0;
+  padding: 0;
+
+  white-space: pre-wrap;
+
+  word-break: break-word;
+}
+
+#chat .ngx-message-meta {
+  display: inline-flex;
+
+  align-items: center;
+
+  gap: 2px;
+
+  margin-left: 6px;
+
+  color: rgba(70, 70, 70, 0.65);
+
+  font-size: 8px;
+  line-height: 1;
+
+  vertical-align: -1px;
+
+  white-space: nowrap;
+}
+
+#chat .ngx-message-meta svg {
+  width: 11px;
+  height: 11px;
+
+  stroke-width: 2;
+}
+
+#chat .ngx-message-meta svg.read {
+  color: #1687ff;
+}
+
+#chat .ngx-message.seller + .ngx-message.seller,
+#chat .ngx-message.buyer + .ngx-message.buyer {
+  margin-top: -2px;
+}
+
+/* ============================================================
+   25. IMAGE MESSAGES
+   ============================================================ */
+
+#chat .ngx-message:has(.ngx-chat-image) {
+  padding: 4px;
+}
+
+#chat .ngx-chat-image {
+  display: block;
+
+  width: auto;
+
+  min-width: 120px;
+  max-width: 260px;
+
+  max-height: 320px;
+
+  border-radius: 8px;
+
+  object-fit: cover;
+
+  cursor: pointer;
+}
+
+/* ============================================================
+   26. MESSAGE COMPOSER
+   ============================================================ */
+
+#chat .ngx-message-input {
+  flex: 0 0 auto;
+
+  min-height: 58px;
+
+  display: flex;
+
+  align-items: center;
+
+  gap: 5px;
+
+  padding: 8px 10px;
+
+  border-top: 1px solid var(--ngx-chat-line);
+
+  background: rgba(255, 255, 255, 0.97);
+}
+
+#chat .ngx-message-input > button {
+  width: 36px;
+  height: 36px;
+
+  flex: 0 0 36px;
+
+  display: grid;
+  place-items: center;
+
+  padding: 0;
+
+  border: 0;
+  border-radius: 50%;
+
+  background: transparent;
+
+  color: #66716c;
+
+  cursor: pointer;
+}
+
+#chat .ngx-message-input > button:hover {
+  background: rgba(22, 135, 95, 0.075);
+
+  color: var(--ngx-chat-green);
+}
+
+#chat .ngx-message-input button svg {
+  width: 19px;
+  height: 19px;
+
+  stroke-width: 1.8;
+}
+
+#chat .ngx-message-input input {
+  flex: 1;
+
+  min-width: 0;
+
+  height: 38px;
+
+  margin: 0;
+
+  padding: 0 13px;
+
+  border: 1px solid rgba(20, 30, 25, 0.09);
+
+  border-radius: 20px;
+
+  outline: 0;
+
+  background: #f2f5f4;
+
+  color: #26312c;
+
+  font-size: 13px;
+}
+
+#chat .ngx-message-input input:focus {
+  border-color: rgba(22, 135, 95, 0.25);
+
+  background: #fff;
+}
+
+#chat .ngx-message-input .ngx-send-btn {
+  background: var(--ngx-chat-green);
+
+  color: #fff;
+}
+
+#chat .ngx-message-input .ngx-send-btn:hover {
+  background: #107650;
+
+  color: #fff;
+}
+
+/* ============================================================
+   27. DARK MODE
+   ============================================================ */
+
+body.dark #chat .ngx-seller-messages {
+  --ngx-chat-bg: #0f1e19;
+  --ngx-chat-panel: #142720;
+  --ngx-chat-line: rgba(225, 255, 241, 0.09);
+  --ngx-chat-muted: #91a59c;
+
+  color: #effaf5;
+}
+
+body.dark #chat .ngx-chat-sidebar,
+body.dark #chat .ngx-chat-header,
+body.dark #chat .ngx-transaction-center,
+body.dark #chat .ngx-message-input {
+  background: #142720;
+}
+
+body.dark #chat .ngx-sidebar-head h2,
+body.dark #chat .ngx-chat-person-copy strong,
+body.dark #chat .ngx-order-copy h3,
+body.dark #chat .ngx-payment-heading h3,
+body.dark #chat .ngx-transaction-price {
+  color: #effaf5;
+}
+
+body.dark #chat .ngx-chat-search,
+body.dark #chat .ngx-message-input input {
+  background: #1a3129;
+
+  color: #effaf5;
+}
+
+body.dark #chat .ngx-message.buyer {
+  background: #19362d;
+
+  color: #effaf5;
+}
+
+body.dark #chat .ngx-message.seller {
+  background: #087557;
+
+  color: #f1fff9;
+}
+
+/* ============================================================
+   28. MOBILE
+   ============================================================ */
+
+@media (max-width: 760px) {
+  #chat .ngx-seller-messages {
+    height: calc(100vh - 125px);
+
+    min-height: 500px;
+
+    border-radius: 0;
+  }
+
+  #chat .ngx-chat-sidebar {
+    width: 100% !important;
+
+    min-width: 100%;
+    max-width: 100%;
+
+    border-right: 0;
+  }
+
+  #chat .ngx-sidebar-resizer {
+    display: none;
+  }
+
+  #chat .ngx-chat-main {
+    display: none;
+
+    width: 100%;
+  }
+
+  /*
+    JS will add conversation-open
+    once a buyer is selected.
+  */
+
+  #chat .ngx-seller-messages.conversation-open .ngx-chat-sidebar {
+    display: none;
+  }
+
+  #chat .ngx-seller-messages.conversation-open .ngx-chat-main {
+    display: flex;
+  }
+
+  #chat .ngx-mobile-back {
+    display: grid;
+  }
+
+  #chat .ngx-message-area {
+    padding: 12px 10px;
+  }
+
+  #chat .ngx-order-summary {
+    grid-template-columns:
+      48px
+      minmax(0, 1fr)
+      auto;
+  }
+
+  #chat .ngx-order-summary img {
+    width: 48px;
+    height: 48px;
+  }
+
+  #chat .ngx-transaction-center {
+    width: calc(100% - 16px);
+
+    margin: 8px 8px 6px;
+  }
+}
