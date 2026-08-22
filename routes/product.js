@@ -329,13 +329,26 @@ router.get("/", async (req, res) => {
    ========================================================= */
 router.get("/:id", async (req, res) => {
   try {
-    const p = await Product.findById(req.params.id);
-    if (!p) return res.status(404).json({ message: "Product not found" });
-    if (p.visibility === "hidden" || p.blockedByAdmin)
+    const p = await Product.findById(req.params.id).populate({
+      path: "sellerId",
+      select: "_id name storeName avatar profileImage paymentInfo role",
+    });
+
+    if (!p) {
+      return res.status(404).json({ message: "Product not found" });
+    }
+
+    if (p.visibility === "hidden" || p.blockedByAdmin) {
       return res.status(404).json({ message: "Product not available" });
+    }
+
     res.json(p);
-  } catch {
-    res.status(500).json({ message: "Error fetching product" });
+  } catch (err) {
+    console.error("❌ Error fetching product:", err);
+
+    res.status(500).json({
+      message: "Error fetching product",
+    });
   }
 });
 /* =========================================================

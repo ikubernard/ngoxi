@@ -1433,7 +1433,7 @@
           location: seller.location || "",
         },
 
-        paymentDetails: seller.paymentDetails || [],
+        paymentDetails: seller.paymentDetails || seller.paymentInfo || [],
 
         messages: [],
 
