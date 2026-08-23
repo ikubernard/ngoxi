@@ -78,7 +78,97 @@ router.get("/", verifyToken, async (req, res) => {
     });
   }
 });
+/* =========================================================
+   START / FIND BUYER-SELLER CONVERSATION
 
+   POST /api/chats/start
+
+   Buyer sends only:
+   {
+     sellerId: "..."
+   }
+
+   Buyer identity comes from verifyToken.
+========================================================= */
+
+router.post("/start", verifyToken, async (req, res) => {
+  try {
+    const buyerId = req.user?._id;
+
+    if (!buyerId) {
+      return res.status(401).json({
+        error: "Not authorized",
+      });
+    }
+
+    if (!hasRole(req.user, "buyer")) {
+      return res.status(403).json({
+        error: "Only buyers can start seller conversations",
+      });
+    }
+
+    const sellerId = String(req.body?.sellerId || "").trim();
+
+    if (!mongoose.Types.ObjectId.isValid(sellerId)) {
+      return res.status(400).json({
+        error: "Invalid seller ID",
+      });
+    }
+
+    if (String(buyerId) === sellerId) {
+      return res.status(400).json({
+        error: "You cannot start a conversation with yourself",
+      });
+    }
+
+    const seller = await User.findById(sellerId).select(
+      "name storeName roles sellerProfile",
+    );
+
+    if (!seller) {
+      return res.status(404).json({
+        error: "Seller not found",
+      });
+    }
+
+    if (!hasRole(seller, "seller")) {
+      return res.status(400).json({
+        error: "Selected user is not a seller",
+      });
+    }
+
+    let chat = await Chat.findOne({
+      buyer: buyerId,
+      seller: sellerId,
+    });
+
+    if (!chat) {
+      chat = await Chat.create({
+        buyer: buyerId,
+        seller: sellerId,
+        messages: [],
+        lastMessageAt: new Date(),
+      });
+    }
+
+    chat = await Chat.findById(chat._id)
+      .populate("buyer", "name email")
+      .populate(
+        "seller",
+        "name storeName sellerProfile.avatar sellerProfile.paymentMethods sellerProfile.pickupLocations sellerProfile.contact",
+      );
+
+    return res.status(200).json({
+      conversation: chat,
+    });
+  } catch (error) {
+    console.error("❌ POST /api/chats/start failed:", error);
+
+    return res.status(500).json({
+      error: "Could not start conversation",
+    });
+  }
+});
 /* =========================================================
    GET ONE CONVERSATION
 
