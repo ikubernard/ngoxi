@@ -93,6 +93,23 @@
     zoomInButton: $("#zoomInButton"),
   };
 
+  async function authorizedFetch(url, options = {}) {
+    const token = localStorage.getItem("token");
+
+    const headers = {
+      ...(options.headers || {}),
+    };
+
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+    }
+
+    return fetch(url, {
+      ...options,
+      headers,
+      credentials: "include",
+    });
+  }
   function money(value) {
     return `TSh ${Number(value || 0).toLocaleString("en-US")}`;
   }
@@ -543,14 +560,12 @@
 
       els.continueButton.textContent = "Opening seller…";
 
-      const response = await fetch(`${API_BASE}/api/chats/start`, {
+      const response = await authorizedFetch(`${API_BASE}/api/chats/start`, {
         method: "POST",
 
         headers: {
           "Content-Type": "application/json",
         },
-
-        credentials: "include",
 
         body: JSON.stringify({
           sellerId,
