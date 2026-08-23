@@ -1134,13 +1134,90 @@
   }
   async function loadConversations() {
     try {
-      const res = await apiGet(`${API_BASE}/api/chat/conversations`);
+      const token = localStorage.getItem("token");
 
-      state.chats.sellers = res;
+      if (!token) {
+        console.warn("No buyer token found.");
+        return;
+      }
+
+      const response = await fetch(`${API_BASE}/api/chats`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        credentials: "include",
+      });
+
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(data.error || "Could not load conversations");
+      }
+
+      const chats = Array.isArray(data.conversations) ? data.conversations : [];
+
+      state.chats.conversations.clear();
+
+      chats.forEach((chat) => {
+        const seller = chat.seller;
+
+        if (!seller?._id) return;
+
+        const sellerId = String(seller._id);
+
+        const avatar =
+          seller?.sellerProfile?.avatar?.url ||
+          seller?.avatar ||
+          "/assets/default-avatar.jpeg";
+
+        const messages = Array.isArray(chat.messages)
+          ? chat.messages.map((message) => ({
+              ...message,
+
+              sender:
+                message.senderRole ||
+                (String(message.sender) === sellerId ? "seller" : "buyer"),
+            }))
+          : [];
+
+        state.chats.conversations.set(sellerId, {
+          id: chat._id,
+          conversationId: chat._id,
+
+          sellerId,
+
+          seller: {
+            id: sellerId,
+            _id: sellerId,
+
+            name: seller.name || "Seller",
+
+            storeName: seller.storeName || seller.name || "Seller",
+
+            avatar,
+
+            online: false,
+          },
+
+          messages,
+
+          orders: [],
+
+          paymentDetails: [],
+
+          unread: 0,
+
+          lastMessageAt: chat.lastMessageAt || chat.updatedAt || null,
+        });
+      });
 
       renderConversationList();
+
+      return chats;
     } catch (err) {
       console.error("Failed loading conversations", err);
+
+      return [];
     }
   }
 
@@ -1149,47 +1226,73 @@
 
     els.chatList.innerHTML = "";
 
-    state.chats.sellers.forEach((chat) => {
+    const conversations = Array.from(state.chats.conversations.values()).sort(
+      (a, b) => {
+        return new Date(b.lastMessageAt || 0) - new Date(a.lastMessageAt || 0);
+      },
+    );
+
+    if (!conversations.length) {
+      els.chatList.innerHTML = `
+      <div class="ngx-empty-conversations">
+        No conversations yet.
+      </div>
+    `;
+
+      return;
+    }
+
+    conversations.forEach((conversation) => {
+      const seller = conversation.seller;
+
+      const lastMessage =
+        conversation.messages[conversation.messages.length - 1];
+
       const div = document.createElement("div");
 
       div.className = "ngx-conversation";
 
+      div.dataset.sellerId = conversation.sellerId;
+
       div.innerHTML = `
-
         <div class="ngx-avatar">
-
-        <img src="${chat.avatar || "/assets/default-avatar.jpeg"}">
-
+          <img
+            src="${escapeHTML(seller.avatar || "/assets/default-avatar.jpeg")}"
+            alt=""
+          >
         </div>
-
 
         <div class="ngx-conversation-info">
 
+          <div class="ngx-conversation-top">
+            <b>
+              ${escapeHTML(seller.storeName || seller.name || "Seller")}
+            </b>
 
-        <div class="ngx-conversation-top">
+            <span>
+              ${
+                conversation.lastMessageAt
+                  ? formatChatTime(conversation.lastMessageAt)
+                  : ""
+              }
+            </span>
+          </div>
 
-        <b>${chat.name}</b>
-
-        <span>${chat.time || ""}</span>
+          <p>
+            ${escapeHTML(lastMessage?.text || "Start conversation")}
+          </p>
 
         </div>
+      `;
 
-
-        <p>${chat.lastMessage || "Start conversation"}</p>
-
-
-        </div>
-
-
-        `;
-
-      div.onclick = () => {
-        openConversation(chat.sellerId);
-      };
+      div.addEventListener("click", () => {
+        openSellerConversation(conversation.sellerId);
+      });
 
       els.chatList.appendChild(div);
     });
   }
+
   function pushChat(who, text) {
     if (!els.chatBody) return;
     const row = document.createElement("div");
@@ -1604,7 +1707,7 @@
     try {
       const data = JSON.parse(raw);
 
-      if (!data?.seller || !data?.order) {
+      if (!data?.seller || !data?.conversationId) {
         console.warn("Invalid NgoXi chat handoff", data);
 
         return;
@@ -1616,14 +1719,12 @@
         return;
       }
 
-      const incomingOrderId = String(data.order.id || data.order._id || "");
+      conversation.id = data.conversationId;
 
-      const exists = conversation.orders.some(
-        (order) => String(order.id || order._id || "") === incomingOrderId,
-      );
+      conversation.conversationId = data.conversationId;
 
-      if (!exists) {
-        conversation.orders.push(normalizeTransactionOrder(data.order));
+      if (data.orderDraft) {
+        conversation.orders.push(normalizeTransactionOrder(data.orderDraft));
       }
 
       openMessagesView();
@@ -3452,10 +3553,12 @@
     initMessageSidebarResizer();
     initMessagesSidebarNav();
     initMessageFilterOverflow();
-    consumeChatHandoff();
     // initial data
     await Promise.all([loadFavorites(), updateCartCount()]);
+
     await loadConversations();
+
+    consumeChatHandoff();
     await loadProducts(1);
     initInfiniteScroll();
   }
