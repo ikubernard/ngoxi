@@ -1,26 +1,203 @@
 import express from "express";
+import mongoose from "mongoose";
+
 import Chat from "../model/chatModel.js";
+import User from "../model/User.js";
+import { verifyToken } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-// Get chat by buyer/seller/product
-router.get("/", async (req, res) => {
-  const { buyer, seller, product } = req.query;
-  const chat = await Chat.findOne({ buyer, seller, product });
-  if (!chat) return res.json([]);
-  res.json(chat.messages);
+/* =========================================================
+   HELPERS
+========================================================= */
+
+function hasRole(user, role) {
+  return Array.isArray(user?.roles) && user.roles.includes(role);
+}
+
+function isParticipant(chat, userId) {
+  const id = String(userId);
+
+  return String(chat.buyer) === id || String(chat.seller) === id;
+}
+
+/* =========================================================
+   GET MY CONVERSATIONS
+
+   GET /api/chats
+
+   Seller:
+   returns conversations where seller = logged-in user
+
+   Buyer:
+   returns conversations where buyer = logged-in user
+========================================================= */
+
+router.get("/", verifyToken, async (req, res) => {
+  try {
+    const userId = req.user?._id;
+
+    if (!userId) {
+      return res.status(401).json({
+        error: "Not authorized",
+      });
+    }
+
+    let query;
+
+    if (hasRole(req.user, "seller")) {
+      query = {
+        seller: userId,
+      };
+    } else if (hasRole(req.user, "buyer")) {
+      query = {
+        buyer: userId,
+      };
+    } else {
+      return res.status(403).json({
+        error: "Chat access not allowed",
+      });
+    }
+
+    const chats = await Chat.find(query)
+      .populate("buyer", "name email")
+      .populate("seller", "name storeName sellerProfile.avatar")
+      .sort({
+        lastMessageAt: -1,
+      })
+      .lean();
+
+    return res.status(200).json({
+      conversations: chats,
+    });
+  } catch (error) {
+    console.error("❌ GET /api/chats failed:", error);
+
+    return res.status(500).json({
+      error: "Could not load conversations",
+    });
+  }
 });
 
-// Post new message
-router.post("/", async (req, res) => {
-  const { buyer, seller, product, sender, text } = req.body;
-  if (!text) return res.status(400).json({ message: "Empty message" });
+/* =========================================================
+   GET ONE CONVERSATION
 
-  let chat = await Chat.findOne({ buyer, seller, product });
-  if (!chat) chat = await Chat.create({ buyer, seller, product, messages: [] });
-  chat.messages.push({ sender, text });
-  await chat.save();
-  res.json(chat.messages);
+   GET /api/chats/:conversationId
+========================================================= */
+
+router.get("/:conversationId", verifyToken, async (req, res) => {
+  try {
+    const { conversationId } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(conversationId)) {
+      return res.status(400).json({
+        error: "Invalid conversation ID",
+      });
+    }
+
+    const chat = await Chat.findById(conversationId)
+      .populate("buyer", "name email")
+      .populate(
+        "seller",
+        "name storeName sellerProfile.avatar sellerProfile.paymentMethods sellerProfile.pickupLocations sellerProfile.contact",
+      );
+
+    if (!chat) {
+      return res.status(404).json({
+        error: "Conversation not found",
+      });
+    }
+
+    if (!isParticipant(chat, req.user._id)) {
+      return res.status(403).json({
+        error: "You cannot access this conversation",
+      });
+    }
+
+    return res.status(200).json({
+      conversation: chat,
+    });
+  } catch (error) {
+    console.error("❌ GET conversation failed:", error);
+
+    return res.status(500).json({
+      error: "Could not load conversation",
+    });
+  }
+});
+
+/* =========================================================
+   SEND MESSAGE
+
+   POST /api/chats/:conversationId/messages
+========================================================= */
+
+router.post("/:conversationId/messages", verifyToken, async (req, res) => {
+  try {
+    const { conversationId } = req.params;
+
+    const text = String(req.body?.text || "").trim();
+
+    const image = String(req.body?.image || "").trim();
+
+    if (!text && !image) {
+      return res.status(400).json({
+        error: "Message cannot be empty",
+      });
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(conversationId)) {
+      return res.status(400).json({
+        error: "Invalid conversation ID",
+      });
+    }
+
+    const chat = await Chat.findById(conversationId);
+
+    if (!chat) {
+      return res.status(404).json({
+        error: "Conversation not found",
+      });
+    }
+
+    if (!isParticipant(chat, req.user._id)) {
+      return res.status(403).json({
+        error: "You cannot send messages to this conversation",
+      });
+    }
+
+    let senderRole;
+
+    if (String(chat.seller) === String(req.user._id)) {
+      senderRole = "seller";
+    } else {
+      senderRole = "buyer";
+    }
+
+    chat.messages.push({
+      sender: req.user._id,
+      senderRole,
+      text,
+      image,
+      status: "sent",
+    });
+
+    chat.lastMessageAt = new Date();
+
+    await chat.save();
+
+    const message = chat.messages[chat.messages.length - 1];
+
+    return res.status(201).json({
+      message,
+    });
+  } catch (error) {
+    console.error("❌ POST chat message failed:", error);
+
+    return res.status(500).json({
+      error: "Could not send message",
+    });
+  }
 });
 
 export default router;
