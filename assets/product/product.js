@@ -481,14 +481,22 @@
     return true;
   }
 
-  function continueToSeller() {
+  async function continueToSeller() {
     if (!validateSelection()) return;
+
+    const sellerId = getSellerId();
+
+    if (!sellerId) {
+      alert("Seller information is missing.");
+      return;
+    }
 
     const selectedSize = getSelectedSize();
 
     const selection = {
       productId: state.product._id,
-      sellerId: getSellerId(),
+
+      sellerId,
 
       productName: state.product.name,
 
@@ -499,7 +507,9 @@
       variant: state.variant
         ? {
             name: state.variant.name,
+
             priceDiff: safeNumber(state.variant.priceDiff),
+
             image: getVariantImage(state.variant),
           }
         : null,
@@ -507,12 +517,15 @@
       size: selectedSize
         ? {
             label: selectedSize.label,
+
             priceDiff: safeNumber(selectedSize.priceDiff),
           }
         : null,
 
       quantity: state.quantity,
+
       unitPrice: unitPrice(),
+
       total: orderTotal(),
 
       category: state.product.category || "",
@@ -524,58 +537,95 @@
 
       createdAt: new Date().toISOString(),
     };
-    const orderDraft = {
-      seller: {
-        id: selection.sellerId,
 
-        name:
-          state.product.sellerName ||
-          sellerObject()?.storeName ||
-          sellerObject()?.name ||
-          "NgoXi Seller",
+    try {
+      els.continueButton.disabled = true;
 
-        avatar:
-          sellerObject()?.avatar ||
-          sellerObject()?.profileImage ||
-          "/assets/default-avatar.png",
-      },
+      els.continueButton.textContent = "Opening seller…";
 
-      order: {
-        id: "TEMP-" + Date.now(),
+      const response = await fetch(`${API_BASE}/api/chats/start`, {
+        method: "POST",
 
-        productId: selection.productId,
-
-        product: selection.productName,
-
-        image: selection.cover,
-
-        variant: selection.variant?.name || "Default",
-
-        size: selection.size?.label || "",
-
-        price: selection.total,
-
-        quantity: selection.quantity,
-
-        payment: {
-          status: "waiting",
-
-          receiptId: null,
-
-          receiptUrl: null,
+        headers: {
+          "Content-Type": "application/json",
         },
 
-        orderStatus: "placed",
+        credentials: "include",
 
-        createdAt: selection.createdAt,
-      },
-    };
+        body: JSON.stringify({
+          sellerId,
+        }),
+      });
 
-    sessionStorage.setItem("ngx_open_chat", JSON.stringify(orderDraft));
+      const data = await response.json().catch(() => ({}));
 
-    window.location.href = `/home.html?view=messages`;
+      if (!response.ok) {
+        throw new Error(data.error || "Could not open seller conversation.");
+      }
+
+      const conversation = data.conversation;
+
+      if (!conversation?._id) {
+        throw new Error("Conversation was not returned by the server.");
+      }
+
+      const seller = conversation.seller || sellerObject() || {};
+
+      const handoff = {
+        conversationId: conversation._id,
+
+        seller: {
+          id: seller._id || sellerId,
+
+          name: seller.storeName || seller.name || "Seller",
+
+          avatar:
+            seller?.sellerProfile?.avatar?.url ||
+            seller.avatar ||
+            seller.profileImage ||
+            "/assets/default-avatar.jpeg",
+
+          paymentMethods: seller?.sellerProfile?.paymentMethods || [],
+
+          pickupLocations: seller?.sellerProfile?.pickupLocations || [],
+
+          contact: seller?.sellerProfile?.contact || {},
+        },
+
+        orderDraft: {
+          productId: selection.productId,
+
+          product: selection.productName,
+
+          image: selection.cover,
+
+          variant: selection.variant?.name || "Default",
+
+          size: selection.size?.label || "",
+
+          quantity: selection.quantity,
+
+          unitPrice: selection.unitPrice,
+
+          price: selection.total,
+
+          createdAt: selection.createdAt,
+        },
+      };
+
+      sessionStorage.setItem("ngx_open_chat", JSON.stringify(handoff));
+
+      window.location.href = `/home.html?view=messages`;
+    } catch (error) {
+      console.error("Continue to seller failed:", error);
+
+      alert(error.message || "Could not open seller conversation.");
+    } finally {
+      els.continueButton.disabled = false;
+
+      els.continueButton.textContent = "Continue to seller";
+    }
   }
-
   function updateFavoriteButton() {
     const saved = JSON.parse(localStorage.getItem("ngx_favorites") || "[]");
 
