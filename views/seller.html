@@ -7,10 +7,6 @@
   <title>NgoXi Seller Dashboard</title>
   <link rel="stylesheet" href="../assets/seller/seller.css" />
   <link rel="icon" href="../assets/logo.png" type="image/png" />
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
   <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 
@@ -658,38 +654,283 @@
 
         <!-- PERSONAL -->
         <div id="mini-personal" class="mini-content active">
-          <div class="profile-photo-box">
-            <img id="profilePreview" src="../assets/default-avatar.jpeg" />
-            <input id="profilePhotoInput" type="file" accept="image/*" hidden />
-            <button id="changePhotoBtn" class="btn btn-ghost">
-              Change profile picture
-            </button>
+
+          <div class="seller-settings-header">
+            <div>
+              <h3>Seller Profile</h3>
+              <p class="muted">
+                Manage the information buyers will see about your store.
+              </p>
+            </div>
           </div>
 
-          <input id="storeName" placeholder="Store Name" />
-          <input id="contact" placeholder="Email or Phone" />
-          <input id="address" placeholder="Address" />
-          <button id="setLocationBtn" class="btn btn-ghost sm" type="button" style="margin-bottom: 0.5rem;">
-            Set Location on Map
-          </button>
-          <div class="map-embed" id="mapPreview"></div>
+          <!-- PROFILE PHOTO -->
+          <div class="profile-photo-box">
+
+            <img id="profilePreview" src="../assets/default-avatar.jpeg" alt="Seller profile picture" />
+
+            <input id="profilePhotoInput" type="file" accept="image/*" hidden />
+
+            <button id="changePhotoBtn" class="btn btn-ghost" type="button">
+              Change profile picture
+            </button>
+
+          </div>
+
+          <!-- STORE INFORMATION -->
+          <div class="seller-settings-group">
+
+            <div class="seller-settings-group-head">
+              <h4>Store information</h4>
+              <small>Basic information about your NgoXi store.</small>
+            </div>
+
+            <div class="seller-settings-grid">
+
+              <div class="seller-field">
+                <label for="storeName">Store name</label>
+                <input id="storeName" type="text" placeholder="e.g. NgoXi Store" autocomplete="organization" />
+              </div>
+
+              <div class="seller-field">
+                <label for="sellerName">Seller / business name</label>
+                <input id="sellerName" type="text" placeholder="Your name or registered business name"
+                  autocomplete="name" />
+              </div>
+
+            </div>
+
+          </div>
+
+          <!-- CONTACT INFORMATION -->
+          <div class="seller-settings-group">
+
+            <div class="seller-settings-group-head">
+              <h4>Contact information</h4>
+              <small>
+                Used for buyer communication and order support.
+              </small>
+            </div>
+
+            <div class="seller-settings-grid">
+
+              <div class="seller-field">
+                <label for="sellerPhone">Phone number</label>
+                <input id="sellerPhone" type="tel" placeholder="+255 7XX XXX XXX" autocomplete="tel" />
+              </div>
+
+              <div class="seller-field">
+                <label for="sellerWhatsapp">WhatsApp number</label>
+                <input id="sellerWhatsapp" type="tel" placeholder="+255 7XX XXX XXX" />
+              </div>
+
+              <div class="seller-field seller-field-wide">
+                <label for="sellerEmail">Email address</label>
+                <input id="sellerEmail" type="email" placeholder="seller@example.com" autocomplete="email" />
+              </div>
+
+            </div>
+
+          </div>
+
+          <!-- STORE LOCATION -->
+          <div class="seller-settings-group">
+
+            <div class="seller-settings-group-head">
+              <h4>Store location</h4>
+              <small>
+                Enter the pickup or operating location buyers should know.
+              </small>
+            </div>
+
+            <div class="seller-field">
+              <label for="sellerAddress">Store / pickup address</label>
+
+              <textarea id="sellerAddress" rows="3"
+                placeholder="e.g. Kariakoo, Msimbazi Street, Dar es Salaam"></textarea>
+            </div>
+
+          </div>
+
+          <div class="seller-settings-actions">
+
+            <button id="saveSellerProfile" class="btn btn-primary" type="button">
+              Save Changes
+            </button>
+
+            <span id="sellerProfileSaveStatus" class="muted" aria-live="polite"></span>
+
+          </div>
 
         </div>
 
         <!-- PAYMENT INFO -->
         <div id="mini-payment" class="mini-content">
-          <input id="payMethods" placeholder="Payment Channels (M-Pesa, TigoPesa, AirtelMoney, HaloPesa, CRDB, NMB)" />
 
-          <textarea id="payNumber" rows="2" placeholder="Payment number(s) per method
-(e.g. M-Pesa Lipa: 10000, NMB: 02002030203, TigoPesa: 074646446)"></textarea>
+          <div class="seller-settings-header">
 
-          <input id="payPhone" placeholder="Contact Phone (WhatsApp / calls)" />
+            <div>
+              <h3>Payment Methods</h3>
 
-          <input id="payNote" placeholder="Extra note (optional)" />
+              <p class="muted">
+                Add the payment accounts buyers can use when purchasing from you.
+              </p>
+            </div>
 
-          <button id="savePayment" class="btn btn-primary">Save</button>
+          </div>
+
+
+          <!-- SAVED PAYMENT METHODS -->
+          <div id="sellerPaymentMethodsList" class="seller-payment-methods-list">
+
+            <div id="sellerPaymentMethodsEmpty" class="seller-payment-empty">
+              <i data-lucide="credit-card"></i>
+
+              <strong>No payment methods yet</strong>
+
+              <span>
+                Add M-Pesa, Airtel Money, Mixx by Yas, HaloPesa,
+                bank accounts or another supported payment method.
+              </span>
+            </div>
+
+          </div>
+
+
+          <!-- ADD PAYMENT BUTTON -->
+          <button id="addSellerPaymentMethod" class="btn btn-ghost seller-add-payment-btn" type="button">
+            <i data-lucide="plus"></i>
+            Add payment method
+          </button>
+
+
+          <!-- PAYMENT METHOD EDITOR -->
+          <div id="sellerPaymentEditor" class="seller-payment-editor" hidden>
+
+            <div class="seller-settings-group-head">
+
+              <div>
+                <h4 id="sellerPaymentEditorTitle">
+                  Add payment method
+                </h4>
+
+                <small>
+                  These details may be shown to a buyer during checkout.
+                </small>
+              </div>
+
+              <button id="closeSellerPaymentEditor" class="ngx-icon-btn" type="button"
+                aria-label="Close payment editor">
+                <i data-lucide="x"></i>
+              </button>
+
+            </div>
+
+
+            <div class="seller-settings-grid">
+
+              <!-- PAYMENT TYPE -->
+              <div class="seller-field">
+
+                <label for="sellerPaymentType">
+                  Payment type
+                </label>
+
+                <select id="sellerPaymentType">
+
+                  <option value="mobile_money">
+                    Mobile Money
+                  </option>
+
+                  <option value="bank">
+                    Bank Account
+                  </option>
+
+                  <option value="other">
+                    Other
+                  </option>
+
+                </select>
+
+              </div>
+
+
+              <!-- PROVIDER -->
+              <div class="seller-field">
+
+                <label for="sellerPaymentProvider">
+                  Provider
+                </label>
+
+                <input id="sellerPaymentProvider" type="text" placeholder="e.g. M-Pesa, CRDB, NMB" />
+
+              </div>
+
+
+              <!-- ACCOUNT NAME -->
+              <div class="seller-field">
+
+                <label for="sellerPaymentAccountName">
+                  Account name
+                </label>
+
+                <input id="sellerPaymentAccountName" type="text" placeholder="Name registered on the account" />
+
+              </div>
+
+
+              <!-- ACCOUNT NUMBER -->
+              <div class="seller-field">
+
+                <label for="sellerPaymentAccountNumber">
+                  Number / account
+                </label>
+
+                <input id="sellerPaymentAccountNumber" type="text" placeholder="Phone, till or bank account number" />
+
+              </div>
+
+
+              <!-- INSTRUCTIONS -->
+              <div class="seller-field seller-field-wide">
+
+                <label for="sellerPaymentInstructions">
+                  Payment instructions
+                </label>
+
+                <textarea id="sellerPaymentInstructions" rows="3"
+                  placeholder="Optional instructions for the buyer"></textarea>
+
+              </div>
+
+            </div>
+
+
+            <div class="seller-payment-editor-actions">
+
+              <button id="cancelSellerPaymentMethod" class="btn btn-ghost" type="button">
+                Cancel
+              </button>
+
+              <button id="saveSellerPaymentMethod" class="btn btn-primary" type="button">
+                Add Method
+              </button>
+
+            </div>
+
+          </div>
+
+
+          <div class="seller-payment-footer">
+
+            <small class="muted">
+              Payment methods are stored securely with your seller profile
+              and used when buyers create orders.
+            </small>
+
+          </div>
+
         </div>
-
 
         <!-- PREFERENCES -->
         <div id="mini-preferences" class="mini-content">
