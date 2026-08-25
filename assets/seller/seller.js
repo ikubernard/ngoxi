@@ -2286,6 +2286,40 @@ function findSellerConversation(id) {
   );
 }
 
+function normalizeSellerConversation(conversation = {}) {
+  const buyer = conversation.buyer || {};
+
+  return {
+    ...conversation,
+
+    id: String(conversation._id || conversation.id || ""),
+
+    name: buyer.name || conversation.name || "Buyer",
+
+    phone: buyer.phone || conversation.phone || "",
+
+    avatar:
+      buyer.avatar ||
+      buyer.profileImage ||
+      conversation.avatar ||
+      "/assets/default-avatar.jpeg",
+
+    messages: Array.isArray(conversation.messages)
+      ? conversation.messages.map((message) => ({
+          ...message,
+
+          from: message.from || message.senderRole || "buyer",
+
+          text: message.text || "",
+
+          image: message.image || "",
+
+          ts: message.ts || message.createdAt || Date.now(),
+        }))
+      : [],
+  };
+}
+
 async function loadSellerConversations() {
   const listEl = document.getElementById("sellerConversationList");
 
@@ -2313,6 +2347,10 @@ async function loadSellerConversations() {
     const rawConversations = Array.isArray(data)
       ? data
       : data.conversations || [];
+
+    sellerChatState.conversations = rawConversations.map(
+      normalizeSellerConversation,
+    );
 
     sellerChatState.conversations = rawConversations.map((conversation) => {
       const buyer = conversation.buyer || {};
@@ -2546,6 +2584,58 @@ function renderSellerConversationList() {
 
   if (window.lucide?.createIcons) {
     window.lucide.createIcons();
+  }
+}
+
+async function openSellerConversation(conversationId) {
+  if (!conversationId) {
+    return;
+  }
+
+  try {
+    const response = await authorizedFetch(
+      `${API_BASE}/api/chats/${conversationId}`,
+    );
+
+    const data = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      throw new Error(data.error || "Could not open conversation");
+    }
+
+    if (!data.conversation) {
+      throw new Error("Conversation was not returned");
+    }
+
+    const conversation = normalizeSellerConversation(data.conversation);
+
+    /*
+      Replace the lightweight conversation
+      from GET /api/chats with the complete one
+      from GET /api/chats/:id.
+    */
+
+    const index = sellerChatState.conversations.findIndex(
+      (item) =>
+        String(item._id || item.id) ===
+        String(conversation._id || conversation.id),
+    );
+
+    if (index >= 0) {
+      sellerChatState.conversations[index] = conversation;
+    } else {
+      sellerChatState.conversations.unshift(conversation);
+    }
+
+    sellerChatState.activeConversation = conversation;
+
+    setActiveChat(conversation.id);
+
+    renderSellerConversationList();
+  } catch (error) {
+    console.error("❌ Could not open seller conversation:", error);
+
+    showToast(error.message || "Could not open conversation", "error");
   }
 }
 
@@ -3111,9 +3201,27 @@ function renderChatMessages() {
       : "";
 
     div.innerHTML = `
-  <div class="bubble-text">
-    ${sanitize(m.text)}
-  </div>
+  ${
+    m.text
+      ? `
+        <div class="bubble-text">
+          ${sanitize(m.text)}
+        </div>
+      `
+      : ""
+  }
+
+  ${
+    m.image
+      ? `
+        <img
+          class="chat-message-image"
+          src="${sanitize(m.image)}"
+          alt="Chat attachment"
+        />
+      `
+      : ""
+  }
 
   ${timeHTML}
 `;
@@ -3145,13 +3253,109 @@ function addSystemMessage(chatId, text, kind = "system") {
   loadSellerConversations();
 }
 
+async function sendSellerMessage(text) {
+  const cleanText = String(text || "").trim();
+
+  if (!cleanText) {
+    return null;
+  }
+
+  const chat = findSellerConversation(activeChatId);
+
+  if (!chat) {
+    throw new Error("Select a conversation first");
+  }
+
+  const conversationId = chat._id || chat.id;
+
+  if (!conversationId) {
+    throw new Error("Conversation ID is missing");
+  }
+
+  const response = await authorizedFetch(
+    `${API_BASE}/api/chats/${conversationId}/messages`,
+    {
+      method: "POST",
+
+      headers: {
+        "Content-Type": "application/json",
+      },
+
+      body: JSON.stringify({
+        text: cleanText,
+      }),
+    },
+  );
+
+  const data = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    throw new Error(data.error || "Could not send message");
+  }
+
+  if (!data.message) {
+    throw new Error("Server did not return the saved message");
+  }
+
+  const message = {
+    ...data.message,
+
+    from: data.message.senderRole || "seller",
+
+    text: data.message.text || cleanText,
+
+    image: data.message.image || "",
+
+    ts: data.message.createdAt || Date.now(),
+  };
+
+  chat.messages = Array.isArray(chat.messages) ? chat.messages : [];
+
+  chat.messages.push(message);
+
+  chat.lastMessageAt = message.createdAt || new Date().toISOString();
+
+  sellerChatState.activeConversation = chat;
+
+  renderChatMessages();
+
+  renderSellerConversationList();
+
+  return message;
+}
+
 // Send message button
-document.getElementById("sendChat")?.addEventListener("click", () => {
+document.getElementById("sendChat")?.addEventListener("click", async () => {
   const input = document.getElementById("chatInput");
+
+  const button = document.getElementById("sendChat");
+
   const text = input?.value?.trim();
-  if (!text || !activeChatId) return;
-  addMessage(activeChatId, "seller", text);
-  input.value = "";
+
+  if (!text || !activeChatId) {
+    return;
+  }
+
+  try {
+    if (button) {
+      button.disabled = true;
+    }
+
+    await sendSellerMessage(text);
+
+    if (input) {
+      input.value = "";
+      input.focus();
+    }
+  } catch (error) {
+    console.error("❌ Seller message failed:", error);
+
+    showToast(error.message || "Message could not be sent", "error");
+  } finally {
+    if (button) {
+      button.disabled = false;
+    }
+  }
 });
 // Send with Enter
 document.getElementById("chatInput")?.addEventListener("keydown", (event) => {
@@ -3273,8 +3477,9 @@ if (window.matchMedia("(max-width: 760px)").matches) {
 
   document.querySelector(".chat-layout")?.classList.remove("conversation-open");
 } else {
-  // WhatsApp desktop keeps one conversation open
-  setActiveChat("support");
+  activeChatId = null;
+
+  renderChatMessages();
 }
 
 const avatar = document.createElement("div");
