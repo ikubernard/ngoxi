@@ -17,7 +17,6 @@ const API_BASE =
     : window.location.origin;
 // Generic remote placeholder (only used if backend sends no image)
 const PLACEHOLDER = "https://via.placeholder.com/400x400?text=NgoXi";
-const PROFILE_PHOTO_KEY = "ngoxi_profile_photo";
 
 /* ----------------------------------------------------------
    1) SAFE BOOT: splash + token + expose helpers
@@ -78,8 +77,6 @@ function showToast(msg, type = "info") {
     setTimeout(() => t.remove(), 250);
   }, 2600);
 }
-
-const PAYMENT_KEY = "ngoxi_payment_info";
 
 /* ----------------------------------------------------------
    3) THEME (with memory)
@@ -396,17 +393,6 @@ document.getElementById("addVariant")?.addEventListener("click", () => {
   row.querySelector(".v-del").onclick = () => row.remove();
   document.getElementById("variants")?.appendChild(row);
 });
-
-function loadProfilePhoto() {
-  const img = document.getElementById("profilePreview");
-  if (!img) return;
-
-  const saved = localStorage.getItem(PROFILE_PHOTO_KEY);
-  if (saved) {
-    img.src = saved;
-  }
-}
-loadProfilePhoto();
 
 // Collectors used by POST
 // We collect BOTH variant data and attached image files,
@@ -751,65 +737,715 @@ document.querySelectorAll(".mini-pill")?.forEach((btn) => {
   });
 });
 
+/* =========================================================
+   SELLER PROFILE + PAYMENT METHODS V2
+   MongoDB is the source of truth.
+========================================================= */
+
+const sellerProfileState = {
+  seller: null,
+  paymentMethods: [],
+  editingPaymentIndex: null,
+};
+
+/* =========================================================
+   SMALL HELPERS
+========================================================= */
+
+function sellerFieldValue(id) {
+  return document.getElementById(id)?.value?.trim() || "";
+}
+
+function setSellerFieldValue(id, value = "") {
+  const element = document.getElementById(id);
+
+  if (element) {
+    element.value = value || "";
+  }
+}
+
+function setProfileSaveStatus(text = "") {
+  const status = document.getElementById("sellerProfileSaveStatus");
+
+  if (status) {
+    status.textContent = text;
+  }
+}
+
+function normalizePaymentType(uiType, provider = "") {
+  if (uiType === "bank") {
+    return "bank";
+  }
+
+  if (uiType === "other") {
+    return "other";
+  }
+
+  const value = String(provider).trim().toLowerCase();
+
+  if (value.includes("m-pesa") || value.includes("mpesa")) {
+    return "mpesa";
+  }
+
+  if (value.includes("airtel")) {
+    return "airtel-money";
+  }
+
+  if (value.includes("halo") || value.includes("halopesa")) {
+    return "halopesa";
+  }
+
+  if (
+    value.includes("tigo") ||
+    value.includes("mixx") ||
+    value.includes("yas")
+  ) {
+    return "tigo-pesa";
+  }
+
+  if (value.includes("lipa") || value.includes("till")) {
+    return "lipa-namba";
+  }
+
+  return "other";
+}
+
+function paymentTypeForEditor(method = {}) {
+  if (method.type === "bank") {
+    return "bank";
+  }
+
+  if (method.type === "other") {
+    return "other";
+  }
+
+  return "mobile_money";
+}
+
+/* =========================================================
+   LOAD PROFILE FROM MONGODB
+========================================================= */
+
+async function loadSellerProfile() {
+  try {
+    const response = await authorizedFetch(`${API_BASE}/api/seller/profile`);
+
+    const data = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      throw new Error(data.error || "Could not load seller profile");
+    }
+
+    const seller = data.seller;
+
+    if (!seller) {
+      throw new Error("Seller profile was not returned");
+    }
+
+    sellerProfileState.seller = seller;
+
+    sellerProfileState.paymentMethods = Array.isArray(
+      seller?.sellerProfile?.paymentMethods,
+    )
+      ? seller.sellerProfile.paymentMethods
+      : [];
+
+    /* -------------------------
+       PERSONAL FIELDS
+    ------------------------- */
+
+    setSellerFieldValue("storeName", seller.storeName);
+
+    setSellerFieldValue("sellerName", seller.name);
+
+    setSellerFieldValue("sellerPhone", seller?.sellerProfile?.contact?.phone);
+
+    setSellerFieldValue(
+      "sellerWhatsapp",
+      seller?.sellerProfile?.contact?.whatsapp,
+    );
+
+    setSellerFieldValue("sellerEmail", seller.email);
+
+    setSellerFieldValue(
+      "sellerAddress",
+      seller?.sellerProfile?.pickupLocations?.[0]?.address || "",
+    );
+
+    /* -------------------------
+       PROFILE PHOTO
+    ------------------------- */
+
+    const profilePreview = document.getElementById("profilePreview");
+
+    const avatarUrl = seller?.sellerProfile?.avatar?.url;
+
+    if (profilePreview && avatarUrl) {
+      profilePreview.src = avatarUrl;
+    }
+
+    /* -------------------------
+       HEADER STORE NAME
+    ------------------------- */
+
+    const header = document.getElementById("storeNameHeader");
+
+    if (header) {
+      header.textContent = seller.storeName || "Your Store";
+    }
+
+    renderSellerPaymentMethods();
+
+    if (window.lucide) {
+      lucide.createIcons();
+    }
+  } catch (error) {
+    console.error("❌ Failed loading seller profile:", error);
+
+    showToast(error.message || "Could not load seller settings", "error");
+  }
+}
+
+/* =========================================================
+   SAVE PERSONAL PROFILE
+========================================================= */
+
+document
+  .getElementById("saveSellerProfile")
+  ?.addEventListener("click", async () => {
+    const saveButton = document.getElementById("saveSellerProfile");
+
+    try {
+      const storeName = sellerFieldValue("storeName");
+
+      const name = sellerFieldValue("sellerName");
+
+      const phone = sellerFieldValue("sellerPhone");
+
+      const whatsapp = sellerFieldValue("sellerWhatsapp");
+
+      const email = sellerFieldValue("sellerEmail");
+
+      const address = sellerFieldValue("sellerAddress");
+
+      if (!storeName) {
+        showToast("Enter your store name.", "error");
+
+        return;
+      }
+
+      if (!name) {
+        showToast("Enter seller or business name.", "error");
+
+        return;
+      }
+
+      if (!email) {
+        showToast("Enter an email address.", "error");
+
+        return;
+      }
+
+      if (saveButton) {
+        saveButton.disabled = true;
+        saveButton.textContent = "Saving...";
+      }
+
+      setProfileSaveStatus("Saving...");
+
+      const response = await authorizedFetch(`${API_BASE}/api/seller/profile`, {
+        method: "PATCH",
+
+        headers: {
+          "Content-Type": "application/json",
+        },
+
+        body: JSON.stringify({
+          storeName,
+          name,
+          phone,
+          whatsapp,
+          email,
+          address,
+        }),
+      });
+
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(data.error || "Could not save seller profile");
+      }
+
+      sellerProfileState.seller = data.seller;
+
+      const header = document.getElementById("storeNameHeader");
+
+      if (header) {
+        header.textContent = data.seller?.storeName || "Your Store";
+      }
+
+      /*
+          Keep the cached login user reasonably
+          fresh, but MongoDB remains truth.
+        */
+
+      const cachedUser = JSON.parse(localStorage.getItem("user") || "{}");
+
+      localStorage.setItem(
+        "user",
+        JSON.stringify({
+          ...cachedUser,
+
+          name: data.seller?.name || cachedUser.name,
+
+          email: data.seller?.email || cachedUser.email,
+
+          storeName: data.seller?.storeName || cachedUser.storeName,
+        }),
+      );
+
+      setProfileSaveStatus("Saved ✓");
+
+      showToast("Seller profile saved ✅", "success");
+    } catch (error) {
+      console.error("❌ Save seller profile failed:", error);
+
+      setProfileSaveStatus("Save failed");
+
+      showToast(error.message || "Could not save profile", "error");
+    } finally {
+      if (saveButton) {
+        saveButton.disabled = false;
+        saveButton.textContent = "Save Changes";
+      }
+    }
+  });
+
+/* =========================================================
+   PROFILE PHOTO PREVIEW
+
+   IMPORTANT:
+   This only previews the selected image for now.
+   Actual image upload comes in the avatar-upload patch.
+========================================================= */
+
 const photoBtn = document.getElementById("changePhotoBtn");
+
 const photoInput = document.getElementById("profilePhotoInput");
 
 photoBtn?.addEventListener("click", () => {
-  photoInput.click();
+  photoInput?.click();
 });
 
 photoInput?.addEventListener("change", () => {
   const file = photoInput.files?.[0];
-  if (!file) return;
 
-  const reader = new FileReader();
-  reader.onload = () => {
-    localStorage.setItem(PROFILE_PHOTO_KEY, reader.result);
-    loadProfilePhoto();
-    loadSellerConversations(); // update chat DPs
-  };
-  reader.readAsDataURL(file);
-});
-// ---------- PAYMENT INFO (Me -> Settings -> Payment) ----------
-function loadPaymentInfo() {
-  const raw = localStorage.getItem(PAYMENT_KEY);
-  if (!raw) return;
-  try {
-    const info = JSON.parse(raw);
-    const methodsEl = document.getElementById("payMethods");
-    const numberEl = document.getElementById("payNumber");
-    const phoneEl = document.getElementById("payPhone");
-    const noteEl = document.getElementById("payNote");
-
-    if (methodsEl) methodsEl.value = info.methods || "";
-    if (numberEl) numberEl.value = info.payNumber || "";
-    if (phoneEl) phoneEl.value = info.phone || "";
-    if (noteEl) noteEl.value = info.note || "";
-  } catch (e) {
-    console.error("Bad saved payment info", e);
-  }
-}
-loadPaymentInfo();
-
-document.getElementById("savePayment")?.addEventListener("click", () => {
-  const methods = document.getElementById("payMethods")?.value.trim();
-  const payNumber = document.getElementById("payNumber")?.value.trim();
-  const phone = document.getElementById("payPhone")?.value.trim();
-  const note = document.getElementById("payNote")?.value.trim();
-
-  if (!methods || !payNumber || !phone) {
-    showToast(
-      "Fill payment channels, payment number(s) and phone number.",
-      "error",
-    );
+  if (!file) {
     return;
   }
 
-  const info = { methods, payNumber, phone, note };
-  localStorage.setItem(PAYMENT_KEY, JSON.stringify(info));
-  showToast("Payment info saved.", "success");
+  if (!file.type.startsWith("image/")) {
+    showToast("Choose an image file.", "error");
+
+    return;
+  }
+
+  const preview = document.getElementById("profilePreview");
+
+  if (preview) {
+    const temporaryUrl = URL.createObjectURL(file);
+
+    preview.src = temporaryUrl;
+
+    preview.onload = () => {
+      URL.revokeObjectURL(temporaryUrl);
+    };
+  }
+
+  showToast("Photo selected. Image upload will be connected next.", "info");
 });
 
+/* =========================================================
+   PAYMENT EDITOR
+========================================================= */
+
+function openSellerPaymentEditor(method = null, index = null) {
+  const editor = document.getElementById("sellerPaymentEditor");
+
+  if (!editor) {
+    return;
+  }
+
+  sellerProfileState.editingPaymentIndex = Number.isInteger(index)
+    ? index
+    : null;
+
+  const editing = sellerProfileState.editingPaymentIndex !== null;
+
+  const title = document.getElementById("sellerPaymentEditorTitle");
+
+  const saveButton = document.getElementById("saveSellerPaymentMethod");
+
+  if (title) {
+    title.textContent = editing ? "Edit payment method" : "Add payment method";
+  }
+
+  if (saveButton) {
+    saveButton.textContent = editing ? "Save Changes" : "Add Method";
+  }
+
+  setSellerFieldValue("sellerPaymentProvider", method?.provider || "");
+
+  setSellerFieldValue("sellerPaymentAccountName", method?.accountName || "");
+
+  setSellerFieldValue("sellerPaymentAccountNumber", method?.number || "");
+
+  setSellerFieldValue("sellerPaymentInstructions", method?.note || "");
+
+  const typeSelect = document.getElementById("sellerPaymentType");
+
+  if (typeSelect) {
+    typeSelect.value = paymentTypeForEditor(method || {});
+  }
+
+  editor.hidden = false;
+
+  editor.scrollIntoView({
+    behavior: "smooth",
+    block: "nearest",
+  });
+
+  if (window.lucide) {
+    lucide.createIcons();
+  }
+}
+
+function closeSellerPaymentEditor() {
+  const editor = document.getElementById("sellerPaymentEditor");
+
+  if (editor) {
+    editor.hidden = true;
+  }
+
+  sellerProfileState.editingPaymentIndex = null;
+}
+
+document
+  .getElementById("addSellerPaymentMethod")
+  ?.addEventListener("click", () => {
+    openSellerPaymentEditor();
+  });
+
+document
+  .getElementById("closeSellerPaymentEditor")
+  ?.addEventListener("click", closeSellerPaymentEditor);
+
+document
+  .getElementById("cancelSellerPaymentMethod")
+  ?.addEventListener("click", closeSellerPaymentEditor);
+
+/* =========================================================
+   RENDER PAYMENT METHODS
+========================================================= */
+
+function renderSellerPaymentMethods() {
+  const list = document.getElementById("sellerPaymentMethodsList");
+
+  const empty = document.getElementById("sellerPaymentMethodsEmpty");
+
+  if (!list) {
+    return;
+  }
+
+  /*
+    Keep the empty-state element,
+    remove only generated cards.
+  */
+
+  list
+    .querySelectorAll(".seller-payment-method-card")
+    .forEach((card) => card.remove());
+
+  const methods = sellerProfileState.paymentMethods;
+
+  if (empty) {
+    empty.hidden = methods.length > 0;
+  }
+
+  methods.forEach((method, index) => {
+    const card = document.createElement("article");
+
+    card.className = "seller-payment-method-card";
+
+    card.innerHTML = `
+        <div class="seller-payment-method-card-top">
+
+          <div class="seller-payment-provider">
+
+            <div class="seller-payment-provider-icon">
+              <i data-lucide="${
+                method.type === "bank" ? "landmark" : "wallet-cards"
+              }"></i>
+            </div>
+
+            <div class="seller-payment-provider-copy">
+
+              <strong>
+                ${sanitize(method.provider || method.label || "Payment method")}
+              </strong>
+
+              <small>
+                ${sanitize(
+                  method.type === "bank" ? "Bank account" : "Payment account",
+                )}
+              </small>
+
+            </div>
+
+          </div>
+
+          <div class="seller-payment-card-actions">
+
+            <button
+              type="button"
+              data-edit-payment="${index}"
+              aria-label="Edit payment method"
+            >
+              <i data-lucide="pencil"></i>
+            </button>
+
+            <button
+              type="button"
+              data-delete-payment="${index}"
+              aria-label="Delete payment method"
+            >
+              <i data-lucide="trash-2"></i>
+            </button>
+
+          </div>
+
+        </div>
+
+        <div class="seller-payment-account-number">
+          ${sanitize(method.number || "")}
+        </div>
+
+        ${
+          method.accountName
+            ? `
+              <div class="seller-payment-account-name">
+                ${sanitize(method.accountName)}
+              </div>
+            `
+            : ""
+        }
+
+        ${
+          method.note
+            ? `
+              <div class="seller-payment-method-note">
+                ${sanitize(method.note)}
+              </div>
+            `
+            : ""
+        }
+
+      `;
+
+    list.appendChild(card);
+  });
+
+  list.querySelectorAll("[data-edit-payment]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const index = Number(button.dataset.editPayment);
+
+      const method = sellerProfileState.paymentMethods[index];
+
+      if (!method) {
+        return;
+      }
+
+      openSellerPaymentEditor(method, index);
+    });
+  });
+
+  list.querySelectorAll("[data-delete-payment]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const index = Number(button.dataset.deletePayment);
+
+      await deleteSellerPaymentMethod(index);
+    });
+  });
+
+  if (window.lucide) {
+    lucide.createIcons();
+  }
+}
+
+/* =========================================================
+   SAVE PAYMENT ARRAY TO MONGODB
+========================================================= */
+
+async function saveSellerPaymentMethods() {
+  const response = await authorizedFetch(`${API_BASE}/api/seller/profile`, {
+    method: "PATCH",
+
+    headers: {
+      "Content-Type": "application/json",
+    },
+
+    body: JSON.stringify({
+      paymentMethods: sellerProfileState.paymentMethods,
+    }),
+  });
+
+  const data = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    throw new Error(data.error || "Could not save payment methods");
+  }
+
+  sellerProfileState.seller = data.seller;
+
+  sellerProfileState.paymentMethods = Array.isArray(
+    data.seller?.sellerProfile?.paymentMethods,
+  )
+    ? data.seller.sellerProfile.paymentMethods
+    : [];
+
+  renderSellerPaymentMethods();
+}
+
+/* =========================================================
+   ADD / EDIT PAYMENT METHOD
+========================================================= */
+
+document
+  .getElementById("saveSellerPaymentMethod")
+  ?.addEventListener("click", async () => {
+    const saveButton = document.getElementById("saveSellerPaymentMethod");
+
+    try {
+      const uiType = sellerFieldValue("sellerPaymentType");
+
+      const provider = sellerFieldValue("sellerPaymentProvider");
+
+      const accountName = sellerFieldValue("sellerPaymentAccountName");
+
+      const number = sellerFieldValue("sellerPaymentAccountNumber");
+
+      const note = sellerFieldValue("sellerPaymentInstructions");
+
+      if (!provider) {
+        showToast("Enter the payment provider.", "error");
+
+        return;
+      }
+
+      if (!number) {
+        showToast("Enter the payment number or account.", "error");
+
+        return;
+      }
+
+      const method = {
+        type: normalizePaymentType(uiType, provider),
+
+        provider,
+
+        label: provider,
+
+        accountName,
+
+        number,
+
+        note,
+
+        active: true,
+      };
+
+      const editIndex = sellerProfileState.editingPaymentIndex;
+
+      if (Number.isInteger(editIndex)) {
+        sellerProfileState.paymentMethods[editIndex] = method;
+      } else {
+        sellerProfileState.paymentMethods.push(method);
+      }
+
+      if (saveButton) {
+        saveButton.disabled = true;
+
+        saveButton.textContent = "Saving...";
+      }
+
+      await saveSellerPaymentMethods();
+
+      closeSellerPaymentEditor();
+
+      showToast("Payment method saved ✅", "success");
+    } catch (error) {
+      console.error("❌ Payment save failed:", error);
+
+      showToast(error.message || "Could not save payment method", "error");
+
+      /*
+          Reload from MongoDB if the PATCH failed,
+          preventing browser state from drifting.
+        */
+
+      await loadSellerProfile();
+    } finally {
+      if (saveButton) {
+        saveButton.disabled = false;
+
+        saveButton.textContent = "Add Method";
+      }
+    }
+  });
+
+/* =========================================================
+   DELETE PAYMENT METHOD
+========================================================= */
+
+async function deleteSellerPaymentMethod(index) {
+  const method = sellerProfileState.paymentMethods[index];
+
+  if (!method) {
+    return;
+  }
+
+  const confirmed = window.confirm(
+    `Remove ${method.provider || "this payment method"}?`,
+  );
+
+  if (!confirmed) {
+    return;
+  }
+
+  const previous = [...sellerProfileState.paymentMethods];
+
+  try {
+    sellerProfileState.paymentMethods.splice(index, 1);
+
+    await saveSellerPaymentMethods();
+
+    showToast("Payment method removed.", "success");
+  } catch (error) {
+    sellerProfileState.paymentMethods = previous;
+
+    renderSellerPaymentMethods();
+
+    console.error("❌ Delete payment method failed:", error);
+
+    showToast(error.message || "Could not remove payment method", "error");
+  }
+}
+
+/* =========================================================
+   INITIAL PROFILE LOAD
+========================================================= */
+
+loadSellerProfile();
 /* ==========================================================
    PART 3 — FINAL WIRING: cards, actions, QR, orders, init
    ========================================================== */
@@ -1605,120 +2241,6 @@ document.getElementById("downloadQR")?.addEventListener("click", async () => {
   };
   tmp.src = img.src;
 });
-/* ---------- Location picker (Leaflet) ---------- */
-
-let locationMapInstance = null;
-let locationMarker = null;
-
-function getSavedLocation() {
-  try {
-    return JSON.parse(localStorage.getItem("personalLocation") || "null");
-  } catch {
-    return null;
-  }
-}
-
-function saveLocationToStorage(loc) {
-  localStorage.setItem("personalLocation", JSON.stringify(loc));
-}
-
-function openLocationModal() {
-  const modal = document.getElementById("locationModal");
-  if (!modal) return;
-  modal.setAttribute("aria-hidden", "false");
-
-  const mapEl = document.getElementById("locationMap");
-  if (!mapEl) return;
-
-  // Init Leaflet map once
-  if (!locationMapInstance && window.L) {
-    const saved = getSavedLocation();
-    const initialLatLng = saved
-      ? [saved.latitude, saved.longitude]
-      : [-6.8143, 39.2894]; // Dar es Salaam default
-
-    locationMapInstance = L.map(mapEl).setView(initialLatLng, 13);
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      maxZoom: 19,
-      attribution: "© OpenStreetMap",
-    }).addTo(locationMapInstance);
-
-    locationMarker = L.marker(initialLatLng, { draggable: true }).addTo(
-      locationMapInstance,
-    );
-  }
-
-  setTimeout(() => {
-    locationMapInstance && locationMapInstance.invalidateSize();
-  }, 200);
-
-  // Try to center on current browser location once
-  if (locationMapInstance && !getSavedLocation() && navigator.geolocation) {
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const latlng = [pos.coords.latitude, pos.coords.longitude];
-        locationMapInstance.setView(latlng, 14);
-        if (locationMarker) {
-          locationMarker.setLatLng(latlng);
-        }
-      },
-      () => {
-        // ignore if user denies
-      },
-    );
-  }
-}
-
-function closeLocationModal() {
-  const modal = document.getElementById("locationModal");
-  if (!modal) return;
-  modal.setAttribute("aria-hidden", "true");
-}
-
-document.getElementById("setLocationBtn")?.addEventListener("click", () => {
-  openLocationModal();
-});
-
-document
-  .querySelectorAll("[data-close-location]")
-  .forEach((btn) => btn.addEventListener("click", closeLocationModal));
-
-document.getElementById("saveLocationBtn")?.addEventListener("click", () => {
-  if (!locationMarker) {
-    closeLocationModal();
-    return;
-  }
-  const latlng = locationMarker.getLatLng();
-  const loc = {
-    latitude: latlng.lat,
-    longitude: latlng.lng,
-    formattedAddress: document.getElementById("address")?.value || "",
-  };
-  saveLocationToStorage(loc);
-  showToast("Location saved ✅", "success");
-  closeLocationModal();
-  renderLocationPreview();
-});
-
-function renderLocationPreview() {
-  const container = document.getElementById("mapPreview");
-  if (!container || !window.L) return;
-  container.innerHTML = "";
-  const saved = getSavedLocation();
-  if (!saved) return;
-
-  const map = L.map(container, {
-    zoomControl: false,
-    attributionControl: false,
-  }).setView([saved.latitude, saved.longitude], 14);
-  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-    maxZoom: 19,
-  }).addTo(map);
-  L.marker([saved.latitude, saved.longitude]).addTo(map);
-}
-
-// Call once at startup so preview appears in Settings
-renderLocationPreview();
 
 /* ---------- Home Overview stats ---------- */
 function updateOverview() {
