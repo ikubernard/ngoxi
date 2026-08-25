@@ -294,7 +294,7 @@ document.getElementById("saveOrderUpdateBtn")?.addEventListener("click", () => {
 
   // Update chat dot based on order status
   if (updated.chatId) {
-    const chat = CHAT_STORE.find((c) => c.id === updated.chatId);
+    const chat = findSellerConversation(updated.chatId);
     if (chat) {
       chat.orderState = updated.status === "done" ? "completed" : "completed"; // orange either way once confirmed/shipping
       loadSellerConversations();
@@ -2275,6 +2275,17 @@ const sellerChatState = {
   search: "",
 };
 
+function findSellerConversation(id) {
+  if (!id) return null;
+
+  return (
+    sellerChatState.conversations.find(
+      (conversation) =>
+        String(conversation._id || conversation.id || "") === String(id),
+    ) || null
+  );
+}
+
 async function loadSellerConversations() {
   const listEl = document.getElementById("sellerConversationList");
 
@@ -2299,9 +2310,39 @@ async function loadSellerConversations() {
 
     const data = await response.json();
 
-    sellerChatState.conversations = Array.isArray(data)
+    const rawConversations = Array.isArray(data)
       ? data
       : data.conversations || [];
+
+    sellerChatState.conversations = rawConversations.map((conversation) => {
+      const buyer = conversation.buyer || {};
+
+      return {
+        ...conversation,
+
+        id: String(conversation._id || conversation.id || ""),
+
+        name: buyer.name || conversation.name || "Buyer",
+
+        phone: buyer.phone || conversation.phone || "",
+
+        avatar:
+          buyer.avatar ||
+          buyer.profileImage ||
+          conversation.avatar ||
+          "/assets/default-avatar.jpeg",
+
+        messages: Array.isArray(conversation.messages)
+          ? conversation.messages.map((message) => ({
+              ...message,
+
+              from: message.from || message.senderRole || "buyer",
+
+              ts: message.ts || message.createdAt || Date.now(),
+            }))
+          : [],
+      };
+    });
 
     sellerChatState.loading = false;
 
@@ -2706,60 +2747,106 @@ window.receiveIncomingOrder = receiveIncomingOrder;
 window.receiveReceiptUploaded = receiveReceiptUploaded;
 window.receiveSellerConfirm = receiveSellerConfirm;
 
-function getSavedPaymentInfo() {
-  try {
-    return JSON.parse(localStorage.getItem(PAYMENT_KEY) || "null");
-  } catch {
-    return null;
-  }
-}
-
 // Builds/refreshes the pinned card content for a chat based on order status
 function buildPinnedPaymentCard(chat) {
   if (!chat) return null;
 
-  // We show pinned card only while order is UNFILLED or FILLED
   const orderId = chat.orderId || chat.paymentCard?.orderId;
-  if (!orderId) return null;
 
-  const o = findOrderById(orderId);
-  if (!o) return null;
-
-  if (o.status !== "unfilled" && o.status !== "filled") {
-    return null; // disappears after confirm (completed/done)
+  if (!orderId) {
+    return null;
   }
 
-  const pay = getSavedPaymentInfo();
-  if (!pay) {
-    // Payment card cannot show without saved seller payment info
+  const order = findOrderById(orderId);
+
+  if (!order) {
+    return null;
+  }
+
+  if (order.status !== "unfilled" && order.status !== "filled") {
+    return null;
+  }
+
+  const paymentMethods = Array.isArray(sellerProfileState.paymentMethods)
+    ? sellerProfileState.paymentMethods.filter(
+        (method) => method && method.active !== false,
+      )
+    : [];
+
+  const seller = sellerProfileState.seller || {};
+
+  const sellerPhone = seller?.sellerProfile?.contact?.phone || "";
+
+  if (!paymentMethods.length) {
     return {
-      orderId: o.id,
-      productName: o.productName,
-      totalPrice: o.price,
-      methods: "—",
-      payNumber: "Set payment info in Me → Settings → Payment Info",
-      phone: "",
-      note: "",
-      receipt: o.receiptImage || null,
+      orderId: order.id,
+
+      productName: order.productName || order.product || "Product",
+
+      totalPrice: order.price || 0,
+
+      methods: "No payment method available",
+
+      payNumber: "",
+
+      phone: sellerPhone,
+
+      note: "Add a payment method in Me → Settings → Payment Info.",
+
+      receipt: order.receiptImage || null,
     };
   }
 
+  const methodsText = paymentMethods
+    .map(
+      (method) => method.provider || method.label || method.type || "Payment",
+    )
+    .join(" • ");
+
+  const numbersText = paymentMethods
+    .map((method) => {
+      const provider = method.provider || method.label || "";
+
+      const number = method.number || method.accountNumber || "";
+
+      if (!number) {
+        return "";
+      }
+
+      return provider ? `${provider}: ${number}` : number;
+    })
+    .filter(Boolean)
+    .join(" | ");
+
+  const notesText = paymentMethods
+    .map((method) => method.note || method.instructions || "")
+    .filter(Boolean)
+    .join(" • ");
+
   return {
-    orderId: o.id,
-    productName: o.productName,
-    totalPrice: o.price,
-    methods: pay.methods || "",
-    payNumber: pay.payNumber || "",
-    phone: pay.phone || "",
-    note: pay.note || "",
-    receipt: o.receiptImage || null,
+    orderId: order.id,
+
+    productName: order.productName || order.product || "Product",
+
+    totalPrice: order.price || 0,
+
+    methods: methodsText,
+
+    payNumber: numbersText,
+
+    phone: sellerPhone,
+
+    note: notesText,
+
+    paymentMethods,
+
+    receipt: order.receiptImage || null,
   };
 }
-
 function setActiveChat(id) {
   activeChatId = id;
 
-  const chat = sellerChatState.conversations.find((item) => item.id === id);
+  const chat = findSellerConversation(id);
 
   const titleElement = document.getElementById("chatWith");
 
@@ -3035,9 +3122,8 @@ function renderChatMessages() {
 
   body.scrollTop = body.scrollHeight;
 }
-
 function addMessage(chatId, from, text) {
-  const chat = CHAT_STORE.find((c) => c.id === chatId);
+  const chat = findSellerConversation(chatId);
   if (!chat) return;
   const now = Date.now();
   const msg = { from, text, ts: now, kind: "message" };
@@ -3049,7 +3135,7 @@ function addMessage(chatId, from, text) {
 }
 
 function addSystemMessage(chatId, text, kind = "system") {
-  const chat = CHAT_STORE.find((c) => c.id === chatId);
+  const chat = findSellerConversation(chatId);
   if (!chat) return;
   const now = Date.now();
   chat.messages.push({ from: "system", text, ts: now, kind });
@@ -3091,7 +3177,7 @@ function closeChatOptions() {
 }
 
 function syncChatOptions() {
-  const chat = CHAT_STORE.find((item) => item.id === activeChatId);
+  const chat = findSellerConversation(activeChatId);
 
   const toggleButton = document.getElementById("togglePaymentCard");
 
@@ -3123,7 +3209,7 @@ document
   });
 
 document.getElementById("togglePaymentCard")?.addEventListener("click", () => {
-  const chat = CHAT_STORE.find((item) => item.id === activeChatId);
+  const chat = findSellerConversation(activeChatId);
 
   if (!chat || !buildPinnedPaymentCard(chat)) {
     showToast("This conversation has no active payment card.", "info");
@@ -3160,7 +3246,7 @@ document.getElementById("callContact")?.addEventListener("click", () => {
     return;
   }
 
-  const chat = CHAT_STORE.find((c) => c.id === activeChatId);
+  const chat = findSellerConversation(activeChatId);
   if (!chat || !chat.phone) {
     showToast("No phone number available for this contact.", "error");
     return;
