@@ -3194,12 +3194,20 @@ if (window.matchMedia("(max-width: 760px)").matches) {
 const avatar = document.createElement("div");
 avatar.className = "contact-avatar";
 
-const dp = localStorage.getItem(PROFILE_PHOTO_KEY);
+const seller = sellerProfileState?.seller || {};
+
+const dp = seller?.sellerProfile?.avatar?.url || "";
+
 if (dp) {
-  avatar.innerHTML = `<img src="${dp}" />`;
+  avatar.innerHTML = `
+    <img
+      src="${dp}"
+      alt=""
+    />
+  `;
 } else {
-  const user = JSON.parse(localStorage.getItem("user") || "{}");
-  const displayName = user.storeName || user.name || user.fullName || "Seller";
+  const displayName = seller.storeName || seller.name || "Seller";
+
   avatar.textContent = getInitials(displayName);
 }
 
