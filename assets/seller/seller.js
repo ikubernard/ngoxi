@@ -21,30 +21,55 @@ const PLACEHOLDER = "https://via.placeholder.com/400x400?text=NgoXi";
 /* ----------------------------------------------------------
    1) SAFE BOOT: splash + token + expose helpers
    ---------------------------------------------------------- */
-window.addEventListener("load", () => {
+window.addEventListener("load", async () => {
   console.log("✅ Seller.js initialized");
 
-  const token = localStorage.getItem("token");
-  const user = JSON.parse(localStorage.getItem("user") || "{}");
+  try {
+    const response = await fetch(`${API_BASE}/api/auth/me`, {
+      credentials: "include",
+    });
 
-  // If no token, go back to auth
-  if (!token) {
-    alert("Session expired ⚠️ Please log in again.");
+    const data = await response.json().catch(() => ({}));
+
+    if (response.status === 401) {
+      window.location.href = "/auth";
+      return;
+    }
+
+    if (!response.ok) {
+      throw new Error(data.error || "Could not verify session");
+    }
+
+    const user = data.user;
+
+    if (!Array.isArray(user?.roles) || !user.roles.includes("seller")) {
+      alert("Seller access required.");
+      window.location.href = "/role-select.html";
+      return;
+    }
+
+    const splash = document.getElementById("splash");
+
+    setTimeout(() => {
+      if (splash) splash.remove();
+
+      const dash = document.getElementById("dashboard");
+
+      if (dash) {
+        dash.style.display = "block";
+      }
+    }, 800);
+
+    const hdr = document.getElementById("storeNameHeader");
+
+    if (hdr) {
+      hdr.textContent = user.storeName || user.name || "Your Store";
+    }
+  } catch (error) {
+    console.error("Seller session check failed:", error);
+
     window.location.href = "/auth";
-    return;
   }
-
-  // Splash fade-out then show dashboard
-  const splash = document.getElementById("splash");
-  setTimeout(() => {
-    if (splash) splash.remove();
-    const dash = document.getElementById("dashboard");
-    if (dash) dash.style.display = "block";
-  }, 800);
-
-  // Header store name
-  const hdr = document.getElementById("storeNameHeader");
-  if (hdr) hdr.textContent = user.storeName || "Your Store";
 });
 
 document.addEventListener("DOMContentLoaded", () => {
