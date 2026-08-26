@@ -2343,7 +2343,16 @@ async function loadSellerConversations() {
     }
 
     const data = await response.json();
-    console.log("SELLER CHATS:", data);
+    console.table(
+      (data.conversations || []).map((chat) => ({
+        chatId: chat._id,
+        buyerId: chat.buyer?._id,
+        buyerName: chat.buyer?.name,
+        sellerId: chat.seller?._id,
+        sellerName: chat.seller?.name,
+        messages: chat.messages?.length || 0,
+      })),
+    );
 
     const rawConversations = Array.isArray(data)
       ? data
