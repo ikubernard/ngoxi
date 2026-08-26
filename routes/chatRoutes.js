@@ -15,10 +15,20 @@ function hasRole(user, role) {
   return Array.isArray(user?.roles) && user.roles.includes(role);
 }
 
-function isParticipant(chat, userId) {
-  const id = String(userId);
+function getMongoId(value) {
+  if (!value) return "";
 
-  return String(chat.buyer) === id || String(chat.seller) === id;
+  return String(value._id || value.id || value);
+}
+
+function isParticipant(chat, userId) {
+  const userIdString = getMongoId(userId);
+
+  const buyerId = getMongoId(chat?.buyer);
+
+  const sellerId = getMongoId(chat?.seller);
+
+  return buyerId === userIdString || sellerId === userIdString;
 }
 
 /* =========================================================
