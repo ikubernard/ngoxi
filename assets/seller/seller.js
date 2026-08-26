@@ -2343,6 +2343,7 @@ async function loadSellerConversations() {
     }
 
     const data = await response.json();
+    console.log("SELLER CHATS:", data);
 
     const rawConversations = Array.isArray(data)
       ? data

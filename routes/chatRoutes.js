@@ -147,19 +147,27 @@ router.post("/start", verifyToken, async (req, res) => {
       });
     }
 
-    let chat = await Chat.findOne({
-      buyer: buyerId,
-      seller: sellerId,
-    });
-
-    if (!chat) {
-      chat = await Chat.create({
+    let chat = await Chat.findOneAndUpdate(
+      {
         buyer: buyerId,
         seller: sellerId,
-        messages: [],
-        lastMessageAt: new Date(),
-      });
-    }
+      },
+
+      {
+        $setOnInsert: {
+          buyer: buyerId,
+          seller: sellerId,
+          messages: [],
+          lastMessageAt: new Date(),
+        },
+      },
+
+      {
+        new: true,
+        upsert: true,
+        setDefaultsOnInsert: true,
+      },
+    );
 
     chat = await Chat.findById(chat._id)
       .populate("buyer", "name email")
