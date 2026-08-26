@@ -173,10 +173,7 @@
     });
 
     /* ===== Helpers ===== */
-    function saveAuth(token, user) {
-      localStorage.setItem('token', token);
-      localStorage.setItem('user', JSON.stringify(user));
-    }
+
     function manyRoles(u) { return Array.isArray(u?.roles) && u.roles.length > 1; }
     function goRoleSelect() { window.location.href = "/role-select.html"; }
     function goFirst(u) {
@@ -192,18 +189,32 @@
 
       msg.textContent = "Logging in…";
       try {
-        const res = await fetch(`${API_BASE}/api/auth/login`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, password })
-        });
+        const res =
+          await fetch(
+            `${API_BASE}/api/auth/login`,
+            {
+              method: "POST",
+
+              headers: {
+                "Content-Type":
+                  "application/json",
+              },
+
+              credentials: "include",
+
+              body: JSON.stringify({
+                email,
+                password,
+              }),
+            },
+          );
 
         const text = await res.text();
         const data = text ? JSON.parse(text) : {};
 
         if (!res.ok) throw new Error(data.error || data.message || "Login failed");
 
-        saveAuth(data.token, data.user);
+
         if (manyRoles(data.user)) goRoleSelect();
         else goFirst(data.user);
       } catch (err) {
@@ -226,18 +237,35 @@
 
       msg.textContent = "Creating account…";
       try {
-        const res = await fetch(`${API_BASE}/api/auth/signup`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name, email, password, role, adminCode })
-        });
+        const res =
+          await fetch(
+            `${API_BASE}/api/auth/signup`,
+            {
+              method: "POST",
+
+              headers: {
+                "Content-Type":
+                  "application/json",
+              },
+
+              credentials: "include",
+
+              body: JSON.stringify({
+                name,
+                email,
+                password,
+                role,
+                adminCode,
+              }),
+            },
+          );
 
         const text = await res.text();
         const data = text ? JSON.parse(text) : {};
 
         if (!res.ok) throw new Error(data.error || data.message || "Signup failed");
 
-        saveAuth(data.token, data.user);
+
         if (manyRoles(data.user)) goRoleSelect();
         else goFirst(data.user);
       } catch (err) {

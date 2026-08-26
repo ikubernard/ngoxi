@@ -8,6 +8,7 @@ import mongoose from "mongoose";
 import dotenv from "dotenv";
 import cors from "cors";
 import bodyParser from "body-parser";
+import cookieParser from "cookie-parser";
 import { Server } from "socket.io";
 import http from "http";
 import fs from "fs";
@@ -21,30 +22,45 @@ const __dirname = path.dirname(__filename);
 // ===== Load ENV =====
 dotenv.config();
 const app = express();
-const allowed =
-  process.env.NODE_ENV === "production"
-    ? ["https://ngoxi.app"]
-    : ["http://127.0.0.1:5000", "http://localhost:5000"];
+const allowedOrigins = [
+  "https://ngoxi.onrender.com",
+  "https://ngoxi.app",
+  "http://127.0.0.1:5000",
+  "http://localhost:5000",
+  "http://127.0.0.1:5500",
+];
 
-// ===== CORS (allow everything in dev) =====
 app.use(
   cors({
-    origin: [
-      "http://127.0.0.1:5000",
-      "http://localhost:5000",
-      "http://127.0.0.1:5500",
-    ],
+    origin(origin, callback) {
+      /*
+        Requests with no Origin can happen from
+        same-origin navigation/tools.
+      */
+      if (!origin) {
+        return callback(null, true);
+      }
+
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+
+      return callback(new Error("Origin not allowed by CORS"));
+    },
+
     credentials: true,
+
     allowedHeaders: ["Content-Type", "Authorization"],
+
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
   }),
 );
-
 app.set("trust proxy", 1);
 
 // ===== Body Parsers =====
 app.use(express.json());
 app.use(bodyParser.urlencoded({ extended: true }));
+app.use(cookieParser());
 
 // ============================
 // ✅ STATIC FILES (THE IMPORTANT FIX)

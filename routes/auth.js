@@ -2,6 +2,7 @@ import express from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import User from "../model/User.js";
+import { verifyToken } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
@@ -11,6 +12,45 @@ function signToken(user) {
     process.env.JWT_SECRET,
     { expiresIn: "7d" },
   );
+}
+
+function authCookieOptions() {
+  const production = process.env.NODE_ENV === "production";
+
+  return {
+    httpOnly: true,
+
+    secure: production,
+
+    sameSite: "lax",
+
+    /*
+      Cookie works across the whole NgoXi site.
+    */
+    path: "/",
+
+    /*
+      Match current JWT lifetime.
+      We'll shorten/rotate sessions later
+      during auth hardening.
+    */
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+  };
+}
+
+function setAuthCookie(res, token) {
+  res.cookie("ngoxi_auth", token, authCookieOptions());
+}
+
+function clearAuthCookie(res) {
+  const production = process.env.NODE_ENV === "production";
+
+  res.clearCookie("ngoxi_auth", {
+    httpOnly: true,
+    secure: production,
+    sameSite: "lax",
+    path: "/",
+  });
 }
 
 // ======================
@@ -60,16 +100,20 @@ router.post("/signup", async (req, res) => {
       await user.save();
 
       const token = signToken(user);
+
+      setAuthCookie(res, token);
+
       return res.json({
         merged: true,
+
         message: "Role merged",
+
         user: {
           id: user._id,
           name: user.name,
           email: user.email,
           roles: user.roles,
         },
-        token,
       });
     }
 
@@ -89,6 +133,9 @@ router.post("/signup", async (req, res) => {
     });
 
     const token = signToken(user);
+
+    setAuthCookie(res, token);
+
     return res.status(201).json({
       user: {
         id: user._id,
@@ -96,7 +143,6 @@ router.post("/signup", async (req, res) => {
         email: user.email,
         roles: user.roles,
       },
-      token,
     });
   } catch (e) {
     console.error("Signup error:", e);
@@ -120,6 +166,9 @@ router.post("/login", async (req, res) => {
       return res.status(401).json({ error: "Invalid email or password" });
 
     const token = signToken(user);
+
+    setAuthCookie(res, token);
+
     return res.json({
       user: {
         id: user._id,
@@ -127,11 +176,50 @@ router.post("/login", async (req, res) => {
         email: user.email,
         roles: user.roles,
       },
-      token,
     });
   } catch (e) {
     console.error("Login error:", e);
     res.status(500).json({ error: "Login failed" });
+  }
+});
+
+// ======================
+// POST /api/auth/logout
+// ======================
+
+router.post("/logout", (req, res) => {
+  clearAuthCookie(res);
+
+  return res.status(200).json({
+    message: "Logged out",
+  });
+});
+
+// ======================
+// GET /api/auth/me
+// ======================
+
+router.get("/me", verifyToken, async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id).select(
+      "name email roles storeName sellerProfile.avatar",
+    );
+
+    if (!user) {
+      return res.status(404).json({
+        error: "User not found",
+      });
+    }
+
+    return res.json({
+      user,
+    });
+  } catch (error) {
+    console.error("GET /api/auth/me failed:", error);
+
+    return res.status(500).json({
+      error: "Could not load session",
+    });
   }
 });
 
