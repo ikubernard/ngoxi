@@ -262,6 +262,32 @@
     if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
     return res.json();
   }
+  async function loadCurrentBuyer() {
+    const response = await fetch(`${API_BASE}/api/auth/me`, {
+      credentials: "include",
+    });
+
+    const data = await response.json().catch(() => ({}));
+
+    if (response.status === 401) {
+      window.location.href = "/auth.html";
+      return null;
+    }
+
+    if (!response.ok) {
+      throw new Error(data.error || "Could not verify session");
+    }
+
+    const user = data.user;
+
+    if (!Array.isArray(user?.roles) || !user.roles.includes("buyer")) {
+      window.location.href = "/role-select.html";
+
+      return null;
+    }
+
+    return user;
+  }
 
   // -----------------------------
   // Products / Grid
@@ -1134,17 +1160,7 @@
   }
   async function loadConversations() {
     try {
-      const token = localStorage.getItem("token");
-
-      if (!token) {
-        console.warn("No buyer token found.");
-        return;
-      }
-
       const response = await fetch(`${API_BASE}/api/chats`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
         credentials: "include",
       });
 
@@ -1350,9 +1366,23 @@
       toast("Saved (local demo). Hook your /api/user/settings to persist.");
     });
 
-    els.logoutBtn?.addEventListener("click", () => {
-      // location.href = '/logout' (if existed)
-      toast("Logged out (demo). Wire to your real /logout.");
+    els.logoutBtn?.addEventListener("click", async () => {
+      try {
+        const response = await fetch(`${API_BASE}/api/auth/logout`, {
+          method: "POST",
+          credentials: "include",
+        });
+
+        if (!response.ok) {
+          throw new Error("Logout failed");
+        }
+
+        window.location.href = "/auth.html";
+      } catch (error) {
+        console.error("Logout failed:", error);
+
+        toast("Could not log out.");
+      }
     });
 
     // Mode navigation
@@ -3537,6 +3567,11 @@
   // Boot
   // -----------------------------
   async function boot() {
+    const currentUser = await loadCurrentBuyer();
+
+    if (!currentUser) {
+      return;
+    }
     applyTheme(state.theme);
     runSplash();
     initHero();
