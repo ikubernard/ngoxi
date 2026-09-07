@@ -127,6 +127,54 @@ const userSchema = new mongoose.Schema(
         },
       ],
     },
+
+    buyerProfile: {
+      avatar: {
+        url: {
+          type: String,
+          default: "",
+        },
+
+        publicId: {
+          type: String,
+          default: "",
+        },
+      },
+
+      contact: {
+        phone: {
+          type: String,
+          default: "",
+          trim: true,
+        },
+      },
+
+      delivery: {
+        city: {
+          type: String,
+          default: "",
+          trim: true,
+        },
+
+        address: {
+          type: String,
+          default: "",
+          trim: true,
+        },
+
+        receiverName: {
+          type: String,
+          default: "",
+          trim: true,
+        },
+
+        receiverPhone: {
+          type: String,
+          default: "",
+          trim: true,
+        },
+      },
+    },
   },
   { timestamps: true },
 );

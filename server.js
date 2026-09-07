@@ -111,11 +111,13 @@ mongoose
 import authRoutes from "./routes/auth.js";
 import productRoutes from "./routes/product.js";
 import sellerRoutes from "./routes/seller.js";
+import buyerRoutes from "./routes/buyer.js";
 import reviewRoutes from "./routes/reviewRoutes.js";
 import chatRoutes from "./routes/chatRoutes.js";
 import adminRoutes from "./routes/admin.js";
 
 app.use("/api/auth", authRoutes);
+app.use("/api/buyer", buyerRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/reviews", reviewRoutes);
 app.use("/api/chats", chatRoutes);
