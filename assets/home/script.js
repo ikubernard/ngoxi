@@ -288,6 +288,49 @@
 
     return user;
   }
+  async function loadBuyerProfile() {
+    try {
+      const response = await fetch(`${API_BASE}/api/buyer/profile`, {
+        credentials: "include",
+      });
+
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(data.error || "Could not load buyer profile");
+      }
+
+      const buyer = data.buyer;
+
+      if (!buyer) {
+        throw new Error("Buyer profile was not returned");
+      }
+
+      if (els.setName) {
+        els.setName.value = buyer.name || "";
+      }
+
+      if (els.setEmail) {
+        els.setEmail.value = buyer.email || "";
+      }
+
+      if (els.setPhone) {
+        els.setPhone.value = buyer?.buyerProfile?.contact?.phone || "";
+      }
+
+      if (els.setLocation) {
+        els.setLocation.value = buyer?.buyerProfile?.delivery?.address || "";
+      }
+
+      return buyer;
+    } catch (error) {
+      console.error("Failed loading buyer profile:", error);
+
+      toast(error.message || "Could not load buyer profile");
+
+      return null;
+    }
+  }
 
   // -----------------------------
   // Products / Grid
@@ -1353,17 +1396,70 @@
       if (e.target === els.productSheet) closeProductSheet();
     });
 
-    // Save settings
-    els.saveSettings?.addEventListener("click", () => {
-      const payload = {
-        name: els.setName?.value || "",
-        phone: els.setPhone?.value || "",
-        email: els.setEmail?.value || "",
-        address: els.setLocation?.value || "",
-      };
-      // Hook to your backend user settings endpoint if you have one:
-      // apiPost(`${API_BASE}/api/user/settings`, payload)
-      toast("Saved (local demo). Hook your /api/user/settings to persist.");
+    // Save buyer settings to MongoDB
+    els.saveSettings?.addEventListener("click", async () => {
+      try {
+        const payload = {
+          name: els.setName?.value.trim() || "",
+
+          phone: els.setPhone?.value.trim() || "",
+
+          address: els.setLocation?.value.trim() || "",
+        };
+
+        if (!payload.name) {
+          toast("Enter your name.");
+          return;
+        }
+
+        els.saveSettings.disabled = true;
+        els.saveSettings.textContent = "Saving...";
+
+        const response = await fetch(`${API_BASE}/api/buyer/profile`, {
+          method: "PATCH",
+
+          headers: {
+            "Content-Type": "application/json",
+          },
+
+          credentials: "include",
+
+          body: JSON.stringify(payload),
+        });
+
+        const data = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+          throw new Error(data.error || "Could not save buyer profile");
+        }
+
+        const buyer = data.buyer;
+
+        if (els.setName) {
+          els.setName.value = buyer?.name || "";
+        }
+
+        if (els.setPhone) {
+          els.setPhone.value = buyer?.buyerProfile?.contact?.phone || "";
+        }
+
+        if (els.setEmail) {
+          els.setEmail.value = buyer?.email || "";
+        }
+
+        if (els.setLocation) {
+          els.setLocation.value = buyer?.buyerProfile?.delivery?.address || "";
+        }
+
+        toast("Buyer profile saved ✅");
+      } catch (error) {
+        console.error("Buyer profile save failed:", error);
+
+        toast(error.message || "Could not save profile");
+      } finally {
+        els.saveSettings.disabled = false;
+        els.saveSettings.textContent = "Save";
+      }
     });
 
     els.logoutBtn?.addEventListener("click", async () => {
@@ -3572,6 +3668,7 @@
     if (!currentUser) {
       return;
     }
+    await loadBuyerProfile();
     applyTheme(state.theme);
     runSplash();
     initHero();
