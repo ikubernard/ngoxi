@@ -2321,26 +2321,37 @@ function normalizeSellerConversation(conversation = {}) {
 
     name: buyer.name || conversation.name || "Buyer",
 
-    phone: buyer.phone || conversation.phone || "",
+    phone:
+      buyer?.buyerProfile?.contact?.phone ||
+      buyer.phone ||
+      conversation.phone ||
+      "",
 
     avatar:
+      buyer?.buyerProfile?.avatar?.url ||
       buyer.avatar ||
       buyer.profileImage ||
       conversation.avatar ||
       "/assets/default-avatar.jpeg",
 
     messages: Array.isArray(conversation.messages)
-      ? conversation.messages.map((message) => ({
-          ...message,
+      ? conversation.messages.map((message) => {
+          const senderRole = message.senderRole || message.from || "";
 
-          from: message.from || message.senderRole || "buyer",
+          return {
+            ...message,
 
-          text: message.text || "",
+            senderRole,
 
-          image: message.image || "",
+            from: senderRole,
 
-          ts: message.ts || message.createdAt || Date.now(),
-        }))
+            text: message.text || "",
+
+            image: message.image || "",
+
+            ts: message.createdAt || message.ts || Date.now(),
+          };
+        })
       : [],
   };
 }
@@ -2944,7 +2955,13 @@ function setActiveChat(id) {
   activeChatId = id;
 
   const chat = findSellerConversation(id);
+  const emptyState = document.getElementById("sellerConversationEmpty");
 
+  if (emptyState) {
+    emptyState.hidden = Boolean(chat);
+
+    emptyState.style.display = chat ? "none" : "";
+  }
   const titleElement = document.getElementById("sellerBuyerName");
   const presenceElement = document.getElementById("sellerBuyerPresence");
   const headerImage = document.getElementById("sellerBuyerAvatar");
@@ -3011,81 +3028,19 @@ function renderChatMessages() {
     return;
   }
 
-  // Seller confirm/report block when receipt exists and waiting
-  if (
-    chat.paymentCard &&
-    chat.paymentCard.orderId &&
-    chat.paymentStatus === "awaitSeller"
-  ) {
-    const pc = chat.paymentCard;
-    const sellerActions = document.createElement("div");
-    sellerActions.className = "payment-seller-actions";
-    sellerActions.innerHTML = `
-      <div class="muted small">
-        Buyer has uploaded a receipt for <strong>${sanitize(
-          pc.productName || "order",
-        )}</strong>. Confirm or report a problem.
-      </div>
-      <button class="btn btn-primary sm" data-seller-pay="confirm">
-        Confirm payment
-      </button>
-      <button class="btn btn-ghost sm" data-seller-pay="problem">
-        Report a problem
-      </button>
-    `;
-    cardHost.appendChild(sellerActions);
-
-    sellerActions.addEventListener("click", (e) => {
-      const act = e.target?.dataset?.sellerPay;
-      if (!act) return;
-
-      const all = JSON.parse(localStorage.getItem(ORDERS_KEY) || "[]");
-      const idx = all.findIndex((o) => o.id === pc.orderId);
-      if (idx < 0) return;
-      if (act === "confirm") {
-        // completed/active shipping
-        confirmOrder(pc.orderId);
-
-        chat.paymentStatus = "confirmed";
-        chat.orderState = "completed"; // 🟠 orange
-        chat.paymentCard = null; // DISAPPEAR pinned card
-
-        addSystemMessage(
-          chat.id,
-          "Seller confirmed payment. Order is now Active Shipping.",
-          "order",
-        );
-
-        showToast("Payment confirmed ✅", "success");
-        loadSellerConversations();
-        renderChatMessages();
-        return;
-      }
-
-      if (act === "problem") {
-        all[idx].status = "unfilled";
-        chat.paymentStatus = "issue";
-        chat.orderState = "open";
-        addSystemMessage(
-          chat.id,
-          "Seller reported a payment issue. Please chat to resolve.",
-          "order",
-        );
-        showToast("Payment problem recorded ⚠️", "error");
-      }
-
-      localStorage.setItem(ORDERS_KEY, JSON.stringify(all));
-      loadSellerConversations();
-      renderChatMessages();
-    });
-  }
-
   chat.messages.forEach((m) => {
     const div = document.createElement("div");
+    const messageRole = m.senderRole || m.from || "";
+
     let cls = "bubble";
-    if (m.from === "seller") cls += " seller";
-    else if (m.from === "buyer") cls += " buyer";
-    else cls += " system";
+
+    if (messageRole === "seller") {
+      cls += " seller";
+    } else if (messageRole === "buyer") {
+      cls += " buyer";
+    } else {
+      cls += " system";
+    }
 
     div.className = cls;
     const timeHTML = m.ts
@@ -3093,7 +3048,7 @@ function renderChatMessages() {
     <div class="bubble-meta">
       <span>${formatTime(m.ts)}</span>
 
-      ${m.from === "seller" ? `<span class="message-ticks">✓✓</span>` : ""}
+      ${messageRole === "seller" ? `<span class="message-ticks">✓✓</span>` : ""}
     </div>
   `
       : "";
@@ -3198,6 +3153,8 @@ async function sendSellerMessage(text) {
   const message = {
     ...data.message,
 
+    senderRole: data.message.senderRole || "seller",
+
     from: data.message.senderRole || "seller",
 
     text: data.message.text || cleanText,
@@ -3269,9 +3226,9 @@ document
   });
 
 function closeChatOptions() {
-  const menu = document.getElementById("chatOptionsMenu");
+  const menu = document.getElementById("sellerChatOptionsMenu");
 
-  const button = document.getElementById("chatOptionsBtn");
+  const button = document.getElementById("sellerChatOptionsBtn");
 
   if (menu) {
     menu.hidden = true;
@@ -3283,29 +3240,25 @@ function closeChatOptions() {
 }
 
 function syncChatOptions() {
-  const chat = findSellerConversation(activeChatId);
+  const button = document.getElementById("sellerChatOptionsBtn");
 
-  const toggleButton = document.getElementById("togglePaymentCard");
+  if (!button) {
+    return;
+  }
 
-  if (!toggleButton) return;
-
-  const hasPaymentCard = Boolean(chat && buildPinnedPaymentCard(chat));
-
-  toggleButton.textContent = chat?.paymentCardHidden
-    ? "Show payment card"
-    : "Hide payment card";
-
-  toggleButton.disabled = !hasPaymentCard;
+  button.disabled = !findSellerConversation(activeChatId);
 }
 
 document
-  .getElementById("chatOptionsBtn")
+  .getElementById("sellerChatOptionsBtn")
   ?.addEventListener("click", (event) => {
     event.stopPropagation();
 
-    const menu = document.getElementById("chatOptionsMenu");
+    const menu = document.getElementById("sellerChatOptionsMenu");
 
-    if (!menu) return;
+    if (!menu) {
+      return;
+    }
 
     menu.hidden = !menu.hidden;
 
@@ -3313,24 +3266,6 @@ document
 
     syncChatOptions();
   });
-
-document.getElementById("togglePaymentCard")?.addEventListener("click", () => {
-  const chat = findSellerConversation(activeChatId);
-
-  if (!chat || !buildPinnedPaymentCard(chat)) {
-    showToast("This conversation has no active payment card.", "info");
-
-    closeChatOptions();
-    return;
-  }
-
-  chat.paymentCardHidden = !chat.paymentCardHidden;
-
-  closeChatOptions();
-  renderChatMessages();
-  syncChatOptions();
-});
-
 // Close options when clicking elsewhere
 document.addEventListener("click", (event) => {
   if (!event.target.closest(".chat-options-wrap")) {
