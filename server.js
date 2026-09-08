@@ -114,6 +114,7 @@ import sellerRoutes from "./routes/seller.js";
 import buyerRoutes from "./routes/buyer.js";
 import reviewRoutes from "./routes/reviewRoutes.js";
 import chatRoutes from "./routes/chatRoutes.js";
+import orderRoutes from "./routes/orders.js";
 import adminRoutes from "./routes/admin.js";
 
 app.use("/api/auth", authRoutes);
@@ -121,6 +122,7 @@ app.use("/api/buyer", buyerRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/reviews", reviewRoutes);
 app.use("/api/chats", chatRoutes);
+app.use("/api/orders", orderRoutes);
 app.use("/api/seller", sellerRoutes);
 
 // admin routes
