@@ -2361,7 +2361,7 @@ async function loadSellerConversations() {
   `;
 
   try {
-    const response = await authorizedFetch(`${API_BASE}/api/chats`);
+    const response = await authorizedFetch(`${API_BASE}/api/chats?as=seller`);
 
     if (!response.ok) {
       throw new Error(`Chat request failed: ${response.status}`);
