@@ -5441,3 +5441,85 @@ body.dark .seller-payment-empty {
     width: 100%;
   }
 }
+/* =========================================================
+   NGOXI SELLER CHAT — FINAL MESSAGE ALIGNMENT OVERRIDE
+========================================================= */
+
+#sellerChatMessages {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
+  padding: 18px 24px;
+}
+
+/* Every message */
+#sellerChatMessages .bubble {
+  display: block;
+  width: fit-content;
+  max-width: min(68%, 620px);
+
+  margin: 0;
+
+  padding: 10px 14px;
+
+  border-radius: 14px;
+
+  word-break: break-word;
+  overflow-wrap: anywhere;
+
+  box-sizing: border-box;
+}
+
+/* BUYER → LEFT */
+#sellerChatMessages .bubble.buyer {
+  align-self: flex-start;
+
+  margin-right: auto;
+
+  border-top-left-radius: 5px;
+}
+
+/* SELLER → RIGHT */
+#sellerChatMessages .bubble.seller {
+  align-self: flex-end;
+
+  margin-left: auto;
+
+  border-top-right-radius: 5px;
+}
+
+/* SYSTEM → CENTER */
+#sellerChatMessages .bubble.system {
+  align-self: center;
+
+  max-width: 80%;
+
+  text-align: center;
+}
+
+/* Message text */
+#sellerChatMessages .bubble-text {
+  white-space: pre-wrap;
+  line-height: 1.35;
+}
+
+/* Time + ticks */
+#sellerChatMessages .bubble-meta {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+
+  gap: 4px;
+
+  margin-top: 3px;
+
+  font-size: 11px;
+  opacity: 0.65;
+}
+
+/* Small spacing when sender changes */
+#sellerChatMessages .bubble.buyer + .bubble.seller,
+#sellerChatMessages .bubble.seller + .bubble.buyer {
+  margin-top: 8px;
+}
