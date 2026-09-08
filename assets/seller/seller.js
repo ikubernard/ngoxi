@@ -2943,12 +2943,9 @@ function setActiveChat(id) {
 
   const chat = findSellerConversation(id);
 
-  const titleElement = document.getElementById("chatWith");
-
-  const presenceElement = document.getElementById("chatPresence");
-
-  const headerImage = document.getElementById("chatDp");
-
+  const titleElement = document.getElementById("sellerBuyerName");
+  const presenceElement = document.getElementById("sellerBuyerPresence");
+  const headerImage = document.getElementById("sellerBuyerAvatar");
   if (titleElement) {
     titleElement.textContent = chat?.name || "Select a contact";
   }
