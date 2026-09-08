@@ -1,8 +1,8 @@
 import express from "express";
 import mongoose from "mongoose";
 
-import order from "../model/order.js";
-import Product from "../model/Product.js";
+import Order from "../model/order.js";
+import Product from "../model/product.js";
 import Chat from "../model/chatModel.js";
 
 import { verifyToken } from "../middleware/authMiddleware.js";
