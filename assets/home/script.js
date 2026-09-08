@@ -1203,7 +1203,7 @@
   }
   async function loadConversations() {
     try {
-      const response = await fetch(`${API_BASE}/api/chats`, {
+      const response = await fetch(`${API_BASE}/api/chats?as=buyer`, {
         credentials: "include",
       });
 

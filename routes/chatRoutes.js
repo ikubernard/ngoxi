@@ -53,21 +53,24 @@ router.get("/", verifyToken, async (req, res) => {
       });
     }
 
-    let query;
+    const requestedRole = String(req.query?.as || "")
+      .trim()
+      .toLowerCase();
 
-    if (hasRole(req.user, "seller")) {
-      query = {
-        seller: userId,
-      };
-    } else if (hasRole(req.user, "buyer")) {
-      query = {
-        buyer: userId,
-      };
-    } else {
-      return res.status(403).json({
-        error: "Chat access not allowed",
+    if (requestedRole !== "buyer" && requestedRole !== "seller") {
+      return res.status(400).json({
+        error: "Choose chat context with ?as=buyer or ?as=seller",
       });
     }
+
+    if (!hasRole(req.user, requestedRole)) {
+      return res.status(403).json({
+        error: `${requestedRole} access required`,
+      });
+    }
+
+    const query =
+      requestedRole === "seller" ? { seller: userId } : { buyer: userId };
 
     const chats = await Chat.find(query)
       .populate("buyer", "name email")
