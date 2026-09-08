@@ -2791,7 +2791,9 @@ function receiveReceiptUploaded(payload) {
 
   // Update chat indicator
   const chat = sellerChatState.conversations.find(
-    (c) => c.orderId === orderId || c.id === updated.chatId,
+    (conversation) =>
+      String(conversation._id || conversation.id || "") ===
+      String(activeChatId || ""),
   );
   if (chat) {
     chat.orderState = "open"; // still active until done
@@ -2985,133 +2987,28 @@ function getInitials(fullName = "") {
 }
 
 function renderChatMessages() {
-  const body = document.getElementById("chatMessages");
-  const cardHost = document.getElementById("paymentCardHost");
-  if (!body || !cardHost) return;
-  body.innerHTML = "";
-  cardHost.innerHTML = "";
+  const body = document.getElementById("sellerChatMessages");
 
-  const chat = sellerChatState.conversations.find((c) => c.id === activeChatId);
-
-  cardHost.hidden = Boolean(chat?.paymentCardHidden);
-
-  if (!chat) {
-    body.innerHTML =
-      "<div class='muted'>Select a conversation to start chatting.</div>";
+  if (!body) {
+    console.warn("sellerChatMessages container missing");
     return;
   }
-  // Pinned Payment Card (AUTO) — visible only for unfilled/filled
-  const pinned = buildPinnedPaymentCard(chat);
-  if (pinned) {
-    // keep it on chat object for internal use
-    chat.paymentCard = pinned;
 
-    const card = document.createElement("div");
-    card.className = "payment-card";
-    const pc = pinned;
+  body.innerHTML = "";
 
-    const statusLine =
-      findOrderById(pc.orderId)?.status === "unfilled"
-        ? "Status: Awaiting payment"
-        : "Status: Receipt uploaded • Waiting seller confirmation";
+  const chat = sellerChatState.conversations.find(
+    (conversation) =>
+      String(conversation._id || conversation.id || "") ===
+      String(activeChatId || ""),
+  );
 
-    card.innerHTML = `
-      <div class="payment-card-header">
-        <div>Payment Details</div>
-        <div class="muted">${sanitize(chat.name)}</div>
+  if (!chat) {
+    body.innerHTML = `
+      <div class="muted">
+        Select a conversation to start chatting.
       </div>
-
-      <div class="payment-card-meta">
-        <div><strong>Product:</strong> ${sanitize(pc.productName || "Product")}</div>
-        <div><strong>Total:</strong> TSh ${Number(pc.totalPrice || 0).toLocaleString()}</div>
-        <div class="muted">${sanitize(statusLine)}</div>
-        <hr style="border:0;border-top:1px solid rgba(0,0,0,0.06);margin:8px 0;">
-        <div><strong>Methods:</strong> ${sanitize(pc.methods || "")}</div>
-        <div><strong>Payment number(s):</strong> ${sanitize(pc.payNumber || "")}</div>
-        <div><strong>Phone:</strong> ${sanitize(pc.phone || "")}</div>
-        ${pc.note ? `<div class="muted">${sanitize(pc.note)}</div>` : ""}
-      </div>
-
-      <div class="payment-card-actions">
-        <input type="file" id="receiptInput" accept="image/*" style="display:none" />
-        <button data-card-action="paid" class="btn btn-primary">I have paid</button>
-        <button data-card-action="cancel" class="btn btn-ghost">Cancel</button>
-      </div>
-
-      ${
-        pc.receipt
-          ? `<div class="payment-receipt">
-               <div class="small muted">Receipt uploaded:</div>
-               <img src="${pc.receipt}" alt="Receipt" />
-             </div>`
-          : ""
-      }
     `;
-    cardHost.appendChild(card);
-
-    const receiptInput = card.querySelector("#receiptInput");
-
-    card.querySelectorAll("[data-card-action]").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        const act = btn.dataset.cardAction;
-
-        // NOTE: This "buyer action" is temporary for seller-demo/testing.
-        // Later buyer-side will do this for real.
-        if (act === "paid") {
-          if (!receiptInput) return;
-          receiptInput.click();
-
-          receiptInput.onchange = () => {
-            const file = receiptInput.files?.[0];
-            if (!file) return showToast("No receipt selected.", "error");
-
-            const reader = new FileReader();
-            reader.onload = () => {
-              // Update order -> FILLED + save receipt
-              markOrderPaid(pc.orderId, reader.result);
-
-              chat.orderState = "open"; // 🔴 still order active before confirm
-              addSystemMessage(
-                chat.id,
-                `Buyer uploaded receipt for ${pc.productName}. Waiting for seller confirmation.`,
-                "order",
-              );
-
-              loadSellerConversations();
-              renderChatMessages();
-            };
-            reader.readAsDataURL(file);
-          };
-        }
-
-        if (act === "cancel") {
-          // Cancel means: remove order only if still UNFILLED (awaiting payment)
-          const o = findOrderById(pc.orderId);
-          if (!o) return;
-
-          if (o.status !== "unfilled") {
-            showToast("Cannot cancel after payment/receipt.", "error");
-            return;
-          }
-
-          // delete unfilled order
-          const keep = getAllOrders().filter((x) => x.id !== o.id);
-          saveAllOrders(keep);
-
-          chat.orderId = null;
-          chat.paymentCard = null;
-          chat.orderState = null;
-
-          addSystemMessage(chat.id, "Buyer cancelled the order.", "order");
-          updateOverview();
-          loadSellerConversations();
-          renderChatMessages();
-        }
-      });
-    });
-  } else {
-    // No pinned card should show (order confirmed or no order)
-    chat.paymentCard = null;
+    return;
   }
 
   // Seller confirm/report block when receipt exists and waiting
