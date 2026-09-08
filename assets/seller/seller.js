@@ -3223,46 +3223,50 @@ async function sendSellerMessage(text) {
 }
 
 // Send message button
-document.getElementById("sendChat")?.addEventListener("click", async () => {
-  const input = document.getElementById("chatInput");
+document
+  .getElementById("sellerSendMessageBtn")
+  ?.addEventListener("click", async () => {
+    const input = document.getElementById("sellerMessageInput");
 
-  const button = document.getElementById("sendChat");
+    const button = document.getElementById("sellerSendMessageBtn");
 
-  const text = input?.value?.trim();
+    const text = input?.value?.trim();
 
-  if (!text || !activeChatId) {
-    return;
-  }
-
-  try {
-    if (button) {
-      button.disabled = true;
+    if (!text || !activeChatId) {
+      return;
     }
 
-    await sendSellerMessage(text);
+    try {
+      if (button) {
+        button.disabled = true;
+      }
 
-    if (input) {
-      input.value = "";
-      input.focus();
-    }
-  } catch (error) {
-    console.error("❌ Seller message failed:", error);
+      await sendSellerMessage(text);
 
-    showToast(error.message || "Message could not be sent", "error");
-  } finally {
-    if (button) {
-      button.disabled = false;
+      if (input) {
+        input.value = "";
+        input.focus();
+      }
+    } catch (error) {
+      console.error("❌ Seller message failed:", error);
+
+      showToast(error.message || "Message could not be sent", "error");
+    } finally {
+      if (button) {
+        button.disabled = false;
+      }
     }
-  }
-});
+  });
 // Send with Enter
-document.getElementById("chatInput")?.addEventListener("keydown", (event) => {
-  if (event.key === "Enter" && !event.shiftKey) {
-    event.preventDefault();
+document
+  .getElementById("sellerMessageInput")
+  ?.addEventListener("keydown", (event) => {
+    if (event.key === "Enter" && !event.shiftKey) {
+      event.preventDefault();
 
-    document.getElementById("sendChat")?.click();
-  }
-});
+      document.getElementById("sellerSendMessageBtn")?.click();
+    }
+  });
 
 function closeChatOptions() {
   const menu = document.getElementById("chatOptionsMenu");
@@ -3335,13 +3339,17 @@ document.addEventListener("click", (event) => {
 });
 
 // Mobile: return to conversation list
-document.getElementById("mobileChatBack")?.addEventListener("click", () => {
-  document.querySelector(".chat-layout")?.classList.remove("conversation-open");
+document
+  .getElementById("sellerMobileChatBack")
+  ?.addEventListener("click", () => {
+    document
+      .querySelector(".chat-layout")
+      ?.classList.remove("conversation-open");
 
-  closeChatOptions();
-});
+    closeChatOptions();
+  });
 // CALL BUTTON — opens device dialer using the stored phone number
-document.getElementById("callContact")?.addEventListener("click", () => {
+document.getElementById("sellerCallBuyer")?.addEventListener("click", () => {
   closeChatOptions();
   if (!activeChatId) {
     showToast("Select a contact first.", "error");
