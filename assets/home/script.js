@@ -2442,23 +2442,56 @@
           uploadedURL = await uploadChatImage(file);
         }
 
-        const payload = {
-          text,
-          createdAt: new Date().toISOString(),
-        };
+        const conversation = getActiveConversation();
 
-        if (uploadedURL) {
-          payload.image = uploadedURL;
+        if (!conversation) {
+          throw new Error("Select a conversation first");
         }
 
-        state.socket?.emit("message", payload);
+        const conversationId = conversation.conversationId || conversation.id;
 
-        renderOutgoingMessage({
-          text,
-          image: uploadedURL,
-          time: payload.createdAt,
-          status: "sent",
+        if (!conversationId) {
+          throw new Error("Conversation ID is missing");
+        }
+
+        const response = await fetch(
+          `${API_BASE}/api/chats/${conversationId}/messages`,
+          {
+            method: "POST",
+
+            headers: {
+              "Content-Type": "application/json",
+            },
+
+            credentials: "include",
+
+            body: JSON.stringify({
+              text,
+              image: uploadedURL || "",
+            }),
+          },
+        );
+
+        const data = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+          throw new Error(data.error || "Message could not be saved");
+        }
+
+        const savedMessage = data.message;
+
+        conversation.messages.push({
+          ...savedMessage,
+
+          sender: "buyer",
         });
+
+        conversation.lastMessageAt =
+          savedMessage?.createdAt || new Date().toISOString();
+
+        renderActiveConversationMessages();
+
+        renderConversationList();
 
         input.value = "";
 

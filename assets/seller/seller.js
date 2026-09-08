@@ -2387,36 +2387,6 @@ async function loadSellerConversations() {
       normalizeSellerConversation,
     );
 
-    sellerChatState.conversations = rawConversations.map((conversation) => {
-      const buyer = conversation.buyer || {};
-
-      return {
-        ...conversation,
-
-        id: String(conversation._id || conversation.id || ""),
-
-        name: buyer.name || conversation.name || "Buyer",
-
-        phone: buyer.phone || conversation.phone || "",
-
-        avatar:
-          buyer.avatar ||
-          buyer.profileImage ||
-          conversation.avatar ||
-          "/assets/default-avatar.jpeg",
-
-        messages: Array.isArray(conversation.messages)
-          ? conversation.messages.map((message) => ({
-              ...message,
-
-              from: message.from || message.senderRole || "buyer",
-
-              ts: message.ts || message.createdAt || Date.now(),
-            }))
-          : [],
-      };
-    });
-
     sellerChatState.loading = false;
 
     renderSellerConversationList();
@@ -2998,7 +2968,6 @@ function setActiveChat(id) {
     };
   }
 
-  loadSellerConversations();
   renderChatMessages();
   syncChatOptions();
 
