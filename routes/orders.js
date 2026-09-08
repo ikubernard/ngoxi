@@ -1,7 +1,7 @@
 import express from "express";
 import mongoose from "mongoose";
 
-import Order from "../model/order.js";
+import order from "../model/order.js";
 import Product from "../model/Product.js";
 import Chat from "../model/chatModel.js";
 
