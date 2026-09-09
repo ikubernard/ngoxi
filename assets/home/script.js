@@ -1793,18 +1793,21 @@
 
       id: order.id || order._id,
 
-      product:
-        order.product || order.productName || order.product?.name || "Product",
+      product: order.productName || order.product?.name || "Product",
 
       image:
-        order.image ||
         order.productImage ||
-        order.product?.image ||
+        order.image ||
+        order.product?.cover?.url ||
         "/assets/default-product.png",
 
-      variant: order.variant || order.variantName || "Default",
+      variant: order.variant || order.productSnapshot?.variant || "Default",
 
-      price: Number(order.price || order.total || 0),
+      size: order.size || order.productSnapshot?.size || "",
+
+      quantity: Number(order.quantity || order.productSnapshot?.quantity || 1),
+
+      price: Number(order.price || order.productSnapshot?.totalPrice || 0),
 
       payment: {
         status: order.payment?.status || "waiting",
@@ -1818,10 +1821,86 @@
         uploadedAt: order.payment?.uploadedAt || null,
       },
 
-      paymentMethods: order.paymentMethods || [],
+      paymentMethods: Array.isArray(order.paymentMethods)
+        ? order.paymentMethods
+        : [],
 
-      orderStatus: order.orderStatus || "placed",
+      orderStatus: order.orderStatus || order.status || "awaiting-payment",
+
+      conversationId: String(
+        order.conversation?._id || order.conversation || "",
+      ),
     };
+  }
+
+  async function loadBuyerOrders() {
+    try {
+      const response = await fetch(`${API_BASE}/api/orders?as=buyer`, {
+        credentials: "include",
+      });
+
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(data.error || "Could not load orders");
+      }
+
+      const orders = Array.isArray(data.orders)
+        ? data.orders.map(normalizeTransactionOrder)
+        : [];
+
+      /*
+      First clear the in-memory order arrays.
+    */
+      state.chats.conversations.forEach((conversation) => {
+        conversation.orders = [];
+      });
+
+      /*
+      Put each MongoDB order inside the
+      conversation it belongs to.
+    */
+      orders.forEach((order) => {
+        const conversationId = String(order.conversationId || "");
+
+        if (!conversationId) {
+          return;
+        }
+
+        const conversation = Array.from(
+          state.chats.conversations.values(),
+        ).find(
+          (item) =>
+            String(item.conversationId || item.id || "") === conversationId,
+        );
+
+        if (!conversation) {
+          return;
+        }
+
+        conversation.orders.push(order);
+      });
+
+      /*
+      If a conversation is already open,
+      refresh its Transaction Center.
+    */
+      const activeSellerId = state.chats.activeSellerId;
+
+      if (activeSellerId) {
+        const active = state.chats.conversations.get(String(activeSellerId));
+
+        if (active) {
+          transactionCenterAPI?.setOrders(active.orders);
+        }
+      }
+
+      return orders;
+    } catch (error) {
+      console.error("Failed loading buyer orders:", error);
+
+      return [];
+    }
   }
   function consumeChatHandoff() {
     const raw = sessionStorage.getItem("ngx_open_chat");
@@ -1848,10 +1927,6 @@
       conversation.id = data.conversationId;
 
       conversation.conversationId = data.conversationId;
-
-      if (data.orderDraft) {
-        conversation.orders.push(normalizeTransactionOrder(data.orderDraft));
-      }
 
       openMessagesView();
 
@@ -3722,6 +3797,8 @@
     await Promise.all([loadFavorites(), updateCartCount()]);
 
     await loadConversations();
+
+    await loadBuyerOrders();
 
     consumeChatHandoff();
     await loadProducts(1);

@@ -586,6 +586,76 @@
 
       const seller = conversation.seller || sellerObject() || {};
 
+      /* =========================================================
+   LOAD SAVED BUYER DELIVERY PROFILE
+========================================================= */
+
+      const profileResponse = await authorizedFetch(
+        `${API_BASE}/api/buyer/profile`,
+      );
+
+      const profileData = await profileResponse.json().catch(() => ({}));
+
+      if (!profileResponse.ok) {
+        throw new Error(profileData.error || "Could not load buyer profile");
+      }
+
+      const buyer = profileData.buyer || {};
+
+      const buyerProfile = buyer.buyerProfile || {};
+
+      const buyerDelivery = buyerProfile.delivery || {};
+
+      const buyerContact = buyerProfile.contact || {};
+
+      /* =========================================================
+   CREATE REAL MONGODB ORDER
+========================================================= */
+
+      els.continueButton.textContent = "Creating order…";
+
+      const orderResponse = await authorizedFetch(`${API_BASE}/api/orders`, {
+        method: "POST",
+
+        headers: {
+          "Content-Type": "application/json",
+        },
+
+        body: JSON.stringify({
+          conversationId: conversation._id,
+
+          productId: selection.productId,
+
+          variant: selection.variant?.name || "",
+
+          size: selection.size?.label || "",
+
+          quantity: selection.quantity,
+
+          delivery: {
+            city: buyerDelivery.city || "",
+
+            address: buyerDelivery.address || "",
+
+            phone: buyerDelivery.receiverPhone || buyerContact.phone || "",
+
+            receiverName: buyerDelivery.receiverName || buyer.name || "",
+          },
+        }),
+      });
+
+      const orderData = await orderResponse.json().catch(() => ({}));
+
+      if (!orderResponse.ok) {
+        throw new Error(orderData.error || "Could not create order");
+      }
+
+      if (!orderData.order?._id && !orderData.order?.id) {
+        throw new Error("Order was not returned by the server");
+      }
+
+      const createdOrder = orderData.order;
+
       const handoff = {
         conversationId: conversation._id,
 
@@ -607,25 +677,7 @@
           contact: seller?.sellerProfile?.contact || {},
         },
 
-        orderDraft: {
-          productId: selection.productId,
-
-          product: selection.productName,
-
-          image: selection.cover,
-
-          variant: selection.variant?.name || "Default",
-
-          size: selection.size?.label || "",
-
-          quantity: selection.quantity,
-
-          unitPrice: selection.unitPrice,
-
-          price: selection.total,
-
-          createdAt: selection.createdAt,
-        },
+        orderId: createdOrder._id || createdOrder.id,
       };
 
       sessionStorage.setItem("ngx_open_chat", JSON.stringify(handoff));
