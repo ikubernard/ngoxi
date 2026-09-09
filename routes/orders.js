@@ -56,9 +56,38 @@ function normalizeOrder(order) {
     orderStatus: raw?.status || "awaiting-payment",
 
     paymentMethods: Array.isArray(seller?.sellerProfile?.paymentMethods)
-      ? seller.sellerProfile.paymentMethods.filter(
-          (method) => method?.active !== false,
-        )
+      ? seller.sellerProfile.paymentMethods
+          .filter((method) => method && method.active !== false)
+          .map((method) => ({
+            id: method._id || null,
+
+            type: method.type || "",
+
+            provider: method.provider || method.label || "Payment",
+
+            label: method.label || method.provider || method.type || "Payment",
+
+            /*
+            Buyer Transaction Center expects:
+            value = payment number/account
+            name  = account holder
+          */
+            value: method.number || method.accountNumber || "",
+
+            name: method.accountName || "",
+
+            note: method.note || method.instructions || "",
+
+            /*
+            Keep original names too.
+            Useful for seller UI and future APIs.
+          */
+            number: method.number || method.accountNumber || "",
+
+            accountName: method.accountName || "",
+
+            active: method.active !== false,
+          }))
       : [],
   };
 }
