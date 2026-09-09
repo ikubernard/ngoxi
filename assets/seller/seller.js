@@ -1687,16 +1687,123 @@ function attachProductActions() {
   });
 }
 
-const ORDERS_KEY = "orders_v70_flow";
-
 const ORDER_STATUS = {
   UNFILLED: "unfilled",
   FILLED: "filled",
   COMPLETED: "completed",
   DONE: "done",
+  CANCELLED: "cancelled",
 };
 
+/*
+  Seller orders now come from MongoDB.
+  No business order data should live in localStorage.
+*/
+let sellerOrdersState = [];
+
 let activeOrderDetailsId = null;
+
+function mapMongoOrderStatus(status = "") {
+  switch (status) {
+    case "placed":
+    case "awaiting-payment":
+      return ORDER_STATUS.UNFILLED;
+
+    case "receipt-uploaded":
+      return ORDER_STATUS.FILLED;
+
+    case "payment-confirmed":
+    case "preparing":
+    case "ready":
+    case "shipping":
+      return ORDER_STATUS.COMPLETED;
+
+    case "delivered":
+      return ORDER_STATUS.DONE;
+
+    case "cancelled":
+      return ORDER_STATUS.CANCELLED;
+
+    default:
+      return ORDER_STATUS.UNFILLED;
+  }
+}
+
+function normalizeSellerOrder(order = {}) {
+  const delivery = order.delivery || {};
+  const snapshot = order.productSnapshot || {};
+  const buyer = order.buyer || {};
+
+  const conversationId = String(
+    order.conversation?._id || order.conversation || "",
+  );
+
+  return {
+    ...order,
+
+    id: String(order.id || order._id || ""),
+
+    mongoStatus: order.status || "awaiting-payment",
+
+    status: mapMongoOrderStatus(order.status),
+
+    conversationId,
+
+    chatId: conversationId,
+
+    productId: String(order.product?._id || order.product || ""),
+
+    productName:
+      order.productName ||
+      snapshot.name ||
+      order.product?.name ||
+      "NgoXi Order",
+
+    productImage:
+      order.productImage || snapshot.image || order.product?.cover?.url || "",
+
+    variant: order.variant || snapshot.variant || "",
+
+    size: order.size || snapshot.size || "",
+
+    qty: Number(order.quantity || snapshot.quantity || 1),
+
+    quantity: Number(order.quantity || snapshot.quantity || 1),
+
+    price: Number(order.price || snapshot.totalPrice || 0),
+
+    unitPrice: Number(snapshot.unitPrice || 0),
+
+    buyerId: String(buyer._id || order.buyer || ""),
+
+    buyerName: buyer.name || order.buyerName || "Buyer",
+
+    buyerCity: delivery.city || "",
+
+    receiverName: delivery.receiverName || buyer.name || "",
+
+    receiverPhone: delivery.phone || "",
+
+    address: delivery.address || "",
+
+    receiptImage: order.payment?.receiptUrl || null,
+
+    shipping: {
+      plateNumber: order.inbound?.busPlate || "",
+
+      tripStatus:
+        order.status === "delivered"
+          ? "arrived"
+          : order.status === "shipping"
+            ? "on_the_way"
+            : "pending",
+    },
+
+    createdAt: order.createdAt || Date.now(),
+
+    updatedAt: order.updatedAt || Date.now(),
+  };
+}
 
 function statusLabel(st) {
   if (st === ORDER_STATUS.UNFILLED) return "Awaiting payment";
@@ -1753,21 +1860,23 @@ function renderOrders(filter) {
     const row = document.createElement("div");
     row.className = "order-row card";
 
-    const statusLabel =
+    const orderStatusLabel =
       o.status === ORDER_STATUS.UNFILLED
         ? "Awaiting payment"
         : o.status === ORDER_STATUS.FILLED
-          ? "Paid (waiting confirmation)"
+          ? "Receipt uploaded"
           : o.status === ORDER_STATUS.COMPLETED
-            ? "Active shipping"
-            : "Arrived (Done)";
+            ? "Active order"
+            : o.status === ORDER_STATUS.DONE
+              ? "Delivered"
+              : "Cancelled";
 
     row.innerHTML = `
       <div class="or-left">
         <div class="or-title">${sanitize(
           o.productName || o.product || "Order",
         )}</div>
-        <div class="or-sub">${statusLabel} • ${new Date(
+        <div class="or-sub">${orderStatusLabel} • ${new Date(
           o.createdAt || o.ts,
         ).toLocaleString()}</div>
       </div>
@@ -1776,14 +1885,14 @@ function renderOrders(filter) {
         <div class="or-price">TSh ${Number(o.price || 0).toLocaleString()}</div>
       </div>
 
-      <div class="or-actions">
-        <button class="btn btn-ghost sm" data-act="details">Details</button>
-        ${
-          (o.status || ORDER_STATUS.UNFILLED) === ORDER_STATUS.UNFILLED
-            ? `<button class="btn btn-ghost sm" data-act="delete">Delete</button>`
-            : ""
-        }
-      </div>
+    <div class="or-actions">
+  <button
+    class="btn btn-ghost sm"
+    data-act="details"
+  >
+    Details
+  </button>
+</div>
     `;
 
     row.addEventListener("click", (e) => {
@@ -1793,19 +1902,6 @@ function renderOrders(filter) {
       if (act === "details") {
         openOrderDetails(o.id);
         return;
-      }
-
-      if (act === "delete") {
-        const st = o.status || ORDER_STATUS.UNFILLED;
-        if (st !== ORDER_STATUS.UNFILLED) {
-          showToast("Cannot delete after payment.", "error");
-          return;
-        }
-        const keep = getAllOrders().filter((x) => x.id !== o.id);
-        saveAllOrders(keep);
-        renderOrders(filter);
-        updateOverview();
-        showToast("Order deleted.", "success");
       }
     });
 
@@ -1855,8 +1951,8 @@ function openOrderDetails(orderId) {
   const isIntercity =
     o.type === "intercity" || busCompany !== "—" || busStation !== "—";
 
-  // Shipping editable only in completed (active shipping)
-  const shippingEditable = st === "completed";
+  //"Shipping updates will be enabled after the MongoDB shipping API is connected."
+  const shippingEditable = false;
   const readOnly = st === "done";
 
   const busPlate = o.shipping?.plateNumber || o.logistics?.busPlate || "";
@@ -2099,11 +2195,95 @@ function makeOrder({
 }
 
 function getAllOrders() {
-  return JSON.parse(localStorage.getItem(ORDERS_KEY) || "[]");
+  return sellerOrdersState;
 }
 
+function attachSellerOrdersToConversations() {
+  sellerChatState.conversations.forEach((conversation) => {
+    const conversationId = String(conversation._id || conversation.id || "");
+
+    const orders = sellerOrdersState.filter(
+      (order) => String(order.conversationId || "") === conversationId,
+    );
+
+    conversation.orders = orders;
+    conversation.orderCount = orders.length;
+
+    /*
+        Old seller UI sometimes expects
+        one current orderId.
+        Give it the newest non-finished order.
+      */
+    const activeOrder =
+      orders.find(
+        (order) =>
+          order.status !== ORDER_STATUS.DONE &&
+          order.status !== ORDER_STATUS.CANCELLED,
+      ) ||
+      orders[0] ||
+      null;
+
+    conversation.orderId = activeOrder?.id || null;
+
+    conversation.orderState = activeOrder
+      ? activeOrder.status === ORDER_STATUS.COMPLETED
+        ? "completed"
+        : "open"
+      : null;
+  });
+
+  renderSellerConversationList();
+
+  if (activeChatId) {
+    renderChatMessages();
+  }
+}
+
+async function loadSellerOrders() {
+  try {
+    const response = await authorizedFetch(`${API_BASE}/api/orders?as=seller`);
+
+    const data = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      throw new Error(data.error || "Could not load seller orders");
+    }
+
+    sellerOrdersState = Array.isArray(data.orders)
+      ? data.orders.map(normalizeSellerOrder)
+      : [];
+
+    attachSellerOrdersToConversations();
+
+    updateOverview();
+
+    const activeFilter =
+      document.querySelector("[data-order].active")?.dataset?.order ||
+      "unfilled";
+
+    renderOrders(activeFilter);
+
+    return sellerOrdersState;
+  } catch (error) {
+    console.error("❌ Failed loading seller orders:", error);
+
+    sellerOrdersState = [];
+
+    updateOverview();
+    renderOrders("unfilled");
+
+    return [];
+  }
+}
+
+/*
+  Temporary compatibility helper.
+
+  Do NOT persist orders here.
+  Real writes will go through /api/orders endpoints.
+*/
 function saveAllOrders(arr) {
-  localStorage.setItem(ORDERS_KEY, JSON.stringify(arr));
+  sellerOrdersState = Array.isArray(arr) ? arr : [];
 }
 function seedDevOrders() {
   const existing = getAllOrders();
@@ -2223,8 +2403,6 @@ function confirmOrder(orderId) {
   return o;
 }
 
-seedDevOrders();
-
 /* ---------- QR Generator ---------- */
 function getSellerId() {
   // Your backend likely returns sellerId in JWT; for now store once at login.
@@ -2269,18 +2447,33 @@ document.getElementById("downloadQR")?.addEventListener("click", async () => {
 
 /* ---------- Home Overview stats ---------- */
 function updateOverview() {
-  const orders = JSON.parse(localStorage.getItem(ORDERS_KEY) || "[]");
+  const orders = getAllOrders();
+
   const revenue = orders
-    .filter((o) => o.status === "filled" || o.status === "completed")
-    .reduce((sum, o) => sum + Number(o.price || 0) * (o.qty || 1), 0);
+    .filter(
+      (order) =>
+        order.mongoStatus === "payment-confirmed" ||
+        order.mongoStatus === "preparing" ||
+        order.mongoStatus === "ready" ||
+        order.mongoStatus === "shipping" ||
+        order.mongoStatus === "delivered",
+    )
+    .reduce((sum, order) => sum + Number(order.price || 0), 0);
+
   const ordersCount = orders.length;
 
-  const sRev = document.getElementById("statRevenue");
-  const sOrd = document.getElementById("statOrders");
-  if (sRev) sRev.textContent = "TSh " + revenue.toLocaleString();
-  if (sOrd) sOrd.textContent = String(ordersCount);
-}
+  const revenueElement = document.getElementById("statRevenue");
 
+  const ordersElement = document.getElementById("statOrders");
+
+  if (revenueElement) {
+    revenueElement.textContent = `TSh ${revenue.toLocaleString()}`;
+  }
+
+  if (ordersElement) {
+    ordersElement.textContent = String(ordersCount);
+  }
+}
 /* ---------- Messages tab: WhatsApp-like front-only chat ---------- */
 
 let activeChatId = null;
@@ -2397,6 +2590,7 @@ async function loadSellerConversations() {
     sellerChatState.conversations = rawConversations.map(
       normalizeSellerConversation,
     );
+    attachSellerOrdersToConversations();
 
     sellerChatState.loading = false;
 
@@ -3398,10 +3592,13 @@ async function refreshProductsEverywhere() {
 /* ---------- INIT ---------- */
 async function initDashboard() {
   await renderPlanLine();
+
   await loadProductsForHome();
-  updateOverview();
+
+  await loadSellerOrders();
+
   animateStatsFromDom();
-  renderOrders("unfilled");
+
   generateQR();
 }
 function animateNumber(el, target, prefix = "", duration = 700) {
