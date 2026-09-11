@@ -2237,6 +2237,9 @@ function attachSellerOrdersToConversations() {
   if (activeChatId) {
     renderChatMessages();
   }
+  if (activeChatId) {
+    renderSellerTransactionCenter();
+  }
 }
 
 async function loadSellerOrders() {
@@ -2477,6 +2480,8 @@ function updateOverview() {
 /* ---------- Messages tab: WhatsApp-like front-only chat ---------- */
 
 let activeChatId = null;
+let sellerTransactionOrderIndex = 0;
+let sellerTransactionHidden = false;
 
 /* =========================================================
    SELLER CHAT STATE
@@ -2503,6 +2508,426 @@ function findSellerConversation(id) {
     ) || null
   );
 }
+
+function getActiveSellerConversation() {
+  return findSellerConversation(activeChatId);
+}
+
+function getSellerConversationOrders() {
+  const conversation = getActiveSellerConversation();
+
+  if (!conversation) {
+    return [];
+  }
+
+  return Array.isArray(conversation.orders) ? conversation.orders : [];
+}
+
+function getCurrentSellerOrder() {
+  const orders = getSellerConversationOrders();
+
+  if (!orders.length) {
+    return null;
+  }
+
+  sellerTransactionOrderIndex = Math.max(
+    0,
+    Math.min(sellerTransactionOrderIndex, orders.length - 1),
+  );
+
+  return orders[sellerTransactionOrderIndex];
+}
+
+function sellerOrderStatusText(order) {
+  const status = order?.mongoStatus || order?.status || "";
+
+  switch (status) {
+    case "placed":
+    case "awaiting-payment":
+    case "unfilled":
+      return "Awaiting payment";
+
+    case "receipt-uploaded":
+    case "filled":
+      return "Receipt uploaded";
+
+    case "payment-confirmed":
+      return "Payment confirmed";
+
+    case "preparing":
+      return "Preparing order";
+
+    case "ready":
+      return "Ready";
+
+    case "shipping":
+      return "Shipping";
+
+    case "delivered":
+    case "done":
+      return "Delivered";
+
+    case "cancelled":
+      return "Cancelled";
+
+    default:
+      return "Order active";
+  }
+}
+
+function renderSellerTransactionCenter() {
+  const center = document.getElementById("sellerTransactionCenter");
+
+  if (!center) {
+    return;
+  }
+
+  const orders = getSellerConversationOrders();
+
+  /*
+    No active conversation or no orders:
+    hide Transaction Center.
+  */
+  if (!activeChatId || !orders.length || sellerTransactionHidden) {
+    center.hidden = true;
+    return;
+  }
+
+  center.hidden = false;
+
+  const order = getCurrentSellerOrder();
+
+  if (!order) {
+    center.hidden = true;
+    return;
+  }
+
+  /* -------------------------
+     ORDER COUNTER
+  ------------------------- */
+
+  const counter = document.getElementById("sellerOrderCounter");
+
+  if (counter) {
+    counter.textContent = `${sellerTransactionOrderIndex + 1} / ${orders.length}`;
+  }
+
+  /* -------------------------
+     PRODUCT IMAGE
+  ------------------------- */
+
+  const image = document.getElementById("sellerTransactionProductImage");
+
+  if (image) {
+    image.src = order.productImage || "/assets/default-product.png";
+
+    image.onerror = () => {
+      image.src = "/assets/default-product.png";
+    };
+  }
+
+  /* -------------------------
+     ORDER ID
+  ------------------------- */
+
+  const orderId = document.getElementById("sellerTransactionOrderId");
+
+  if (orderId) {
+    orderId.textContent = `Order #${order.id || "—"}`;
+  }
+
+  /* -------------------------
+     PRODUCT
+  ------------------------- */
+
+  const productName = document.getElementById("sellerTransactionProductName");
+
+  if (productName) {
+    productName.textContent = order.productName || "Product";
+  }
+
+  /* -------------------------
+     VARIANT / SIZE / QTY
+  ------------------------- */
+
+  const variant = document.getElementById("sellerTransactionVariant");
+
+  if (variant) {
+    const pieces = [];
+
+    if (order.variant) {
+      pieces.push(`Variant: ${order.variant}`);
+    }
+
+    if (order.size) {
+      pieces.push(`Size: ${order.size}`);
+    }
+
+    pieces.push(`Qty: ${order.quantity || order.qty || 1}`);
+
+    variant.textContent = pieces.join(" • ");
+  }
+
+  /* -------------------------
+     PRICE
+  ------------------------- */
+
+  const price = document.getElementById("sellerTransactionPrice");
+
+  if (price) {
+    price.textContent = `TSh ${Number(order.price || 0).toLocaleString()}`;
+  }
+
+  /* -------------------------
+     ORDER STATUS
+  ------------------------- */
+
+  const status = document.getElementById("sellerTransactionStatus");
+
+  if (status) {
+    status.innerHTML = `
+      <div class="ngx-order-progress-copy">
+
+        <strong>
+          ${sanitize(sellerOrderStatusText(order))}
+        </strong>
+
+        <small>
+          Buyer:
+          ${sanitize(order.buyerName || "Buyer")}
+        </small>
+
+      </div>
+    `;
+  }
+
+  /* -------------------------
+     ORDER ACTION
+  ------------------------- */
+
+  const orderActions = document.getElementById("sellerOrderActions");
+
+  if (orderActions) {
+    orderActions.innerHTML = `
+      <button
+        type="button"
+        class="ngx-secondary-btn"
+        id="sellerOpenOrderDetails"
+      >
+        View order details
+      </button>
+    `;
+
+    document
+      .getElementById("sellerOpenOrderDetails")
+      ?.addEventListener("click", () => {
+        openOrderDetails(order.id);
+      });
+  }
+
+  renderSellerPaymentSlide(order);
+
+  syncSellerTransactionArrows();
+}
+
+function renderSellerPaymentSlide(order) {
+  const title = document.getElementById("sellerPaymentTitle");
+
+  const amount = document.getElementById("sellerPaymentAmount");
+
+  const product = document.getElementById("sellerPaymentProduct");
+
+  const details = document.getElementById("sellerPaymentDetails");
+
+  const receiptPanel = document.getElementById("sellerReceiptPanel");
+
+  const receiptId = document.getElementById("sellerReceiptId");
+
+  const confirmButton = document.getElementById("sellerConfirmPaymentBtn");
+
+  const rejectButton = document.getElementById("sellerRejectPaymentBtn");
+
+  const paymentStatus = order.payment?.status || "waiting";
+
+  if (amount) {
+    amount.textContent = `TSh ${Number(order.price || 0).toLocaleString()}`;
+  }
+
+  if (product) {
+    product.textContent = order.productName || "Product";
+  }
+
+  if (title) {
+    if (paymentStatus === "receipt-uploaded") {
+      title.textContent = "Receipt uploaded";
+    } else if (paymentStatus === "confirmed") {
+      title.textContent = "Payment confirmed";
+    } else if (paymentStatus === "rejected") {
+      title.textContent = "Payment problem";
+    } else {
+      title.textContent = "Waiting for payment";
+    }
+  }
+
+  if (details) {
+    details.innerHTML = `
+      <div>
+        <small>Buyer</small>
+        <strong>
+          ${sanitize(order.buyerName || "Buyer")}
+        </strong>
+      </div>
+
+      <div>
+        <small>Receiver</small>
+        <strong>
+          ${sanitize(order.receiverName || order.buyerName || "—")}
+        </strong>
+      </div>
+
+      <div>
+        <small>Phone</small>
+        <strong>
+          ${sanitize(order.receiverPhone || "—")}
+        </strong>
+      </div>
+
+      <div>
+        <small>City</small>
+        <strong>
+          ${sanitize(order.buyerCity || "—")}
+        </strong>
+      </div>
+    `;
+  }
+
+  const receiptUrl = order.payment?.receiptUrl || order.receiptImage || null;
+
+  if (receiptPanel) {
+    receiptPanel.hidden = !receiptUrl;
+  }
+
+  if (receiptId) {
+    receiptId.textContent = receiptUrl ? `Order #${order.id}` : "";
+  }
+
+  /*
+    Keep actions disabled until
+    real backend payment endpoints exist.
+  */
+  if (confirmButton) {
+    confirmButton.hidden = true;
+  }
+
+  if (rejectButton) {
+    rejectButton.hidden = true;
+  }
+
+  const viewReceiptButton = document.getElementById("sellerViewReceiptBtn");
+
+  if (viewReceiptButton) {
+    viewReceiptButton.onclick = () => {
+      if (!receiptUrl) {
+        showToast("No receipt uploaded yet.", "info");
+        return;
+      }
+
+      window.open(receiptUrl, "_blank", "noopener,noreferrer");
+    };
+  }
+}
+
+function syncSellerTransactionArrows() {
+  const orders = getSellerConversationOrders();
+
+  const previous = document.getElementById("sellerPrevOrder");
+
+  const next = document.getElementById("sellerNextOrder");
+
+  const disabled = orders.length <= 1;
+
+  if (previous) {
+    previous.disabled = disabled;
+  }
+
+  if (next) {
+    next.disabled = disabled;
+  }
+}
+
+document.getElementById("sellerPrevOrder")?.addEventListener("click", () => {
+  const orders = getSellerConversationOrders();
+
+  if (!orders.length) {
+    return;
+  }
+
+  sellerTransactionOrderIndex =
+    sellerTransactionOrderIndex === 0
+      ? orders.length - 1
+      : sellerTransactionOrderIndex - 1;
+
+  renderSellerTransactionCenter();
+});
+
+document.getElementById("sellerNextOrder")?.addEventListener("click", () => {
+  const orders = getSellerConversationOrders();
+
+  if (!orders.length) {
+    return;
+  }
+
+  sellerTransactionOrderIndex =
+    (sellerTransactionOrderIndex + 1) % orders.length;
+
+  renderSellerTransactionCenter();
+});
+
+function setSellerTransactionTab(tab) {
+  const ordersTab = document.getElementById("sellerOrdersTab");
+
+  const paymentTab = document.getElementById("sellerPaymentTab");
+
+  const ordersSlide = document.getElementById("sellerOrdersSlide");
+
+  const paymentSlide = document.getElementById("sellerPaymentSlide");
+
+  const paymentActive = tab === "payment";
+
+  ordersTab?.classList.toggle("active", !paymentActive);
+
+  paymentTab?.classList.toggle("active", paymentActive);
+
+  ordersSlide?.classList.toggle("active", !paymentActive);
+
+  paymentSlide?.classList.toggle("active", paymentActive);
+}
+
+document.getElementById("sellerOrdersTab")?.addEventListener("click", () => {
+  setSellerTransactionTab("orders");
+});
+
+document.getElementById("sellerPaymentTab")?.addEventListener("click", () => {
+  setSellerTransactionTab("payment");
+});
+
+document
+  .getElementById("sellerToggleTransaction")
+  ?.addEventListener("click", () => {
+    sellerTransactionHidden = !sellerTransactionHidden;
+
+    const button = document.getElementById("sellerToggleTransaction");
+
+    if (button) {
+      button.textContent = sellerTransactionHidden
+        ? "Show transaction card"
+        : "Hide transaction card";
+    }
+
+    renderSellerTransactionCenter();
+
+    closeChatOptions();
+  });
 
 function normalizeSellerConversation(conversation = {}) {
   const buyer = conversation.buyer || {};
@@ -3147,6 +3572,7 @@ function buildPinnedPaymentCard(chat) {
 }
 function setActiveChat(id) {
   activeChatId = id;
+  sellerTransactionOrderIndex = 0;
 
   const chat = findSellerConversation(id);
   const emptyState = document.getElementById("sellerConversationEmpty");
@@ -3178,6 +3604,7 @@ function setActiveChat(id) {
     };
   }
 
+  renderSellerTransactionCenter();
   renderChatMessages();
   syncChatOptions();
 
