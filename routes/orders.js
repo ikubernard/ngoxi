@@ -423,6 +423,111 @@ router.get("/", verifyToken, async (req, res) => {
 });
 
 /* =========================================================
+   SAVE BUYER PAYMENT RECEIPT
+   PATCH /api/orders/:orderId/receipt
+========================================================= */
+
+router.patch("/:orderId/receipt", verifyToken, async (req, res) => {
+  try {
+    const buyerId = req.user?._id;
+    const orderId = String(req.params?.orderId || "").trim();
+
+    if (!buyerId) {
+      return res.status(401).json({
+        error: "Not authorized",
+      });
+    }
+
+    if (!hasRole(req.user, "buyer")) {
+      return res.status(403).json({
+        error: "Buyer access required",
+      });
+    }
+
+    if (!validId(orderId)) {
+      return res.status(400).json({
+        error: "Invalid order ID",
+      });
+    }
+
+    const receiptUrl = String(req.body?.receiptUrl || "").trim();
+
+    const receiptPublicId = String(req.body?.receiptPublicId || "").trim();
+
+    if (!receiptUrl || !/^https?:\/\//i.test(receiptUrl)) {
+      return res.status(400).json({
+        error: "Valid receipt URL required",
+      });
+    }
+
+    let order = await Order.findById(orderId);
+
+    if (!order) {
+      return res.status(404).json({
+        error: "Order not found",
+      });
+    }
+
+    /*
+      Only the buyer who owns this order
+      can attach its payment receipt.
+    */
+    if (getMongoId(order.buyer) !== getMongoId(buyerId)) {
+      return res.status(403).json({
+        error: "This order does not belong to you",
+      });
+    }
+
+    /*
+      Do not allow receipt changes after
+      seller confirmation or cancellation.
+    */
+    if (
+      order.status === "payment-confirmed" ||
+      order.status === "preparing" ||
+      order.status === "ready" ||
+      order.status === "shipping" ||
+      order.status === "delivered" ||
+      order.status === "cancelled"
+    ) {
+      return res.status(409).json({
+        error: "Receipt cannot be changed for this order",
+      });
+    }
+
+    order.payment = {
+      ...(order.payment?.toObject
+        ? order.payment.toObject()
+        : order.payment || {}),
+
+      status: "receipt-uploaded",
+      receiptUrl,
+      receiptPublicId: receiptPublicId || undefined,
+      uploadedAt: new Date(),
+    };
+
+    order.status = "receipt-uploaded";
+
+    await order.save();
+
+    order = await Order.findById(order._id)
+      .populate("buyer", "name email buyerProfile")
+      .populate("seller", "name storeName sellerProfile")
+      .populate("product", "name cover");
+
+    return res.status(200).json({
+      order: normalizeOrder(order),
+    });
+  } catch (error) {
+    console.error("❌ PATCH order receipt failed:", error);
+
+    return res.status(500).json({
+      error: "Could not save receipt",
+    });
+  }
+});
+
+/* =========================================================
    GET ONE ORDER
 
    GET /api/orders/:orderId

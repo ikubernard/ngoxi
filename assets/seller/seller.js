@@ -3257,12 +3257,38 @@ async function openSellerConversation(conversationId) {
     );
 
     if (index >= 0) {
+      /*
+    Preserve MongoDB order attachments
+    when replacing the lightweight chat
+    with the full conversation.
+  */
+      const previous = sellerChatState.conversations[index];
+
+      conversation.orders = Array.isArray(previous.orders)
+        ? previous.orders
+        : [];
+
+      conversation.orderCount = conversation.orders.length;
+
+      conversation.orderId =
+        previous.orderId || conversation.orders[0]?.id || null;
+
+      conversation.orderState = previous.orderState || null;
+
       sellerChatState.conversations[index] = conversation;
     } else {
       sellerChatState.conversations.unshift(conversation);
     }
 
-    sellerChatState.activeConversation = conversation;
+    /*
+  Reattach from sellerOrdersState as an
+  extra source-of-truth safeguard.
+*/
+    attachSellerOrdersToConversations();
+
+    const activeConversation = findSellerConversation(conversation.id);
+
+    sellerChatState.activeConversation = activeConversation || conversation;
 
     setActiveChat(conversation.id);
 

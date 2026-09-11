@@ -1788,6 +1788,12 @@
     messagesBtn?.click();
   }
   function normalizeTransactionOrder(order) {
+    const rawPaymentStatus = order.payment?.status || "waiting";
+
+    const paymentStatus =
+      rawPaymentStatus === "receipt-uploaded"
+        ? "receipt_uploaded"
+        : rawPaymentStatus;
     return {
       ...order,
 
@@ -1810,9 +1816,9 @@
       price: Number(order.price || order.productSnapshot?.totalPrice || 0),
 
       payment: {
-        status: order.payment?.status || "waiting",
+        status: paymentStatus,
 
-        receiptId: order.payment?.receiptId || null,
+        receiptId: order.payment?.receiptId || order.id || order._id || null,
 
         receiptName: order.payment?.receiptName || null,
 
@@ -3602,52 +3608,122 @@
       }
     });
 
-    receiptInput.addEventListener("change", () => {
+    receiptInput.addEventListener("change", async () => {
       const file = receiptInput.files?.[0];
 
-      if (!file) return;
+      if (!file) {
+        return;
+      }
 
       const order = currentOrder();
 
-      if (order.payment.receiptUrl) {
-        URL.revokeObjectURL(order.payment.receiptUrl);
+      if (!order?.id) {
+        toast("Order ID is missing.");
+        return;
       }
 
-      order.payment.receiptUrl = URL.createObjectURL(file);
+      try {
+        pauseAutoRotation();
 
-      order.payment.receiptName = file.name;
+        toast("Uploading receipt…");
 
-      order.payment.receiptId = createReceiptId();
+        /*
+        STEP 1
+        Upload actual image to Cloudinary
+        through NgoXi's existing upload API.
+      */
+        const formData = new FormData();
 
-      order.payment.uploadedAt = new Date().toISOString();
+        formData.append("file", file);
 
-      order.payment.status = "receipt_uploaded";
-
-      pauseAutoRotation();
-
-      renderTransactionCenter();
-
-      toast(`Receipt uploaded for Order #${order.id}`);
-
-      /*
-      BACKEND HOOK
-
-      Later upload the actual receipt:
-
-      const form = new FormData();
-
-      form.append("receipt", file);
-      form.append("orderId", order.id);
-
-      fetch(
-        `${API_BASE}/api/orders/${order.id}/receipt`,
-        {
+        const uploadResponse = await fetch(`${API_BASE}/api/upload/image`, {
           method: "POST",
-          body: form,
-          credentials: "include"
+          body: formData,
+          credentials: "include",
+        });
+
+        const uploadData = await uploadResponse.json().catch(() => ({}));
+
+        if (!uploadResponse.ok) {
+          throw new Error(
+            uploadData.error || uploadData.message || "Receipt upload failed",
+          );
         }
-      );
-    */
+
+        const receiptUrl =
+          uploadData.url ||
+          uploadData.secure_url ||
+          uploadData.image?.url ||
+          "";
+
+        const receiptPublicId =
+          uploadData.publicId ||
+          uploadData.public_id ||
+          uploadData.image?.publicId ||
+          "";
+
+        if (!receiptUrl) {
+          throw new Error("Upload did not return an image URL");
+        }
+
+        /*
+        STEP 2
+        Store receipt URL and payment state
+        on the real MongoDB order.
+      */
+        const saveResponse = await fetch(
+          `${API_BASE}/api/orders/${order.id}/receipt`,
+          {
+            method: "PATCH",
+
+            headers: {
+              "Content-Type": "application/json",
+            },
+
+            credentials: "include",
+
+            body: JSON.stringify({
+              receiptUrl,
+              receiptPublicId,
+            }),
+          },
+        );
+
+        const saveData = await saveResponse.json().catch(() => ({}));
+
+        if (!saveResponse.ok) {
+          throw new Error(saveData.error || "Could not save receipt");
+        }
+
+        /*
+        Normalize the fresh MongoDB order,
+        then replace this order in the
+        Transaction Center immediately.
+      */
+        const savedOrder = normalizeTransactionOrder(saveData.order);
+
+        const conversation = getActiveConversation();
+
+        if (conversation) {
+          const index = conversation.orders.findIndex(
+            (item) => String(item.id) === String(savedOrder.id),
+          );
+
+          if (index >= 0) {
+            conversation.orders[index] = savedOrder;
+          }
+
+          transactionCenterAPI?.setOrders(conversation.orders);
+        }
+
+        toast(`Receipt uploaded for Order #${savedOrder.id}`);
+      } catch (error) {
+        console.error("Receipt upload failed:", error);
+
+        toast(error.message || "Could not upload receipt");
+      } finally {
+        receiptInput.value = "";
+      }
     });
 
     /* =====================================================
