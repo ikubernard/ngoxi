@@ -3619,6 +3619,7 @@
 
       if (!order?.id) {
         toast("Order ID is missing.");
+
         return;
       }
 
@@ -3627,80 +3628,32 @@
 
         toast("Uploading receipt…");
 
-        /*
-        STEP 1
-        Upload actual image to Cloudinary
-        through NgoXi's existing upload API.
-      */
-        const formData = new FormData();
+        const form = new FormData();
 
-        formData.append("file", file);
+        form.append("receipt", file);
 
-        const uploadResponse = await fetch(`${API_BASE}/api/upload/image`, {
-          method: "POST",
-          body: formData,
-          credentials: "include",
-        });
-
-        const uploadData = await uploadResponse.json().catch(() => ({}));
-
-        if (!uploadResponse.ok) {
-          throw new Error(
-            uploadData.error || uploadData.message || "Receipt upload failed",
-          );
-        }
-
-        const receiptUrl =
-          uploadData.url ||
-          uploadData.secure_url ||
-          uploadData.image?.url ||
-          "";
-
-        const receiptPublicId =
-          uploadData.publicId ||
-          uploadData.public_id ||
-          uploadData.image?.publicId ||
-          "";
-
-        if (!receiptUrl) {
-          throw new Error("Upload did not return an image URL");
-        }
-
-        /*
-        STEP 2
-        Store receipt URL and payment state
-        on the real MongoDB order.
-      */
-        const saveResponse = await fetch(
+        const response = await fetch(
           `${API_BASE}/api/orders/${order.id}/receipt`,
           {
-            method: "PATCH",
+            method: "POST",
 
-            headers: {
-              "Content-Type": "application/json",
-            },
+            body: form,
 
             credentials: "include",
-
-            body: JSON.stringify({
-              receiptUrl,
-              receiptPublicId,
-            }),
           },
         );
 
-        const saveData = await saveResponse.json().catch(() => ({}));
+        const data = await response.json().catch(() => ({}));
 
-        if (!saveResponse.ok) {
-          throw new Error(saveData.error || "Could not save receipt");
+        if (!response.ok) {
+          throw new Error(data.error || "Receipt upload failed");
         }
 
-        /*
-        Normalize the fresh MongoDB order,
-        then replace this order in the
-        Transaction Center immediately.
-      */
-        const savedOrder = normalizeTransactionOrder(saveData.order);
+        if (!data.order) {
+          throw new Error("Updated order was not returned");
+        }
+
+        const savedOrder = normalizeTransactionOrder(data.order);
 
         const conversation = getActiveConversation();
 
@@ -3716,11 +3669,11 @@
           transactionCenterAPI?.setOrders(conversation.orders);
         }
 
-        toast(`Receipt uploaded for Order #${savedOrder.id}`);
+        toast("Receipt uploaded ✓");
       } catch (error) {
         console.error("Receipt upload failed:", error);
 
-        toast(error.message || "Could not upload receipt");
+        toast(error.message || "Receipt upload failed");
       } finally {
         receiptInput.value = "";
       }

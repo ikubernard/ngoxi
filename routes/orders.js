@@ -27,6 +27,23 @@ function validId(value) {
   return mongoose.Types.ObjectId.isValid(String(value || ""));
 }
 
+function uploadBufferToCloudinary(buffer, options = {}) {
+  return new Promise((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(
+      options,
+      (error, result) => {
+        if (error) {
+          return reject(error);
+        }
+
+        resolve(result);
+      },
+    );
+
+    stream.end(buffer);
+  });
+}
+
 /*
   Convert an Order document into something both
   buyer and seller frontends can consume easily.
@@ -423,109 +440,139 @@ router.get("/", verifyToken, async (req, res) => {
 });
 
 /* =========================================================
-   SAVE BUYER PAYMENT RECEIPT
-   PATCH /api/orders/:orderId/receipt
+   UPLOAD PAYMENT RECEIPT
+   POST /api/orders/:orderId/receipt
 ========================================================= */
 
-router.patch("/:orderId/receipt", verifyToken, async (req, res) => {
-  try {
-    const buyerId = req.user?._id;
-    const orderId = String(req.params?.orderId || "").trim();
+router.post(
+  "/:orderId/receipt",
 
-    if (!buyerId) {
-      return res.status(401).json({
-        error: "Not authorized",
+  verifyToken,
+
+  upload.single("receipt"),
+
+  async (req, res) => {
+    try {
+      const buyerId = req.user?._id;
+
+      const orderId = String(req.params?.orderId || "").trim();
+
+      if (!buyerId) {
+        return res.status(401).json({
+          error: "Not authorized",
+        });
+      }
+
+      if (!hasRole(req.user, "buyer")) {
+        return res.status(403).json({
+          error: "Buyer access required",
+        });
+      }
+
+      if (!validId(orderId)) {
+        return res.status(400).json({
+          error: "Invalid order ID",
+        });
+      }
+
+      if (!req.file) {
+        return res.status(400).json({
+          error: "Receipt image required",
+        });
+      }
+
+      if (!String(req.file.mimetype || "").startsWith("image/")) {
+        return res.status(400).json({
+          error: "Receipt must be an image",
+        });
+      }
+
+      let order = await Order.findById(orderId);
+
+      if (!order) {
+        return res.status(404).json({
+          error: "Order not found",
+        });
+      }
+
+      /*
+        Security:
+        only the buyer who owns
+        this order may upload.
+      */
+      if (getMongoId(order.buyer) !== getMongoId(buyerId)) {
+        return res.status(403).json({
+          error: "This order does not belong to you",
+        });
+      }
+
+      /*
+        Stop receipt replacement after
+        payment has entered fulfillment.
+      */
+      const lockedStatuses = new Set([
+        "payment-confirmed",
+        "preparing",
+        "ready",
+        "shipping",
+        "delivered",
+        "cancelled",
+      ]);
+
+      if (lockedStatuses.has(order.status)) {
+        return res.status(409).json({
+          error: "Receipt cannot be changed for this order",
+        });
+      }
+
+      const uploaded = await uploadBufferToCloudinary(req.file.buffer, {
+        folder: "ngoxi/orders/receipts",
+
+        resource_type: "image",
+
+        transformation: [
+          {
+            quality: "auto:good",
+          },
+          {
+            fetch_format: "auto",
+          },
+        ],
+      });
+
+      if (!uploaded?.secure_url) {
+        throw new Error("Cloudinary did not return a receipt URL");
+      }
+
+      order.payment.status = "receipt-uploaded";
+
+      order.payment.receiptUrl = uploaded.secure_url;
+
+      order.payment.receiptPublicId = uploaded.public_id;
+
+      order.payment.uploadedAt = new Date();
+
+      order.status = "receipt-uploaded";
+
+      await order.save();
+
+      order = await Order.findById(order._id)
+        .populate("buyer", "name email buyerProfile")
+        .populate("seller", "name storeName sellerProfile")
+        .populate("product", "name cover");
+
+      return res.status(200).json({
+        order: normalizeOrder(order),
+      });
+    } catch (error) {
+      console.error("❌ Receipt upload failed:", error);
+
+      return res.status(500).json({
+        error: "Could not upload receipt",
       });
     }
-
-    if (!hasRole(req.user, "buyer")) {
-      return res.status(403).json({
-        error: "Buyer access required",
-      });
-    }
-
-    if (!validId(orderId)) {
-      return res.status(400).json({
-        error: "Invalid order ID",
-      });
-    }
-
-    const receiptUrl = String(req.body?.receiptUrl || "").trim();
-
-    const receiptPublicId = String(req.body?.receiptPublicId || "").trim();
-
-    if (!receiptUrl || !/^https?:\/\//i.test(receiptUrl)) {
-      return res.status(400).json({
-        error: "Valid receipt URL required",
-      });
-    }
-
-    let order = await Order.findById(orderId);
-
-    if (!order) {
-      return res.status(404).json({
-        error: "Order not found",
-      });
-    }
-
-    /*
-      Only the buyer who owns this order
-      can attach its payment receipt.
-    */
-    if (getMongoId(order.buyer) !== getMongoId(buyerId)) {
-      return res.status(403).json({
-        error: "This order does not belong to you",
-      });
-    }
-
-    /*
-      Do not allow receipt changes after
-      seller confirmation or cancellation.
-    */
-    if (
-      order.status === "payment-confirmed" ||
-      order.status === "preparing" ||
-      order.status === "ready" ||
-      order.status === "shipping" ||
-      order.status === "delivered" ||
-      order.status === "cancelled"
-    ) {
-      return res.status(409).json({
-        error: "Receipt cannot be changed for this order",
-      });
-    }
-
-    order.payment = {
-      ...(order.payment?.toObject
-        ? order.payment.toObject()
-        : order.payment || {}),
-
-      status: "receipt-uploaded",
-      receiptUrl,
-      receiptPublicId: receiptPublicId || undefined,
-      uploadedAt: new Date(),
-    };
-
-    order.status = "receipt-uploaded";
-
-    await order.save();
-
-    order = await Order.findById(order._id)
-      .populate("buyer", "name email buyerProfile")
-      .populate("seller", "name storeName sellerProfile")
-      .populate("product", "name cover");
-
-    return res.status(200).json({
-      order: normalizeOrder(order),
-    });
-  } catch (error) {
-    console.error("❌ PATCH order receipt failed:", error);
-
-    return res.status(500).json({
-      error: "Could not save receipt",
-    });
-  }
-});
+  },
+);
 
 /* =========================================================
    GET ONE ORDER
