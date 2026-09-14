@@ -698,13 +698,6 @@ router.patch("/:orderId/shipping", verifyToken, async (req, res) => {
 
     const orderId = String(req.params?.orderId || "").trim();
 
-    const carrier = String(req.body?.carrier || "").trim();
-    if (!carrier) {
-      return res.status(400).json({
-        error: "Choose a China carrier",
-      });
-    }
-
     const trackingNumber = String(req.body?.trackingNumber || "")
       .trim()
       .toUpperCase();
@@ -788,8 +781,6 @@ router.patch("/:orderId/shipping", verifyToken, async (req, res) => {
     }
 
     order.inbound = order.inbound || {};
-
-    order.inbound.chinaCarrier = carrier || "SF Express";
 
     order.inbound.chinaTrackingNumber = trackingNumber;
 
