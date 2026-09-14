@@ -7,6 +7,9 @@ import Chat from "../model/chatModel.js";
 
 import { verifyToken } from "../middleware/authMiddleware.js";
 
+import cloudinary from "../Utils/cloudinary.js";
+import { upload } from "../Utils/multer.js";
+
 const router = express.Router();
 
 /* =========================================================
