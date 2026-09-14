@@ -2584,10 +2584,6 @@ function renderSellerTransactionCenter() {
 
   const orders = getSellerConversationOrders();
 
-  /*
-    No active conversation or no orders:
-    hide Transaction Center.
-  */
   if (!activeChatId || !orders.length || sellerTransactionHidden) {
     center.hidden = true;
     return;
@@ -2602,9 +2598,9 @@ function renderSellerTransactionCenter() {
     return;
   }
 
-  /* -------------------------
+  /* ==========================================
      ORDER COUNTER
-  ------------------------- */
+  ========================================== */
 
   const counter = document.getElementById("sellerOrderCounter");
 
@@ -2612,9 +2608,9 @@ function renderSellerTransactionCenter() {
     counter.textContent = `${sellerTransactionOrderIndex + 1} / ${orders.length}`;
   }
 
-  /* -------------------------
+  /* ==========================================
      PRODUCT IMAGE
-  ------------------------- */
+  ========================================== */
 
   const image = document.getElementById("sellerTransactionProductImage");
 
@@ -2622,13 +2618,15 @@ function renderSellerTransactionCenter() {
     image.src = order.productImage || "/assets/default-product.png";
 
     image.onerror = () => {
-      image.src = "/assets/default-product.png";
+      image.onerror = null;
+
+      image.src = "/assets/logo.png";
     };
   }
 
-  /* -------------------------
+  /* ==========================================
      ORDER ID
-  ------------------------- */
+  ========================================== */
 
   const orderId = document.getElementById("sellerTransactionOrderId");
 
@@ -2636,9 +2634,9 @@ function renderSellerTransactionCenter() {
     orderId.textContent = `Order #${order.id || "—"}`;
   }
 
-  /* -------------------------
-     PRODUCT
-  ------------------------- */
+  /* ==========================================
+     PRODUCT NAME
+  ========================================== */
 
   const productName = document.getElementById("sellerTransactionProductName");
 
@@ -2646,9 +2644,9 @@ function renderSellerTransactionCenter() {
     productName.textContent = order.productName || "Product";
   }
 
-  /* -------------------------
-     VARIANT / SIZE / QTY
-  ------------------------- */
+  /* ==========================================
+     VARIANT / SIZE / QUANTITY
+  ========================================== */
 
   const variant = document.getElementById("sellerTransactionVariant");
 
@@ -2656,11 +2654,11 @@ function renderSellerTransactionCenter() {
     const pieces = [];
 
     if (order.variant) {
-      pieces.push(`Variant: ${order.variant}`);
+      pieces.push(order.variant);
     }
 
     if (order.size) {
-      pieces.push(`Size: ${order.size}`);
+      pieces.push(`Size ${order.size}`);
     }
 
     pieces.push(`Qty: ${order.quantity || order.qty || 1}`);
@@ -2668,9 +2666,19 @@ function renderSellerTransactionCenter() {
     variant.textContent = pieces.join(" • ");
   }
 
-  /* -------------------------
+  /* ==========================================
+     BUYER
+  ========================================== */
+
+  const buyer = document.getElementById("sellerTransactionBuyer");
+
+  if (buyer) {
+    buyer.textContent = order.buyerName || "Buyer";
+  }
+
+  /* ==========================================
      PRICE
-  ------------------------- */
+  ========================================== */
 
   const price = document.getElementById("sellerTransactionPrice");
 
@@ -2678,32 +2686,80 @@ function renderSellerTransactionCenter() {
     price.textContent = `TSh ${Number(order.price || 0).toLocaleString()}`;
   }
 
-  /* -------------------------
-     ORDER STATUS
-  ------------------------- */
+  /* ==========================================
+     STATUS BADGE
+  ========================================== */
 
   const status = document.getElementById("sellerTransactionStatus");
 
   if (status) {
+    const statusText = sellerOrderStatusText(order);
+
+    const mongoStatus = String(order.mongoStatus || order.status || "");
+
+    let statusClass = "waiting";
+
+    let statusIcon = "clock-3";
+
+    if (mongoStatus === "receipt-uploaded" || mongoStatus === "filled") {
+      statusClass = "receipt";
+
+      statusIcon = "file-check-2";
+    }
+
+    if (mongoStatus === "payment-confirmed" || mongoStatus === "preparing") {
+      statusClass = "confirmed";
+
+      statusIcon = "badge-check";
+    }
+
+    if (mongoStatus === "ready") {
+      statusClass = "ready";
+
+      statusIcon = "package-check";
+    }
+
+    if (mongoStatus === "shipping") {
+      statusClass = "shipping";
+
+      statusIcon = "truck";
+    }
+
+    if (mongoStatus === "delivered" || mongoStatus === "done") {
+      statusClass = "delivered";
+
+      statusIcon = "check-check";
+    }
+
+    if (mongoStatus === "cancelled") {
+      statusClass = "cancelled";
+
+      statusIcon = "circle-x";
+    }
+
     status.innerHTML = `
-      <div class="ngx-order-progress-copy">
+      <div
+        class="
+          ngx-premium-status-badge
+          ${statusClass}
+        "
+      >
 
-        <strong>
-          ${sanitize(sellerOrderStatusText(order))}
-        </strong>
+        <i
+          data-lucide="${statusIcon}"
+        ></i>
 
-        <small>
-          Buyer:
-          ${sanitize(order.buyerName || "Buyer")}
-        </small>
+        <span>
+          ${sanitize(statusText)}
+        </span>
 
       </div>
     `;
   }
 
-  /* -------------------------
-     ORDER ACTION
-  ------------------------- */
+  /* ==========================================
+     ACTION BUTTONS
+  ========================================== */
 
   const orderActions = document.getElementById("sellerOrderActions");
 
@@ -2711,10 +2767,43 @@ function renderSellerTransactionCenter() {
     orderActions.innerHTML = `
       <button
         type="button"
-        class="ngx-secondary-btn"
+        class="
+          ngx-premium-action-btn
+          secondary
+        "
         id="sellerOpenOrderDetails"
       >
-        View order details
+
+        <i
+          data-lucide="file-text"
+        ></i>
+
+        <span>
+          View order details
+        </span>
+
+      </button>
+
+
+      <button
+        type="button"
+        class="
+          ngx-premium-action-btn
+          primary
+        "
+        id="sellerShippingPlaceholder"
+        disabled
+        title="Shipping controls will be enabled after the fulfillment API is connected."
+      >
+
+        <i
+          data-lucide="truck"
+        ></i>
+
+        <span>
+          Mark as shipped
+        </span>
+
       </button>
     `;
 
@@ -2728,6 +2817,13 @@ function renderSellerTransactionCenter() {
   renderSellerPaymentSlide(order);
 
   syncSellerTransactionArrows();
+
+  /*
+    We inject several Lucide icons above.
+  */
+  if (window.lucide?.createIcons) {
+    window.lucide.createIcons();
+  }
 }
 
 function renderSellerPaymentSlide(order) {

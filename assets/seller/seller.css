@@ -5523,3 +5523,670 @@ body.dark .seller-payment-empty {
 #sellerChatMessages .bubble.seller + .bubble.buyer {
   margin-top: 8px;
 }
+/* ==========================================================
+   NGOXI SELLER TRANSACTION CENTER
+   PREMIUM ORDER CARD V2
+========================================================== */
+
+.ngx-transaction-center {
+  margin: 10px 16px 8px;
+  border: 1px solid rgba(20, 87, 62, 0.1);
+  border-radius: 20px;
+  background: linear-gradient(
+    145deg,
+    rgba(255, 255, 255, 0.98),
+    rgba(248, 253, 250, 0.96)
+  );
+  box-shadow: 0 12px 35px rgba(21, 76, 55, 0.08);
+  overflow: hidden;
+}
+
+/* ============================
+   TABS
+============================ */
+
+.ngx-premium-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  padding: 8px 10px 0;
+  border-bottom: 1px solid rgba(30, 70, 55, 0.08);
+}
+
+.ngx-premium-tabs button {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+
+  min-height: 46px;
+
+  border: 0;
+  border-radius: 13px 13px 0 0;
+
+  background: transparent;
+
+  color: #727c77;
+
+  font-size: 14px;
+  font-weight: 700;
+
+  cursor: pointer;
+
+  transition:
+    background 0.2s ease,
+    color 0.2s ease;
+}
+
+.ngx-premium-tabs button svg {
+  width: 18px;
+  height: 18px;
+  stroke-width: 2;
+}
+
+.ngx-premium-tabs button.active {
+  color: #078a59;
+
+  background: linear-gradient(
+    180deg,
+    rgba(224, 248, 237, 0.85),
+    rgba(240, 253, 247, 0.35)
+  );
+}
+
+.ngx-premium-tabs button.active::after {
+  content: "";
+
+  position: absolute;
+
+  left: 4px;
+  right: 4px;
+  bottom: 0;
+
+  height: 2px;
+
+  border-radius: 999px;
+
+  background: #059669;
+}
+
+/* ============================
+   TRANSACTION STAGE
+============================ */
+
+.ngx-transaction-stage {
+  padding: 8px 10px 12px;
+}
+
+.ngx-transaction-slide {
+  display: none;
+}
+
+.ngx-transaction-slide.active {
+  display: block;
+}
+
+/* ============================
+   ORDER NAVIGATION
+============================ */
+
+.ngx-premium-order-nav {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 11px;
+
+  padding: 4px 9px 9px;
+}
+
+.ngx-order-nav-btn {
+  width: 32px;
+  height: 32px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  border: none;
+
+  border-radius: 50%;
+
+  color: #087b53;
+
+  background: rgba(223, 247, 236, 0.9);
+
+  cursor: pointer;
+
+  transition:
+    transform 0.18s ease,
+    background 0.18s ease;
+}
+
+.ngx-order-nav-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+
+  background: rgba(204, 241, 225, 1);
+}
+
+.ngx-order-nav-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.ngx-order-nav-btn svg {
+  width: 17px;
+  height: 17px;
+}
+
+.ngx-order-counter {
+  min-width: 40px;
+  text-align: center;
+
+  color: #69736e;
+
+  font-size: 12px;
+  font-weight: 700;
+}
+
+/* ============================
+   MAIN ORDER CARD
+============================ */
+
+.ngx-premium-order-card {
+  position: relative;
+
+  display: grid;
+
+  grid-template-columns:
+    minmax(0, 1.6fr)
+    minmax(250px, 0.9fr);
+
+  min-height: 160px;
+
+  border: 1px solid rgba(10, 138, 88, 0.15);
+
+  border-radius: 20px;
+
+  overflow: hidden;
+
+  background: linear-gradient(135deg, #ffffff 0%, #fbfffd 55%, #f1fbf6 100%);
+
+  box-shadow: 0 8px 24px rgba(34, 100, 74, 0.09);
+}
+
+.ngx-premium-order-card::after {
+  content: "";
+
+  position: absolute;
+
+  width: 150px;
+  height: 150px;
+
+  right: -55px;
+  bottom: -75px;
+
+  border-radius: 50%;
+
+  background: radial-gradient(circle, rgba(82, 180, 124, 0.1), transparent 70%);
+
+  pointer-events: none;
+}
+
+/* ============================
+   LEFT SIDE
+============================ */
+
+.ngx-premium-order-main {
+  min-width: 0;
+
+  padding: 20px 24px;
+}
+
+.ngx-premium-product-row {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.ngx-premium-product-image-wrap {
+  flex: 0 0 auto;
+
+  width: 92px;
+  height: 92px;
+
+  border-radius: 17px;
+
+  overflow: hidden;
+
+  background: #f0f5f2;
+
+  box-shadow: 0 4px 14px rgba(23, 70, 52, 0.1);
+}
+
+.ngx-premium-product-image {
+  width: 100%;
+  height: 100%;
+
+  display: block;
+
+  object-fit: cover;
+}
+
+.ngx-premium-product-copy {
+  min-width: 0;
+}
+
+.ngx-premium-order-id {
+  display: block;
+
+  margin-bottom: 4px;
+
+  color: #87918c;
+
+  font-size: 11px;
+
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ngx-premium-product-name {
+  margin: 0 0 5px;
+
+  color: #17251f;
+
+  font-size: 18px;
+  font-weight: 800;
+
+  line-height: 1.2;
+}
+
+.ngx-premium-product-meta {
+  margin: 0 0 10px;
+
+  color: #69736e;
+
+  font-size: 12px;
+}
+
+/* ============================
+   STATUS
+============================ */
+
+.ngx-premium-status-host {
+  display: flex;
+}
+
+.ngx-premium-status-badge {
+  width: fit-content;
+
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+
+  padding: 7px 11px;
+
+  border-radius: 999px;
+
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.ngx-premium-status-badge svg {
+  width: 15px;
+  height: 15px;
+}
+
+.ngx-premium-status-badge.waiting {
+  color: #8a6515;
+  background: #fff5d8;
+}
+
+.ngx-premium-status-badge.receipt {
+  color: #06774e;
+  background: #dff7eb;
+}
+
+.ngx-premium-status-badge.confirmed,
+.ngx-premium-status-badge.ready,
+.ngx-premium-status-badge.delivered {
+  color: #056c48;
+  background: #d9f6e8;
+}
+
+.ngx-premium-status-badge.shipping {
+  color: #17668d;
+  background: #e2f3fb;
+}
+
+.ngx-premium-status-badge.cancelled {
+  color: #9a3d3d;
+  background: #fde7e7;
+}
+
+/* ============================
+   BUYER ROW
+============================ */
+
+.ngx-premium-divider {
+  height: 1px;
+
+  margin: 15px 0 12px;
+
+  background: rgba(40, 88, 68, 0.09);
+}
+
+.ngx-premium-buyer-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+
+  color: #65716b;
+
+  font-size: 12px;
+}
+
+.ngx-premium-buyer-row strong {
+  color: #26342e;
+
+  font-weight: 750;
+}
+
+.ngx-premium-buyer-icon {
+  display: inline-flex;
+
+  color: #468368;
+}
+
+.ngx-premium-buyer-icon svg {
+  width: 17px;
+  height: 17px;
+}
+
+/* ============================
+   RIGHT SIDE / PRICE
+============================ */
+
+.ngx-premium-order-side {
+  position: relative;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+
+  padding: 22px 26px;
+
+  border-left: 1px solid rgba(43, 89, 70, 0.09);
+}
+
+.ngx-premium-total-copy {
+  margin-bottom: 20px;
+}
+
+.ngx-premium-total-copy > span {
+  display: block;
+
+  margin-bottom: 5px;
+
+  color: #818a86;
+
+  font-size: 12px;
+}
+
+.ngx-premium-total {
+  display: block;
+
+  color: #064e3b;
+
+  font-size: clamp(21px, 2vw, 28px);
+
+  font-weight: 850;
+
+  letter-spacing: -0.5px;
+}
+
+/* ============================
+   ACTIONS
+============================ */
+
+.ngx-premium-actions {
+  display: grid;
+
+  grid-template-columns:
+    minmax(130px, 1fr)
+    minmax(130px, 1fr);
+
+  gap: 10px;
+}
+
+.ngx-premium-action-btn {
+  min-height: 42px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+
+  padding: 9px 13px;
+
+  border-radius: 10px;
+
+  font-size: 12px;
+  font-weight: 750;
+
+  cursor: pointer;
+
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease,
+    opacity 0.18s ease;
+}
+
+.ngx-premium-action-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+.ngx-premium-action-btn.secondary {
+  color: #164c39;
+
+  background: #ffffff;
+
+  border: 1px solid rgba(34, 80, 62, 0.16);
+
+  box-shadow: 0 3px 9px rgba(23, 68, 51, 0.06);
+}
+
+.ngx-premium-action-btn.primary {
+  border: 1px solid #08764e;
+
+  color: white;
+
+  background: linear-gradient(135deg, #0b9864, #06764e);
+
+  box-shadow: 0 5px 13px rgba(5, 130, 83, 0.18);
+}
+
+.ngx-premium-action-btn:not(:disabled):hover {
+  transform: translateY(-1px);
+}
+
+.ngx-premium-action-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+
+  box-shadow: none;
+}
+
+/* ============================
+   PAYMENT SLIDE POLISH
+============================ */
+
+#sellerPaymentSlide {
+  padding: 16px 18px 18px;
+}
+
+.ngx-payment-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+
+  gap: 18px;
+
+  padding: 17px 19px;
+
+  border-radius: 16px;
+
+  background: linear-gradient(135deg, #f4fbf7, #ffffff);
+
+  border: 1px solid rgba(11, 131, 83, 0.1);
+}
+
+.ngx-payment-heading small {
+  color: #84908a;
+
+  font-size: 11px;
+}
+
+.ngx-payment-heading h3 {
+  margin: 4px 0 0;
+
+  color: #13382a;
+
+  font-size: 17px;
+}
+
+#sellerPaymentAmount {
+  color: #065f46;
+
+  font-size: 22px;
+  font-weight: 850;
+}
+
+.ngx-payment-product {
+  margin: 13px 2px 8px;
+
+  color: #34443d;
+
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.ngx-payment-details {
+  display: grid;
+
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+
+  gap: 9px;
+
+  margin-top: 10px;
+}
+
+.ngx-payment-details > div {
+  padding: 11px 12px;
+
+  border-radius: 12px;
+
+  background: #f7faf8;
+
+  border: 1px solid rgba(34, 80, 61, 0.08);
+}
+
+.ngx-payment-details small {
+  display: block;
+
+  margin-bottom: 4px;
+
+  color: #89928e;
+
+  font-size: 10px;
+}
+
+.ngx-payment-details strong {
+  display: block;
+
+  color: #273730;
+
+  font-size: 12px;
+
+  overflow-wrap: anywhere;
+}
+
+/* ============================
+   RECEIPT PANEL
+============================ */
+
+.ngx-seller-receipt-panel {
+  margin-top: 12px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 15px;
+
+  padding: 13px 15px;
+
+  border-radius: 13px;
+
+  background: #edf9f3;
+
+  border: 1px solid rgba(10, 136, 87, 0.12);
+}
+
+.ngx-seller-receipt-panel[hidden] {
+  display: none;
+}
+
+/* ============================
+   RESPONSIVE
+============================ */
+
+@media (max-width: 900px) {
+  .ngx-premium-order-card {
+    grid-template-columns: 1fr;
+  }
+
+  .ngx-premium-order-side {
+    border-left: 0;
+
+    border-top: 1px solid rgba(43, 89, 70, 0.09);
+  }
+
+  .ngx-payment-details {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 560px) {
+  .ngx-transaction-center {
+    margin: 7px 6px;
+  }
+
+  .ngx-premium-order-main {
+    padding: 15px;
+  }
+
+  .ngx-premium-product-image-wrap {
+    width: 72px;
+
+    height: 72px;
+  }
+
+  .ngx-premium-product-name {
+    font-size: 16px;
+  }
+
+  .ngx-premium-order-side {
+    padding: 16px;
+  }
+
+  .ngx-premium-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .ngx-payment-details {
+    grid-template-columns: 1fr;
+  }
+}
