@@ -698,7 +698,12 @@ router.patch("/:orderId/shipping", verifyToken, async (req, res) => {
 
     const orderId = String(req.params?.orderId || "").trim();
 
-    const carrier = String(req.body?.carrier || "SF Express").trim();
+    const carrier = String(req.body?.carrier || "").trim();
+    if (!carrier) {
+      return res.status(400).json({
+        error: "Choose a China carrier",
+      });
+    }
 
     const trackingNumber = String(req.body?.trackingNumber || "")
       .trim()
@@ -724,13 +729,13 @@ router.patch("/:orderId/shipping", verifyToken, async (req, res) => {
 
     if (!trackingNumber) {
       return res.status(400).json({
-        error: "Enter the SF tracking number",
+        error: "Enter the China tracking or order number",
       });
     }
 
     /*
         Keep this permissive enough for
-        different SF number formats,
+        different China tracking number formats,
         while rejecting junk.
       */
     if (!/^[A-Z0-9-]{6,40}$/.test(trackingNumber)) {

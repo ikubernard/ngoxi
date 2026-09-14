@@ -2994,6 +2994,16 @@
       userPauseUntil = Date.now() + USER_PAUSE_TIME;
     }
 
+    function simpleOrderNumber(orderId = "") {
+      const value = String(orderId).trim();
+
+      if (!value) {
+        return "------";
+      }
+
+      return value.slice(-6).toUpperCase();
+    }
+
     function createReceiptId() {
       const random = Math.floor(100000 + Math.random() * 900000);
 
@@ -3126,7 +3136,7 @@
 
     function renderOrderSlide(order) {
       if (orderIdEl) {
-        orderIdEl.textContent = `Order #${order.id}`;
+        orderIdEl.textContent = `Order #${simpleOrderNumber(order.id)}`;
       }
 
       if (productNameEl) {
@@ -3159,7 +3169,7 @@
   ===================================================== */
 
     function renderPaymentSlide(order) {
-      const status = order.payment.status;
+      const paymentStatus = order.payment?.status || "waiting";
 
       if (paymentProduct) {
         paymentProduct.textContent = order.product;
@@ -3170,7 +3180,7 @@
       }
 
       if (paymentTitle) {
-        paymentTitle.textContent = paymentLabel(status);
+        paymentTitle.textContent = paymentLabel(paymentStatus);
       }
 
       if (!uploadReceiptBtn || !cancelPaymentBtn) {
@@ -3180,7 +3190,7 @@
       uploadReceiptBtn.style.display = "";
       cancelPaymentBtn.style.display = "";
 
-      if (status === "waiting") {
+      if (paymentStatus === "waiting") {
         uploadReceiptBtn.textContent = "I have paid • Upload receipt";
 
         uploadReceiptBtn.disabled = false;
@@ -3190,7 +3200,14 @@
         cancelPaymentBtn.disabled = false;
       }
 
-      if (status === "receipt_uploaded") {
+      if (order.payment.status === "rejected") {
+        receiptInput.value = "";
+
+        receiptInput.click();
+
+        return;
+      }
+      if (paymentStatus === "receipt_uploaded") {
         uploadReceiptBtn.textContent = "View receipt";
 
         uploadReceiptBtn.disabled = false;
@@ -3199,8 +3216,29 @@
 
         cancelPaymentBtn.disabled = true;
       }
+      if (status === "rejected") {
+        details.innerHTML = `
+    <div class="receipt-rejected-message">
 
-      if (status === "confirmed") {
+      <p>
+        Payment issue
+      </p>
+
+      <b>
+        Receipt could not be verified
+      </b>
+
+      <small>
+        The seller could not verify your receipt.
+        Please upload another receipt.
+      </small>
+
+    </div>
+  `;
+
+        return;
+      }
+      if (paymentStatus === "confirmed") {
         uploadReceiptBtn.textContent = "Payment confirmed ✓";
 
         uploadReceiptBtn.disabled = true;
@@ -3208,7 +3246,7 @@
         cancelPaymentBtn.style.display = "none";
       }
 
-      if (status === "cancelled") {
+      if (paymentStatus === "cancelled") {
         uploadReceiptBtn.style.display = "none";
 
         cancelPaymentBtn.textContent = "Order cancelled";
@@ -3410,7 +3448,7 @@
 
         <small>
           The seller confirmed payment for
-          Order #${order.id}.
+          Order #${simpleOrderNumber(order.id)}.
         </small>
       `;
 
@@ -3424,7 +3462,7 @@
         <b>Cancelled</b>
 
         <small>
-          Order #${order.id} is no longer active.
+          Order #${simpleOrderNumber(order.id)} is no longer active.
         </small>
       `;
       }
@@ -3561,7 +3599,7 @@
         order.payment.receiptId || "";
 
       viewer.querySelector("#ngxReceiptViewerOrder").textContent =
-        `Order #${order.id}`;
+        `Order #${simpleOrderNumber(order.id)}`;
 
       viewer.classList.add("show");
     }
@@ -3690,7 +3728,9 @@
         return;
       }
 
-      const confirmed = window.confirm(`Cancel Order #${order.id}?`);
+      const confirmed = window.confirm(
+        `Cancel Order #${simpleOrderNumber(order.id)}?`,
+      );
 
       if (!confirmed) return;
 
@@ -3701,7 +3741,7 @@
 
       renderTransactionCenter();
 
-      toast(`Order #${order.id} cancelled`);
+      toast(`Order #${simpleOrderNumber(order.id)} cancelled`);
 
       /*
         BACKEND HOOK

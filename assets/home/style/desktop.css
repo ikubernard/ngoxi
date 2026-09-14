@@ -5434,3 +5434,42 @@ html[data-theme="dark"] #view-messages .ngx-message-meta {
 
   cursor: pointer;
 }
+
+.receipt-rejected-message {
+  padding: 14px;
+
+  border-radius: 12px;
+
+  border: 1px solid rgba(190, 24, 24, 0.18);
+
+  background: linear-gradient(135deg, #fff4f4, #fffafa);
+}
+
+.receipt-rejected-message p {
+  margin: 0 0 5px;
+
+  color: #b42323;
+
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.receipt-rejected-message b {
+  display: block;
+
+  margin-bottom: 4px;
+
+  color: #8f1f1f;
+}
+
+.receipt-rejected-message small {
+  color: #8d5c5c;
+}
+
+.receipt-rejected-btn {
+  color: #fff !important;
+
+  background: linear-gradient(135deg, #d33a3a, #a91f1f) !important;
+
+  border-color: #a91f1f !important;
+}
