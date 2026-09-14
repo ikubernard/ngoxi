@@ -3015,6 +3015,9 @@
         case "receipt_uploaded":
           return "Receipt Uploaded";
 
+        case "rejected":
+          return "Payment Issue";
+
         case "confirmed":
           return "Payment Confirmed";
 
@@ -3025,7 +3028,6 @@
           return "Payment Required";
       }
     }
-
     /* =====================================================
      SLIDE SYSTEM
   ===================================================== */
@@ -3187,66 +3189,63 @@
         return;
       }
 
+      /*
+    Reset the buttons first.
+    Each state below decides what they become.
+  */
       uploadReceiptBtn.style.display = "";
       cancelPaymentBtn.style.display = "";
+
+      uploadReceiptBtn.disabled = false;
+      cancelPaymentBtn.disabled = false;
+
+      uploadReceiptBtn.classList.remove("receipt-rejected-btn");
+
+      /* =========================
+     WAITING FOR BUYER PAYMENT
+  ========================= */
 
       if (paymentStatus === "waiting") {
         uploadReceiptBtn.textContent = "I have paid • Upload receipt";
 
-        uploadReceiptBtn.disabled = false;
-
         cancelPaymentBtn.textContent = "Cancel order";
+      } else if (paymentStatus === "receipt_uploaded") {
 
-        cancelPaymentBtn.disabled = false;
-      }
-
-      if (order.payment.status === "rejected") {
-        receiptInput.value = "";
-
-        receiptInput.click();
-
-        return;
-      }
-      if (paymentStatus === "receipt_uploaded") {
+      /* =========================
+     RECEIPT SENT
+  ========================= */
         uploadReceiptBtn.textContent = "View receipt";
-
-        uploadReceiptBtn.disabled = false;
 
         cancelPaymentBtn.textContent = "Waiting for seller";
 
         cancelPaymentBtn.disabled = true;
-      }
-      if (status === "rejected") {
-        details.innerHTML = `
-    <div class="receipt-rejected-message">
+      } else if (paymentStatus === "rejected") {
 
-      <p>
-        Payment issue
-      </p>
+      /* =========================
+     SELLER REJECTED RECEIPT
+  ========================= */
+        uploadReceiptBtn.textContent = "Change receipt";
 
-      <b>
-        Receipt could not be verified
-      </b>
+        uploadReceiptBtn.classList.add("receipt-rejected-btn");
 
-      <small>
-        The seller could not verify your receipt.
-        Please upload another receipt.
-      </small>
+        cancelPaymentBtn.textContent = "Receipt rejected";
 
-    </div>
-  `;
+        cancelPaymentBtn.disabled = true;
+      } else if (paymentStatus === "confirmed") {
 
-        return;
-      }
-      if (paymentStatus === "confirmed") {
+      /* =========================
+     PAYMENT CONFIRMED
+  ========================= */
         uploadReceiptBtn.textContent = "Payment confirmed ✓";
 
         uploadReceiptBtn.disabled = true;
 
         cancelPaymentBtn.style.display = "none";
-      }
+      } else if (paymentStatus === "cancelled") {
 
-      if (paymentStatus === "cancelled") {
+      /* =========================
+     ORDER CANCELLED
+  ========================= */
         uploadReceiptBtn.style.display = "none";
 
         cancelPaymentBtn.textContent = "Order cancelled";
@@ -3257,6 +3256,7 @@
       renderReceiptDetails(order);
       renderPaymentMethods(order);
     }
+
     let activePaymentMethod = 0;
 
     const paymentMethodsTrack = document.getElementById("paymentMethodsTrack");
@@ -3406,68 +3406,143 @@
     function renderReceiptDetails(order) {
       const details = paymentSlide.querySelector(".bank-details");
 
-      if (!details) return;
+      if (!details) {
+        return;
+      }
 
-      const status = order.payment.status;
+      const status = order.payment?.status || "waiting";
+
+      /* =========================
+     WAITING
+  ========================= */
 
       if (status === "waiting") {
+        details.classList.remove("receipt-rejected-message");
+
         details.innerHTML = `
-        <p>CRDB BANK PLC</p>
+      <p>
+        Payment
+      </p>
 
-        <b>0150 1234 5678 900</b>
+      <b>
+        Choose a payment method above
+      </b>
 
-        <small>
-          Pay the exact amount shown above,
-          then upload your receipt.
-        </small>
-      `;
+      <small>
+        Pay the exact amount,
+        then upload your receipt.
+      </small>
+    `;
 
         return;
       }
+
+      /* =========================
+     RECEIPT UPLOADED
+  ========================= */
 
       if (status === "receipt_uploaded") {
+        details.classList.remove("receipt-rejected-message");
+
         details.innerHTML = `
-        <p>Receipt ID</p>
+      <p>
+        Receipt submitted
+      </p>
 
-        <b>${order.payment.receiptId}</b>
+      <b>
+        Waiting for seller
+      </b>
 
-        <small>
-          ${order.payment.receiptName || "Receipt uploaded"}
-          • Waiting for seller confirmation
-        </small>
-      `;
+      <small>
+        Your receipt has been sent
+        for verification.
+      </small>
+    `;
 
         return;
       }
+
+      /* =========================
+     REJECTED
+  ========================= */
+
+      if (status === "rejected") {
+        details.classList.add("receipt-rejected-message");
+
+        details.innerHTML = `
+      <p>
+        Payment issue
+      </p>
+
+      <b>
+        Receipt could not be verified
+      </b>
+
+      <small>
+        The seller could not verify
+        your receipt. Upload a new one
+        using the Change receipt button.
+      </small>
+    `;
+
+        return;
+      }
+
+      /* =========================
+     CONFIRMED
+  ========================= */
 
       if (status === "confirmed") {
+        details.classList.remove("receipt-rejected-message");
+
         details.innerHTML = `
-        <p>Payment status</p>
+      <p>
+        Payment status
+      </p>
 
-        <b>Confirmed ✓</b>
+      <b>
+        Confirmed ✓
+      </b>
 
-        <small>
-          The seller confirmed payment for
-          Order #${simpleOrderNumber(order.id)}.
-        </small>
-      `;
+      <small>
+        Payment for
+        Order #${simpleOrderNumber(order.id)}
+        has been confirmed.
+      </small>
+    `;
 
         return;
       }
 
+      /* =========================
+     CANCELLED
+  ========================= */
+
       if (status === "cancelled") {
+        details.classList.remove("receipt-rejected-message");
+
         details.innerHTML = `
-        <p>Order status</p>
+      <p>
+        Order status
+      </p>
 
-        <b>Cancelled</b>
+      <b>
+        Cancelled
+      </b>
 
-        <small>
-          Order #${simpleOrderNumber(order.id)} is no longer active.
-        </small>
-      `;
+      <small>
+        Order #${simpleOrderNumber(order.id)}
+        is no longer active.
+      </small>
+    `;
+
+        return;
       }
-    }
 
+      details.classList.remove("receipt-rejected-message");
+
+      details.innerHTML = "";
+    }
     /* =====================================================
      MASTER RENDERER
   ===================================================== */
@@ -3606,17 +3681,22 @@
     /* =====================================================
      RECEIPT UPLOAD
   ===================================================== */
-
     uploadReceiptBtn?.addEventListener("click", () => {
       const order = currentOrder();
 
-      if (!order) return;
+      if (!order) {
+        return;
+      }
 
-      // BEFORE PAYMENT RECEIPT IS UPLOADED
-      if (order.payment.status === "waiting") {
-        pauseAutoRotation();
+      const status = order.payment?.status || "waiting";
 
-        // reset so selecting the same image again still triggers change
+      pauseAutoRotation();
+
+      /* =========================
+       FIRST RECEIPT
+    ========================= */
+
+      if (status === "waiting") {
         receiptInput.value = "";
 
         receiptInput.click();
@@ -3624,24 +3704,47 @@
         return;
       }
 
-      // AFTER RECEIPT IS UPLOADED
-      if (order.payment.status === "receipt_uploaded") {
-        if (order.payment.receiptUrl) {
+      /* =========================
+       VIEW EXISTING RECEIPT
+    ========================= */
+
+      if (status === "receipt_uploaded") {
+        if (order.payment?.receiptUrl) {
           openReceiptViewer(order);
+        } else {
+          toast("Receipt image is unavailable.");
         }
 
         return;
       }
 
-      // PAYMENT ALREADY CONFIRMED
-      if (order.payment.status === "confirmed") {
+      /* =========================
+       CHANGE REJECTED RECEIPT
+    ========================= */
+
+      if (status === "rejected") {
+        receiptInput.value = "";
+
+        receiptInput.click();
+
+        return;
+      }
+
+      /* =========================
+       CONFIRMED
+    ========================= */
+
+      if (status === "confirmed") {
         toast("Payment already confirmed.");
 
         return;
       }
 
-      // ORDER CANCELLED
-      if (order.payment.status === "cancelled") {
+      /* =========================
+       CANCELLED
+    ========================= */
+
+      if (status === "cancelled") {
         toast("This order has been cancelled.");
       }
     });
