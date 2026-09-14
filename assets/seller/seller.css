@@ -6190,3 +6190,161 @@ body.dark .seller-payment-empty {
     grid-template-columns: 1fr;
   }
 }
+
+/* =========================================================
+   NGOXI SF EXPRESS FULFILLMENT
+========================================================= */
+
+.ngx-sf-shipping-box {
+  grid-column: 1 / -1;
+
+  margin-top: 4px;
+
+  padding: 12px;
+
+  border-radius: 13px;
+
+  border: 1px solid rgba(5, 128, 82, 0.12);
+
+  background: rgba(240, 251, 246, 0.85);
+}
+
+.ngx-sf-shipping-box label {
+  display: block;
+
+  margin-bottom: 7px;
+
+  color: #50635a;
+
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.ngx-sf-shipping-row {
+  display: grid;
+
+  grid-template-columns: auto minmax(160px, 1fr) auto;
+
+  gap: 8px;
+
+  align-items: center;
+}
+
+.ngx-sf-carrier {
+  height: 42px;
+
+  display: flex;
+  align-items: center;
+
+  padding: 0 12px;
+
+  border-radius: 9px;
+
+  color: #1f4c3b;
+
+  background: #ffffff;
+
+  border: 1px solid rgba(35, 79, 62, 0.14);
+
+  font-size: 12px;
+  font-weight: 750;
+
+  white-space: nowrap;
+}
+
+#sellerSFTrackingInput {
+  width: 100%;
+  height: 42px;
+
+  box-sizing: border-box;
+
+  padding: 0 13px;
+
+  border-radius: 9px;
+
+  border: 1px solid rgba(37, 81, 64, 0.16);
+
+  background: #ffffff;
+
+  color: #153d2e;
+
+  font-size: 13px;
+
+  outline: none;
+}
+
+#sellerSFTrackingInput:focus {
+  border-color: rgba(5, 150, 95, 0.55);
+
+  box-shadow: 0 0 0 3px rgba(5, 150, 95, 0.08);
+}
+
+.ngx-shipping-tracking-card {
+  grid-column: 1 / -1;
+
+  display: grid;
+
+  grid-template-columns: 1fr 1.4fr auto;
+
+  gap: 12px;
+
+  align-items: center;
+
+  padding: 12px 14px;
+
+  border-radius: 13px;
+
+  background: linear-gradient(135deg, #edf9f4, #f8fcfa);
+
+  border: 1px solid rgba(8, 132, 86, 0.13);
+}
+
+.ngx-shipping-tracking-card small {
+  display: block;
+
+  margin-bottom: 3px;
+
+  color: #829089;
+
+  font-size: 10px;
+}
+
+.ngx-shipping-tracking-card strong {
+  color: #183e30;
+
+  font-size: 12px;
+
+  overflow-wrap: anywhere;
+}
+
+.ngx-shipping-live-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+
+  padding: 7px 10px;
+
+  border-radius: 999px;
+
+  color: #17668d;
+
+  background: #e2f3fb;
+
+  font-size: 11px;
+  font-weight: 750;
+}
+
+.ngx-shipping-live-badge svg {
+  width: 14px;
+  height: 14px;
+}
+
+@media (max-width: 700px) {
+  .ngx-sf-shipping-row {
+    grid-template-columns: 1fr;
+  }
+
+  .ngx-shipping-tracking-card {
+    grid-template-columns: 1fr;
+  }
+}

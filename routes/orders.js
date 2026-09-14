@@ -578,6 +578,247 @@ router.post(
 );
 
 /* =========================================================
+   SELLER PAYMENT DECISION
+   PATCH /api/orders/:orderId/payment
+========================================================= */
+
+router.patch("/:orderId/payment", verifyToken, async (req, res) => {
+  try {
+    const sellerId = req.user?._id;
+
+    const orderId = String(req.params?.orderId || "").trim();
+
+    const action = String(req.body?.action || "")
+      .trim()
+      .toLowerCase();
+
+    if (!sellerId) {
+      return res.status(401).json({
+        error: "Not authorized",
+      });
+    }
+
+    if (!hasRole(req.user, "seller")) {
+      return res.status(403).json({
+        error: "Seller access required",
+      });
+    }
+
+    if (!validId(orderId)) {
+      return res.status(400).json({
+        error: "Invalid order ID",
+      });
+    }
+
+    if (action !== "confirm" && action !== "reject") {
+      return res.status(400).json({
+        error: "Action must be confirm or reject",
+      });
+    }
+
+    let order = await Order.findById(orderId);
+
+    if (!order) {
+      return res.status(404).json({
+        error: "Order not found",
+      });
+    }
+
+    /*
+        Seller can only control
+        their own order.
+      */
+    if (getMongoId(order.seller) !== getMongoId(sellerId)) {
+      return res.status(403).json({
+        error: "This order does not belong to you",
+      });
+    }
+
+    /*
+        Seller may only decide after
+        buyer has uploaded a receipt.
+      */
+    if (
+      order.status !== "receipt-uploaded" ||
+      order.payment?.status !== "receipt-uploaded" ||
+      !order.payment?.receiptUrl
+    ) {
+      return res.status(409).json({
+        error: "This order is not waiting for payment confirmation",
+      });
+    }
+
+    if (action === "confirm") {
+      order.payment.status = "confirmed";
+
+      order.payment.confirmedAt = new Date();
+
+      order.status = "payment-confirmed";
+    }
+
+    if (action === "reject") {
+      order.payment.status = "rejected";
+
+      order.payment.confirmedAt = undefined;
+
+      /*
+          Buyer may upload a replacement
+          receipt afterward.
+        */
+      order.status = "awaiting-payment";
+    }
+
+    await order.save();
+
+    order = await Order.findById(order._id)
+      .populate("buyer", "name email buyerProfile")
+      .populate("seller", "name storeName sellerProfile")
+      .populate("product", "name cover");
+
+    return res.status(200).json({
+      order: normalizeOrder(order),
+    });
+  } catch (error) {
+    console.error("❌ Seller payment decision failed:", error);
+
+    return res.status(500).json({
+      error: "Could not update payment",
+    });
+  }
+});
+
+/* =========================================================
+   SELLER CHINA SHIPPING
+   PATCH /api/orders/:orderId/shipping
+========================================================= */
+
+router.patch("/:orderId/shipping", verifyToken, async (req, res) => {
+  try {
+    const sellerId = req.user?._id;
+
+    const orderId = String(req.params?.orderId || "").trim();
+
+    const carrier = String(req.body?.carrier || "SF Express").trim();
+
+    const trackingNumber = String(req.body?.trackingNumber || "")
+      .trim()
+      .toUpperCase();
+
+    if (!sellerId) {
+      return res.status(401).json({
+        error: "Not authorized",
+      });
+    }
+
+    if (!hasRole(req.user, "seller")) {
+      return res.status(403).json({
+        error: "Seller access required",
+      });
+    }
+
+    if (!validId(orderId)) {
+      return res.status(400).json({
+        error: "Invalid order ID",
+      });
+    }
+
+    if (!trackingNumber) {
+      return res.status(400).json({
+        error: "Enter the SF tracking number",
+      });
+    }
+
+    /*
+        Keep this permissive enough for
+        different SF number formats,
+        while rejecting junk.
+      */
+    if (!/^[A-Z0-9-]{6,40}$/.test(trackingNumber)) {
+      return res.status(400).json({
+        error: "Invalid tracking number",
+      });
+    }
+
+    let order = await Order.findById(orderId);
+
+    if (!order) {
+      return res.status(404).json({
+        error: "Order not found",
+      });
+    }
+
+    if (getMongoId(order.seller) !== getMongoId(sellerId)) {
+      return res.status(403).json({
+        error: "This order does not belong to you",
+      });
+    }
+
+    /*
+        Cannot ship before payment
+        confirmation.
+      */
+    if (order.status !== "payment-confirmed") {
+      return res.status(409).json({
+        error: "Confirm payment before shipping",
+      });
+    }
+
+    /*
+        Prevent the same China tracking
+        number from being attached to
+        two different NgoXi orders.
+      */
+    const duplicate = await Order.findOne({
+      _id: {
+        $ne: order._id,
+      },
+
+      "inbound.chinaTrackingNumber": trackingNumber,
+    });
+
+    if (duplicate) {
+      return res.status(409).json({
+        error: "This tracking number is already attached to another order",
+      });
+    }
+
+    order.inbound = order.inbound || {};
+
+    order.inbound.chinaCarrier = carrier || "SF Express";
+
+    order.inbound.chinaTrackingNumber = trackingNumber;
+
+    /*
+        The existing inbound schema does
+        not contain "in-transit".
+
+        "in-china" means the package has
+        entered our China fulfillment flow.
+      */
+    order.inbound.status = "in-china";
+
+    order.status = "shipping";
+
+    await order.save();
+
+    order = await Order.findById(order._id)
+      .populate("buyer", "name email buyerProfile")
+      .populate("seller", "name storeName sellerProfile")
+      .populate("product", "name cover");
+
+    return res.status(200).json({
+      order: normalizeOrder(order),
+    });
+  } catch (error) {
+    console.error("❌ Mark order shipped failed:", error);
+
+    return res.status(500).json({
+      error: "Could not mark order as shipped",
+    });
+  }
+});
+
+/* =========================================================
    GET ONE ORDER
 
    GET /api/orders/:orderId

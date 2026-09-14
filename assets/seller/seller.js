@@ -1805,6 +1805,33 @@ function normalizeSellerOrder(order = {}) {
   };
 }
 
+function replaceSellerOrder(updatedOrder) {
+  const normalized = normalizeSellerOrder(updatedOrder);
+
+  const index = sellerOrdersState.findIndex(
+    (order) => String(order.id) === String(normalized.id),
+  );
+
+  if (index >= 0) {
+    sellerOrdersState[index] = normalized;
+  } else {
+    sellerOrdersState.unshift(normalized);
+  }
+
+  attachSellerOrdersToConversations();
+
+  updateOverview();
+
+  const activeFilter =
+    document.querySelector("[data-order].active")?.dataset?.order || "unfilled";
+
+  renderOrders(activeFilter);
+
+  renderSellerTransactionCenter();
+
+  return normalized;
+}
+
 function statusLabel(st) {
   if (st === ORDER_STATUS.UNFILLED) return "Awaiting payment";
   if (st === ORDER_STATUS.FILLED) return "Paid (waiting confirmation)";
@@ -2764,7 +2791,19 @@ function renderSellerTransactionCenter() {
   const orderActions = document.getElementById("sellerOrderActions");
 
   if (orderActions) {
-    orderActions.innerHTML = `
+    const mongoStatus = String(order.mongoStatus || "");
+
+    const trackingNumber = order.inbound?.chinaTrackingNumber || "";
+
+    const carrier = order.inbound?.chinaCarrier || "SF Express";
+
+    /* =========================
+     PAYMENT CONFIRMED
+     SHOW SHIPPING INPUT
+  ========================= */
+
+    if (mongoStatus === "payment-confirmed") {
+      orderActions.innerHTML = `
       <button
         type="button"
         class="
@@ -2773,44 +2812,173 @@ function renderSellerTransactionCenter() {
         "
         id="sellerOpenOrderDetails"
       >
-
-        <i
-          data-lucide="file-text"
-        ></i>
+        <i data-lucide="file-text"></i>
 
         <span>
           View order details
         </span>
-
       </button>
 
 
+      <div
+        class="ngx-sf-shipping-box"
+      >
+
+        <label
+          for="sellerSFTrackingInput"
+        >
+          China SF tracking
+        </label>
+
+        <div
+          class="ngx-sf-shipping-row"
+        >
+
+          <div
+            class="ngx-sf-carrier"
+          >
+            SF Express
+          </div>
+
+          <input
+            id="sellerSFTrackingInput"
+            type="text"
+            autocomplete="off"
+            placeholder="SF123456789..."
+            maxlength="40"
+          >
+
+          <button
+            type="button"
+            class="
+              ngx-premium-action-btn
+              primary
+            "
+            id="sellerMarkShippedBtn"
+          >
+            <i data-lucide="truck"></i>
+
+            <span>
+              Mark as shipped
+            </span>
+          </button>
+
+        </div>
+
+      </div>
+    `;
+    } else if (mongoStatus === "shipping") {
+
+    /* =========================
+     ALREADY SHIPPING
+  ========================= */
+      orderActions.innerHTML = `
       <button
         type="button"
         class="
           ngx-premium-action-btn
-          primary
+          secondary
         "
-        id="sellerShippingPlaceholder"
-        disabled
-        title="Shipping controls will be enabled after the fulfillment API is connected."
+        id="sellerOpenOrderDetails"
       >
-
-        <i
-          data-lucide="truck"
-        ></i>
+        <i data-lucide="file-text"></i>
 
         <span>
-          Mark as shipped
+          View order details
         </span>
+      </button>
 
+
+      <div
+        class="
+          ngx-shipping-tracking-card
+        "
+      >
+
+        <div>
+          <small>
+            China carrier
+          </small>
+
+          <strong>
+            ${sanitize(carrier)}
+          </strong>
+        </div>
+
+        <div>
+          <small>
+            Tracking number
+          </small>
+
+          <strong>
+            ${sanitize(trackingNumber || "—")}
+          </strong>
+        </div>
+
+        <div
+          class="
+            ngx-shipping-live-badge
+          "
+        >
+          <i data-lucide="truck"></i>
+          Shipping
+        </div>
+
+      </div>
+    `;
+    } else {
+
+    /* =========================
+     OTHER ORDER STATES
+  ========================= */
+      orderActions.innerHTML = `
+      <button
+        type="button"
+        class="
+          ngx-premium-action-btn
+          secondary
+        "
+        id="sellerOpenOrderDetails"
+      >
+        <i data-lucide="file-text"></i>
+
+        <span>
+          View order details
+        </span>
       </button>
     `;
+    }
 
     document
       .getElementById("sellerOpenOrderDetails")
       ?.addEventListener("click", () => {
         openOrderDetails(order.id);
+      });
+
+    document
+      .getElementById("sellerMarkShippedBtn")
+      ?.addEventListener("click", async () => {
+        const input = document.getElementById("sellerSFTrackingInput");
+
+        const tracking = input?.value?.trim().toUpperCase() || "";
+
+        if (!tracking) {
+          showToast("Enter the SF tracking number.", "error");
+
+          input?.focus();
+
+          return;
+        }
+
+        const confirmed = window.confirm(
+          `Mark Order #${order.id} as shipped with SF tracking ${tracking}?`,
+        );
+
+        if (!confirmed) {
+          return;
+        }
+
+        await markSellerOrderShipped(order.id, tracking);
       });
   }
 
@@ -2843,7 +3011,15 @@ function renderSellerPaymentSlide(order) {
 
   const rejectButton = document.getElementById("sellerRejectPaymentBtn");
 
+  const viewReceiptButton = document.getElementById("sellerViewReceiptBtn");
+
   const paymentStatus = order.payment?.status || "waiting";
+
+  const receiptUrl = order.payment?.receiptUrl || order.receiptImage || null;
+
+  /* ===========================
+     BASIC INFO
+  =========================== */
 
   if (amount) {
     amount.textContent = `TSh ${Number(order.price || 0).toLocaleString()}`;
@@ -2853,17 +3029,25 @@ function renderSellerPaymentSlide(order) {
     product.textContent = order.productName || "Product";
   }
 
+  /* ===========================
+     PAYMENT TITLE
+  =========================== */
+
   if (title) {
     if (paymentStatus === "receipt-uploaded") {
-      title.textContent = "Receipt uploaded";
+      title.textContent = "Receipt awaiting review";
     } else if (paymentStatus === "confirmed") {
-      title.textContent = "Payment confirmed";
+      title.textContent = "Payment confirmed ✓";
     } else if (paymentStatus === "rejected") {
-      title.textContent = "Payment problem";
+      title.textContent = "Receipt rejected";
     } else {
       title.textContent = "Waiting for payment";
     }
   }
+
+  /* ===========================
+     BUYER DETAILS
+  =========================== */
 
   if (details) {
     details.innerHTML = `
@@ -2897,7 +3081,9 @@ function renderSellerPaymentSlide(order) {
     `;
   }
 
-  const receiptUrl = order.payment?.receiptUrl || order.receiptImage || null;
+  /* ===========================
+     RECEIPT
+  =========================== */
 
   if (receiptPanel) {
     receiptPanel.hidden = !receiptUrl;
@@ -2907,29 +3093,184 @@ function renderSellerPaymentSlide(order) {
     receiptId.textContent = receiptUrl ? `Order #${order.id}` : "";
   }
 
-  /*
-    Keep actions disabled until
-    real backend payment endpoints exist.
-  */
-  if (confirmButton) {
-    confirmButton.hidden = true;
-  }
-
-  if (rejectButton) {
-    rejectButton.hidden = true;
-  }
-
-  const viewReceiptButton = document.getElementById("sellerViewReceiptBtn");
-
   if (viewReceiptButton) {
     viewReceiptButton.onclick = () => {
       if (!receiptUrl) {
         showToast("No receipt uploaded yet.", "info");
+
         return;
       }
 
       window.open(receiptUrl, "_blank", "noopener,noreferrer");
     };
+  }
+
+  /* ===========================
+     CONFIRM / REJECT
+  =========================== */
+
+  const canReview =
+    paymentStatus === "receipt-uploaded" &&
+    order.mongoStatus === "receipt-uploaded";
+
+  if (confirmButton) {
+    confirmButton.hidden = !canReview;
+
+    confirmButton.disabled = false;
+
+    confirmButton.textContent = "Confirm payment";
+
+    confirmButton.onclick = canReview
+      ? async () => {
+          const confirmed = window.confirm(
+            `Confirm payment for Order #${order.id}?`,
+          );
+
+          if (!confirmed) {
+            return;
+          }
+
+          await updateSellerPayment(order.id, "confirm");
+        }
+      : null;
+  }
+
+  if (rejectButton) {
+    rejectButton.hidden = !canReview;
+
+    rejectButton.disabled = false;
+
+    rejectButton.textContent = "Report problem";
+
+    rejectButton.onclick = canReview
+      ? async () => {
+          const confirmed = window.confirm(
+            "Reject this receipt and ask the buyer to upload another one?",
+          );
+
+          if (!confirmed) {
+            return;
+          }
+
+          await updateSellerPayment(order.id, "reject");
+        }
+      : null;
+  }
+
+  if (window.lucide?.createIcons) {
+    window.lucide.createIcons();
+  }
+}
+
+async function updateSellerPayment(orderId, action) {
+  try {
+    const confirmButton = document.getElementById("sellerConfirmPaymentBtn");
+
+    const rejectButton = document.getElementById("sellerRejectPaymentBtn");
+
+    if (confirmButton) {
+      confirmButton.disabled = true;
+    }
+
+    if (rejectButton) {
+      rejectButton.disabled = true;
+    }
+
+    showToast(
+      action === "confirm" ? "Confirming payment..." : "Updating payment...",
+      "info",
+    );
+
+    const response = await authorizedFetch(
+      `${API_BASE}/api/orders/${orderId}/payment`,
+      {
+        method: "PATCH",
+
+        headers: {
+          "Content-Type": "application/json",
+        },
+
+        body: JSON.stringify({
+          action,
+        }),
+      },
+    );
+
+    const data = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      throw new Error(data.error || "Could not update payment");
+    }
+
+    if (!data.order) {
+      throw new Error("Updated order was not returned");
+    }
+
+    replaceSellerOrder(data.order);
+
+    showToast(
+      action === "confirm" ? "Payment confirmed ✅" : "Receipt rejected.",
+      action === "confirm" ? "success" : "info",
+    );
+  } catch (error) {
+    console.error("Seller payment update failed:", error);
+
+    showToast(error.message || "Could not update payment", "error");
+
+    renderSellerTransactionCenter();
+  }
+}
+
+async function markSellerOrderShipped(orderId, trackingNumber) {
+  const button = document.getElementById("sellerMarkShippedBtn");
+
+  try {
+    if (button) {
+      button.disabled = true;
+
+      button.innerHTML = `
+        <span>
+          Saving...
+        </span>
+      `;
+    }
+
+    const response = await authorizedFetch(
+      `${API_BASE}/api/orders/${orderId}/shipping`,
+      {
+        method: "PATCH",
+
+        headers: {
+          "Content-Type": "application/json",
+        },
+
+        body: JSON.stringify({
+          carrier: "SF Express",
+
+          trackingNumber,
+        }),
+      },
+    );
+
+    const data = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      throw new Error(data.error || "Could not mark order shipped");
+    }
+
+    if (!data.order) {
+      throw new Error("Updated order was not returned");
+    }
+
+    replaceSellerOrder(data.order);
+
+    showToast("Order marked as shipped 🚚", "success");
+  } catch (error) {
+    console.error("Mark shipped failed:", error);
+
+    showToast(error.message || "Could not mark order shipped", "error");
+
+    renderSellerTransactionCenter();
   }
 }
 
