@@ -5473,3 +5473,20 @@ html[data-theme="dark"] #view-messages .ngx-message-meta {
 
   border-color: #a91f1f !important;
 }
+.receipt-rejected-message {
+  border-color: rgba(185, 28, 28, 0.18) !important;
+
+  background: linear-gradient(135deg, #fff3f3, #fff9f9) !important;
+}
+
+.receipt-rejected-message p {
+  color: #b42323 !important;
+}
+
+.receipt-rejected-message b {
+  color: #8f1f1f !important;
+}
+
+.receipt-rejected-message small {
+  color: #8d5c5c !important;
+}
