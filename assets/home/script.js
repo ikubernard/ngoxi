@@ -2942,6 +2942,10 @@
     const uploadReceiptBtn = document.getElementById("uploadReceiptBtn");
     const cancelPaymentBtn = document.getElementById("cancelPaymentBtn");
 
+    const cancelRejectedOrderBtn = document.getElementById(
+      "cancelRejectedOrderBtn",
+    );
+
     if (!center || !ordersTab || !paymentTab || !ordersSlide || !paymentSlide) {
       console.warn("NgoXi Transaction Center elements missing");
       return;
@@ -3171,6 +3175,24 @@
   ===================================================== */
 
     function renderPaymentSlide(order) {
+      const orderCancelled =
+        order.orderStatus === "cancelled" || order.status === "cancelled";
+      if (orderCancelled) {
+        uploadReceiptBtn.style.display = "none";
+
+        cancelPaymentBtn.textContent = "Order cancelled";
+
+        cancelPaymentBtn.disabled = true;
+
+        if (cancelRejectedOrderBtn) {
+          cancelRejectedOrderBtn.hidden = true;
+        }
+
+        renderReceiptDetails(order);
+        renderPaymentMethods(order);
+
+        return;
+      }
       const paymentStatus = order.payment?.status || "waiting";
 
       if (paymentProduct) {
@@ -3210,8 +3232,7 @@
 
         cancelPaymentBtn.textContent = "Cancel order";
       } else if (paymentStatus === "receipt_uploaded") {
-
-      /* =========================
+        /* =========================
      RECEIPT SENT
   ========================= */
         uploadReceiptBtn.textContent = "View receipt";
@@ -3220,20 +3241,27 @@
 
         cancelPaymentBtn.disabled = true;
       } else if (paymentStatus === "rejected") {
-
-      /* =========================
+        /* =========================
      SELLER REJECTED RECEIPT
   ========================= */
-        uploadReceiptBtn.textContent = "Change receipt";
+        if (cancelRejectedOrderBtn) {
+          cancelRejectedOrderBtn.hidden = true;
+        } else if (paymentStatus === "rejected") {
+          uploadReceiptBtn.textContent = "Change receipt";
 
-        uploadReceiptBtn.classList.add("receipt-rejected-btn");
+          uploadReceiptBtn.disabled = false;
 
-        cancelPaymentBtn.textContent = "Receipt rejected";
+          uploadReceiptBtn.classList.add("receipt-rejected-btn");
 
-        cancelPaymentBtn.disabled = true;
-      } else if (paymentStatus === "confirmed") {
+          cancelPaymentBtn.textContent = "View rejected receipt";
 
-      /* =========================
+          cancelPaymentBtn.disabled = false;
+
+          if (cancelRejectedOrderBtn) {
+            cancelRejectedOrderBtn.hidden = false;
+          }
+        }
+        /* =========================
      PAYMENT CONFIRMED
   ========================= */
         uploadReceiptBtn.textContent = "Payment confirmed ✓";
@@ -3242,8 +3270,7 @@
 
         cancelPaymentBtn.style.display = "none";
       } else if (paymentStatus === "cancelled") {
-
-      /* =========================
+        /* =========================
      ORDER CANCELLED
   ========================= */
         uploadReceiptBtn.style.display = "none";
@@ -3404,6 +3431,27 @@
   ===================================================== */
 
     function renderReceiptDetails(order) {
+      const orderCancelled =
+        order.orderStatus === "cancelled" || order.status === "cancelled";
+
+      if (orderCancelled) {
+        details.classList.remove("receipt-rejected-message");
+
+        details.innerHTML = `
+    <p>Order status</p>
+
+    <b>
+      Cancelled
+    </b>
+
+    <small>
+      Order #${simpleOrderNumber(order.id)} has been cancelled.
+    </small>
+  `;
+
+        return;
+      }
+
       const details = paymentSlide.querySelector(".bank-details");
 
       if (!details) {
@@ -3542,6 +3590,63 @@
       details.classList.remove("receipt-rejected-message");
 
       details.innerHTML = "";
+    }
+
+    async function cancelBuyerOrder(order) {
+      const confirmed = window.confirm(
+        `Cancel Order #${simpleOrderNumber(order.id)}?`,
+      );
+
+      if (!confirmed) {
+        return;
+      }
+
+      try {
+        pauseAutoRotation();
+
+        toast("Cancelling order...");
+
+        const response = await fetch(
+          `${API_BASE}/api/orders/${order.id}/cancel`,
+          {
+            method: "PATCH",
+
+            credentials: "include",
+          },
+        );
+
+        const data = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+          throw new Error(data.error || "Could not cancel order");
+        }
+
+        if (!data.order) {
+          throw new Error("Updated order was not returned");
+        }
+
+        const savedOrder = normalizeTransactionOrder(data.order);
+
+        const conversation = getActiveConversation();
+
+        if (conversation) {
+          const index = conversation.orders.findIndex(
+            (item) => String(item.id) === String(savedOrder.id),
+          );
+
+          if (index >= 0) {
+            conversation.orders[index] = savedOrder;
+          }
+
+          transactionCenterAPI?.setOrders(conversation.orders);
+        }
+
+        toast(`Order #${simpleOrderNumber(savedOrder.id)} cancelled`);
+      } catch (error) {
+        console.error("Cancel order failed:", error);
+
+        toast(error.message || "Could not cancel order");
+      }
     }
     /* =====================================================
      MASTER RENDERER
@@ -3824,38 +3929,54 @@
      CANCEL ORDER
   ===================================================== */
 
-    cancelPaymentBtn?.addEventListener("click", () => {
+    cancelPaymentBtn?.addEventListener("click", async () => {
       const order = currentOrder();
 
-      if (order.payment.status !== "waiting") {
+      if (!order) {
         return;
       }
 
-      const confirmed = window.confirm(
-        `Cancel Order #${simpleOrderNumber(order.id)}?`,
-      );
-
-      if (!confirmed) return;
-
-      order.payment.status = "cancelled";
-      order.orderStatus = "cancelled";
+      const paymentStatus = order.payment?.status || "waiting";
 
       pauseAutoRotation();
 
-      renderTransactionCenter();
+      /*
+      Rejected receipt:
+      this button becomes
+      "View rejected receipt"
+    */
+      if (paymentStatus === "rejected") {
+        if (order.payment?.receiptUrl) {
+          openReceiptViewer(order);
+        } else {
+          toast("Rejected receipt is unavailable.");
+        }
 
-      toast(`Order #${simpleOrderNumber(order.id)} cancelled`);
+        return;
+      }
 
       /*
-        BACKEND HOOK
-
-        await apiPost(
-          `${API_BASE}/api/orders/${order.id}/cancel`,
-          {}
-        );
-      */
+      Before receipt upload:
+      normal cancel button.
+    */
+      if (paymentStatus === "waiting") {
+        await cancelBuyerOrder(order);
+      }
     });
 
+    cancelRejectedOrderBtn?.addEventListener("click", async () => {
+      const order = currentOrder();
+
+      if (!order) {
+        return;
+      }
+
+      if (order.payment?.status !== "rejected") {
+        return;
+      }
+
+      await cancelBuyerOrder(order);
+    });
     /* =====================================================
      AUTO HERO SWITCH
 

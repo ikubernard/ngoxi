@@ -815,6 +815,105 @@ router.patch("/:orderId/shipping", verifyToken, async (req, res) => {
 });
 
 /* =========================================================
+   BUYER CANCEL ORDER
+   PATCH /api/orders/:orderId/cancel
+========================================================= */
+
+router.patch("/:orderId/cancel", verifyToken, async (req, res) => {
+  try {
+    const buyerId = req.user?._id;
+
+    const orderId = String(req.params?.orderId || "").trim();
+
+    if (!buyerId) {
+      return res.status(401).json({
+        error: "Not authorized",
+      });
+    }
+
+    if (!hasRole(req.user, "buyer")) {
+      return res.status(403).json({
+        error: "Buyer access required",
+      });
+    }
+
+    if (!validId(orderId)) {
+      return res.status(400).json({
+        error: "Invalid order ID",
+      });
+    }
+
+    let order = await Order.findById(orderId);
+
+    if (!order) {
+      return res.status(404).json({
+        error: "Order not found",
+      });
+    }
+
+    /*
+        Buyer may only cancel
+        their own order.
+      */
+    if (getMongoId(order.buyer) !== getMongoId(buyerId)) {
+      return res.status(403).json({
+        error: "This order does not belong to you",
+      });
+    }
+
+    /*
+        Fulfillment has already started.
+      */
+    const lockedStatuses = new Set([
+      "payment-confirmed",
+      "preparing",
+      "ready",
+      "shipping",
+      "delivered",
+      "cancelled",
+    ]);
+
+    if (lockedStatuses.has(order.status)) {
+      return res.status(409).json({
+        error: "This order can no longer be cancelled",
+      });
+    }
+
+    /*
+        Buyer can cancel:
+        - before receipt upload
+        - after rejected receipt
+      */
+    const paymentStatus = order.payment?.status || "waiting";
+
+    if (paymentStatus !== "waiting" && paymentStatus !== "rejected") {
+      return res.status(409).json({
+        error: "This order cannot be cancelled while payment is being reviewed",
+      });
+    }
+
+    order.status = "cancelled";
+
+    await order.save();
+
+    order = await Order.findById(order._id)
+      .populate("buyer", "name email buyerProfile")
+      .populate("seller", "name storeName sellerProfile")
+      .populate("product", "name cover");
+
+    return res.status(200).json({
+      order: normalizeOrder(order),
+    });
+  } catch (error) {
+    console.error("❌ Buyer cancel order failed:", error);
+
+    return res.status(500).json({
+      error: "Could not cancel order",
+    });
+  }
+});
+
+/* =========================================================
    GET ONE ORDER
 
    GET /api/orders/:orderId
