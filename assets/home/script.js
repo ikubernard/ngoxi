@@ -3175,8 +3175,54 @@
   ===================================================== */
 
     function renderPaymentSlide(order) {
+      const paymentStatus = order.payment?.status || "waiting";
+
       const orderCancelled =
         order.orderStatus === "cancelled" || order.status === "cancelled";
+
+      /* ===========================
+     BASIC PAYMENT INFO
+  =========================== */
+
+      if (paymentProduct) {
+        paymentProduct.textContent = order.product;
+      }
+
+      if (paymentAmount) {
+        paymentAmount.textContent = formatMoney(order.price);
+      }
+
+      if (paymentTitle) {
+        paymentTitle.textContent = orderCancelled
+          ? "Order Cancelled"
+          : paymentLabel(paymentStatus);
+      }
+
+      if (!uploadReceiptBtn || !cancelPaymentBtn) {
+        return;
+      }
+
+      /* ===========================
+     RESET EVERYTHING FIRST
+  =========================== */
+
+      uploadReceiptBtn.style.display = "";
+      cancelPaymentBtn.style.display = "";
+
+      uploadReceiptBtn.disabled = false;
+      cancelPaymentBtn.disabled = false;
+
+      uploadReceiptBtn.classList.remove("receipt-rejected-btn");
+
+      if (cancelRejectedOrderBtn) {
+        cancelRejectedOrderBtn.hidden = true;
+        cancelRejectedOrderBtn.disabled = false;
+      }
+
+      /* ===========================
+     ORDER CANCELLED
+  =========================== */
+
       if (orderCancelled) {
         uploadReceiptBtn.style.display = "none";
 
@@ -3193,91 +3239,71 @@
 
         return;
       }
-      const paymentStatus = order.payment?.status || "waiting";
 
-      if (paymentProduct) {
-        paymentProduct.textContent = order.product;
-      }
-
-      if (paymentAmount) {
-        paymentAmount.textContent = formatMoney(order.price);
-      }
-
-      if (paymentTitle) {
-        paymentTitle.textContent = paymentLabel(paymentStatus);
-      }
-
-      if (!uploadReceiptBtn || !cancelPaymentBtn) {
-        return;
-      }
-
-      /*
-    Reset the buttons first.
-    Each state below decides what they become.
-  */
-      uploadReceiptBtn.style.display = "";
-      cancelPaymentBtn.style.display = "";
-
-      uploadReceiptBtn.disabled = false;
-      cancelPaymentBtn.disabled = false;
-
-      uploadReceiptBtn.classList.remove("receipt-rejected-btn");
-
-      /* =========================
-     WAITING FOR BUYER PAYMENT
-  ========================= */
+      /* ===========================
+     WAITING FOR PAYMENT
+  =========================== */
 
       if (paymentStatus === "waiting") {
         uploadReceiptBtn.textContent = "I have paid • Upload receipt";
 
         cancelPaymentBtn.textContent = "Cancel order";
       } else if (paymentStatus === "receipt_uploaded") {
-        /* =========================
-     RECEIPT SENT
-  ========================= */
+
+      /* ===========================
+     RECEIPT UNDER REVIEW
+  =========================== */
         uploadReceiptBtn.textContent = "View receipt";
 
         cancelPaymentBtn.textContent = "Waiting for seller";
 
         cancelPaymentBtn.disabled = true;
       } else if (paymentStatus === "rejected") {
-        /* =========================
-     SELLER REJECTED RECEIPT
-  ========================= */
+
+      /* ===========================
+     RECEIPT REJECTED
+  =========================== */
+        uploadReceiptBtn.textContent = "Change receipt";
+
+        uploadReceiptBtn.disabled = false;
+
+        uploadReceiptBtn.classList.add("receipt-rejected-btn");
+
+        cancelPaymentBtn.style.display = "";
+
+        cancelPaymentBtn.textContent = "View rejected receipt";
+
+        cancelPaymentBtn.disabled = false;
+
         if (cancelRejectedOrderBtn) {
-          cancelRejectedOrderBtn.hidden = true;
-        } else if (paymentStatus === "rejected") {
-          uploadReceiptBtn.textContent = "Change receipt";
+          cancelRejectedOrderBtn.hidden = false;
 
-          uploadReceiptBtn.disabled = false;
-
-          uploadReceiptBtn.classList.add("receipt-rejected-btn");
-
-          cancelPaymentBtn.textContent = "View rejected receipt";
-
-          cancelPaymentBtn.disabled = false;
-
-          if (cancelRejectedOrderBtn) {
-            cancelRejectedOrderBtn.hidden = false;
-          }
+          cancelRejectedOrderBtn.disabled = false;
         }
-        /* =========================
+      } else if (paymentStatus === "confirmed") {
+
+      /* ===========================
      PAYMENT CONFIRMED
-  ========================= */
+  =========================== */
         uploadReceiptBtn.textContent = "Payment confirmed ✓";
 
         uploadReceiptBtn.disabled = true;
 
         cancelPaymentBtn.style.display = "none";
-      } else if (paymentStatus === "cancelled") {
-        /* =========================
-     ORDER CANCELLED
-  ========================= */
-        uploadReceiptBtn.style.display = "none";
 
-        cancelPaymentBtn.textContent = "Order cancelled";
+        if (cancelRejectedOrderBtn) {
+          cancelRejectedOrderBtn.hidden = true;
+        }
+      } else {
 
-        cancelPaymentBtn.disabled = true;
+      /* ===========================
+     UNKNOWN / FALLBACK
+  =========================== */
+        uploadReceiptBtn.textContent = "Payment";
+
+        uploadReceiptBtn.disabled = true;
+
+        cancelPaymentBtn.style.display = "none";
       }
 
       renderReceiptDetails(order);
