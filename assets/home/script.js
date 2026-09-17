@@ -3249,8 +3249,7 @@
 
         cancelPaymentBtn.textContent = "Cancel order";
       } else if (paymentStatus === "receipt_uploaded") {
-
-      /* ===========================
+        /* ===========================
      RECEIPT UNDER REVIEW
   =========================== */
         uploadReceiptBtn.textContent = "View receipt";
@@ -3259,8 +3258,7 @@
 
         cancelPaymentBtn.disabled = true;
       } else if (paymentStatus === "rejected") {
-
-      /* ===========================
+        /* ===========================
      RECEIPT REJECTED
   =========================== */
         uploadReceiptBtn.textContent = "Change receipt";
@@ -3281,8 +3279,7 @@
           cancelRejectedOrderBtn.disabled = false;
         }
       } else if (paymentStatus === "confirmed") {
-
-      /* ===========================
+        /* ===========================
      PAYMENT CONFIRMED
   =========================== */
         uploadReceiptBtn.textContent = "Payment confirmed ✓";
@@ -3295,8 +3292,7 @@
           cancelRejectedOrderBtn.hidden = true;
         }
       } else {
-
-      /* ===========================
+        /* ===========================
      UNKNOWN / FALLBACK
   =========================== */
         uploadReceiptBtn.textContent = "Payment";
@@ -4129,122 +4125,3 @@
   // Kickoff
   document.addEventListener("DOMContentLoaded", boot);
 })();
-
-// ======== Orders Mini Tabs ========
-document.querySelectorAll("#meOrders .pill").forEach((btn, i, all) => {
-  btn.addEventListener("click", () => {
-    all.forEach((b) => b.classList.remove("active"));
-    btn.classList.add("active");
-    const list = document.getElementById("meOrders");
-    let msg = "";
-    if (i === 0) msg = "No orders to be filled.";
-    if (i === 1) msg = "No filled orders yet.";
-    if (i === 2) msg = "No order history.";
-    list.querySelector(".mt16.muted").textContent = msg;
-  });
-});
-// 1) nav active icon swap (if not already)
-els.navBtns.forEach((btn) => {
-  btn.addEventListener("click", () => {
-    els.navBtns.forEach((b) => b.classList.remove("active"));
-    btn.classList.add("active");
-    const view = btn.dataset.view;
-    Object.entries(els.views).forEach(([k, el]) =>
-      el.classList.toggle("active", k === view),
-    );
-  });
-});
-
-// 2) ensure API works (serve over http, not file://)
-const isFile = location.protocol === "file:";
-if (isFile) {
-  console.warn("Open via http:// (not file://) so fetch works.");
-  // Optional: fallback to mock or show toast
-}
-document.querySelectorAll(".nav-btn").forEach((btn) => {
-  btn.onclick = () => {
-    const target = btn.dataset.view;
-
-    document.body.setAttribute("data-view", target);
-
-    document
-      .querySelectorAll(".view")
-      .forEach((v) => v.classList.remove("active"));
-    document.querySelector(`#view-${target}`).classList.add("active");
-
-    document
-      .querySelectorAll(".nav-btn")
-      .forEach((n) => n.classList.remove("active"));
-    btn.classList.add("active");
-  };
-});
-
-const qrButton = document.getElementById("qrBtn");
-
-if (qrButton) {
-  qrButton.addEventListener("click", () => {
-    alert("QR scanning coming soon.");
-  });
-}
-
-const uploadInput = document.getElementById("profileUpload");
-const previewImg = document.getElementById("profilePreview");
-document.getElementById("photoAddBtn").onclick = () => uploadInput.click();
-uploadInput.onchange = (e) => {
-  const file = e.target.files[0];
-  if (!file) return;
-  const url = URL.createObjectURL(file);
-  previewImg.src = url;
-  localStorage.setItem("profilePic", url);
-};
-
-/* =========================================================
-   NGOXI CATEGORY CAROUSEL
-   ========================================================= */
-
-const categoryStrip = document.querySelector(".category-strip");
-const categoryScroll = categoryStrip?.querySelector(".category-scroll");
-const categoryArrows = categoryStrip?.querySelectorAll(".category-arrow");
-
-if (categoryScroll && categoryArrows?.length >= 2) {
-  const leftArrow = categoryArrows[0];
-  const rightArrow = categoryArrows[1];
-
-  leftArrow.addEventListener("click", (event) => {
-    event.preventDefault();
-
-    categoryScroll.scrollBy({
-      left: -500,
-      behavior: "smooth",
-    });
-  });
-
-  rightArrow.addEventListener("click", (event) => {
-    event.preventDefault();
-
-    categoryScroll.scrollBy({
-      left: 500,
-      behavior: "smooth",
-    });
-  });
-
-  categoryScroll.querySelectorAll(".category").forEach((button) => {
-    button.addEventListener("click", () => {
-      categoryScroll.querySelectorAll(".category").forEach((item) => {
-        item.classList.remove("active");
-      });
-
-      button.classList.add("active");
-
-      button.scrollIntoView({
-        behavior: "smooth",
-        block: "nearest",
-        inline: "center",
-      });
-    });
-  });
-} else {
-  console.warn("Category carousel elements were not found.");
-}
-
-loadFavorites();
