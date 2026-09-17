@@ -60,7 +60,7 @@
       seller: [],
     },
   };
-
+  let currentUser = null;
   // Elements
   const $ = (sel, el = document) => el.querySelector(sel);
   const $$ = (sel, el = document) => Array.from(el.querySelectorAll(sel));
@@ -4086,7 +4086,7 @@
   // Boot
   // -----------------------------
   async function boot() {
-    const currentUser = await loadCurrentBuyer();
+    currentUser = await loadCurrentBuyer();
 
     if (!currentUser) {
       return;
