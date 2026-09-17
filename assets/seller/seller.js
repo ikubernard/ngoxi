@@ -2868,8 +2868,7 @@ function renderSellerTransactionCenter() {
       </div>
     `;
     } else if (mongoStatus === "shipping") {
-
-    /* =========================
+      /* =========================
      ALREADY SHIPPING
   ========================= */
       orderActions.innerHTML = `
@@ -2927,8 +2926,7 @@ function renderSellerTransactionCenter() {
       </div>
     `;
     } else {
-
-    /* =========================
+      /* =========================
      OTHER ORDER STATES
   ========================= */
       orderActions.innerHTML = `
