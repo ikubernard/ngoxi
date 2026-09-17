@@ -3013,6 +3013,8 @@ function renderSellerPaymentSlide(order) {
 
   const paymentStatus = order.payment?.status || "waiting";
 
+  const orderStatus = order.mongoStatus || order.status || "";
+
   const receiptUrl = order.payment?.receiptUrl || order.receiptImage || null;
 
   /* ===========================
@@ -3108,8 +3110,13 @@ function renderSellerPaymentSlide(order) {
   =========================== */
 
   const canReview =
+    orderStatus === "receipt-uploaded" &&
     paymentStatus === "receipt-uploaded" &&
-    order.mongoStatus === "receipt-uploaded";
+    Boolean(receiptUrl);
+
+  /* ===========================
+     CONFIRM PAYMENT
+  =========================== */
 
   if (confirmButton) {
     confirmButton.hidden = !canReview;
@@ -3118,41 +3125,49 @@ function renderSellerPaymentSlide(order) {
 
     confirmButton.textContent = "Confirm payment";
 
-    confirmButton.onclick = canReview
-      ? async () => {
-          const confirmed = window.confirm(
-            `Confirm payment for Order #${order.id}?`,
-          );
+    confirmButton.onclick = null;
 
-          if (!confirmed) {
-            return;
-          }
+    if (canReview) {
+      confirmButton.onclick = async () => {
+        const confirmed = window.confirm(
+          `Confirm payment for Order #${order.id}?`,
+        );
 
-          await updateSellerPayment(order.id, "confirm");
+        if (!confirmed) {
+          return;
         }
-      : null;
+
+        await updateSellerPayment(order.id, "confirm");
+      };
+    }
   }
+
+  /* ===========================
+     REJECT RECEIPT
+  =========================== */
 
   if (rejectButton) {
     rejectButton.hidden = !canReview;
 
     rejectButton.disabled = false;
 
-    rejectButton.textContent = "Report problem";
+    rejectButton.textContent = "Reject receipt";
 
-    rejectButton.onclick = canReview
-      ? async () => {
-          const confirmed = window.confirm(
-            "Reject this receipt and ask the buyer to upload another one?",
-          );
+    rejectButton.onclick = null;
 
-          if (!confirmed) {
-            return;
-          }
+    if (canReview) {
+      rejectButton.onclick = async () => {
+        const confirmed = window.confirm(
+          "Reject this receipt and ask the buyer to upload another one?",
+        );
 
-          await updateSellerPayment(order.id, "reject");
+        if (!confirmed) {
+          return;
         }
-      : null;
+
+        await updateSellerPayment(order.id, "reject");
+      };
+    }
   }
 
   if (window.lucide?.createIcons) {
@@ -3161,11 +3176,11 @@ function renderSellerPaymentSlide(order) {
 }
 
 async function updateSellerPayment(orderId, action) {
+  const confirmButton = document.getElementById("sellerConfirmPaymentBtn");
+
+  const rejectButton = document.getElementById("sellerRejectPaymentBtn");
+
   try {
-    const confirmButton = document.getElementById("sellerConfirmPaymentBtn");
-
-    const rejectButton = document.getElementById("sellerRejectPaymentBtn");
-
     if (confirmButton) {
       confirmButton.disabled = true;
     }
@@ -3175,7 +3190,7 @@ async function updateSellerPayment(orderId, action) {
     }
 
     showToast(
-      action === "confirm" ? "Confirming payment..." : "Updating payment...",
+      action === "confirm" ? "Confirming payment..." : "Rejecting receipt...",
       "info",
     );
 
@@ -3204,17 +3219,29 @@ async function updateSellerPayment(orderId, action) {
       throw new Error("Updated order was not returned");
     }
 
+    /*
+      Replace the local seller order
+      with the MongoDB version returned
+      by the server.
+    */
     replaceSellerOrder(data.order);
 
-    showToast(
-      action === "confirm" ? "Payment confirmed ✅" : "Receipt rejected.",
-      action === "confirm" ? "success" : "info",
-    );
+    if (action === "confirm") {
+      showToast("Payment confirmed ✓", "success");
+    } else {
+      showToast("Receipt rejected. Buyer can upload another receipt.", "info");
+    }
   } catch (error) {
     console.error("Seller payment update failed:", error);
 
     showToast(error.message || "Could not update payment", "error");
 
+    renderSellerTransactionCenter();
+  } finally {
+    /*
+      The renderer will decide whether
+      these buttons should remain visible.
+    */
     renderSellerTransactionCenter();
   }
 }
