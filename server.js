@@ -9,6 +9,7 @@ import dotenv from "dotenv";
 import cors from "cors";
 import bodyParser from "body-parser";
 import cookieParser from "cookie-parser";
+import jwt from "jsonwebtoken";
 import { Server } from "socket.io";
 import http from "http";
 import fs from "fs";
@@ -160,7 +161,60 @@ app.get("/role-select", (req, res) => {
 const server = http.createServer(app);
 
 const io = new Server(server, {
-  cors: { origin: "*" },
+  cors: {
+    origin: allowedOrigins,
+    credentials: true,
+  },
+});
+function parseCookieHeader(cookieHeader = "") {
+  return cookieHeader.split(";").reduce((cookies, part) => {
+    const index = part.indexOf("=");
+
+    if (index === -1) {
+      return cookies;
+    }
+
+    const key = part.slice(0, index).trim();
+    const value = part.slice(index + 1).trim();
+
+    if (key) {
+      cookies[key] = decodeURIComponent(value);
+    }
+
+    return cookies;
+  }, {});
+}
+
+io.use((socket, next) => {
+  try {
+    const cookies = parseCookieHeader(socket.handshake.headers.cookie || "");
+
+    const token = cookies.ngoxi_auth;
+
+    if (!token) {
+      return next(new Error("Authentication required"));
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    const userId = String(decoded.id || decoded._id || "");
+
+    if (!userId) {
+      return next(new Error("Invalid session"));
+    }
+
+    socket.data.userId = userId;
+
+    socket.data.roles = Array.isArray(decoded.roles)
+      ? decoded.roles.map((role) => String(role).toLowerCase())
+      : [];
+
+    next();
+  } catch (error) {
+    console.error("Socket authentication failed:", error.message);
+
+    next(new Error("Invalid or expired session"));
+  }
 });
 
 // ---- Track online users ----
@@ -191,85 +245,67 @@ function saveChat(msg) {
 // ✅ SOCKET EVENTS
 // ============================
 io.on("connection", (socket) => {
-  console.log("✅ New socket connected:", socket.id);
+  const userId = socket.data.userId;
+  const roles = socket.data.roles || [];
 
-  socket.on("join", ({ userId, role }) => {
-    if (!userId) return;
+  console.log("✅ Authenticated socket connected:", socket.id, userId, roles);
 
-    const r = (role || "buyer").toLowerCase();
-    socket.data.userId = userId;
-    socket.data.role = r;
+  socket.join(`user:${userId}`);
 
-    socket.join(userId);
-    if (r === "admin") socket.join("admin-room");
+  if (roles.includes("buyer")) {
+    globalThis.online.buyers.add(userId);
+  }
 
-    if (r === "buyer") globalThis.online.buyers.add(userId);
-    if (r === "seller") globalThis.online.sellers.add(userId);
-    if (r === "admin") globalThis.online.admins.add(userId);
+  if (roles.includes("seller")) {
+    globalThis.online.sellers.add(userId);
+  }
+
+  if (roles.includes("admin")) {
+    globalThis.online.admins.add(userId);
+    socket.join("admin-room");
+  }
+
+  io.emit("onlineCounts", {
+    buyers: globalThis.online.buyers.size,
+    sellers: globalThis.online.sellers.size,
+    admins: globalThis.online.admins.size,
+  });
+
+  // =====================================
+  // YOUR OTHER SOCKET EVENTS STAY HERE
+  // chat:dm, chat:broadcast, etc.
+  // =====================================
+
+  // =====================================
+  // DISCONNECT - PUT IT NEAR THE BOTTOM
+  // =====================================
+  socket.on("disconnect", () => {
+    const userId = socket.data.userId;
+    const roles = socket.data.roles || [];
+
+    if (userId) {
+      if (roles.includes("buyer")) {
+        globalThis.online.buyers.delete(userId);
+      }
+
+      if (roles.includes("seller")) {
+        globalThis.online.sellers.delete(userId);
+      }
+
+      if (roles.includes("admin")) {
+        globalThis.online.admins.delete(userId);
+      }
+    }
 
     io.emit("onlineCounts", {
       buyers: globalThis.online.buyers.size,
       sellers: globalThis.online.sellers.size,
       admins: globalThis.online.admins.size,
     });
+
+    console.log("❌ Authenticated socket disconnected:", socket.id);
   });
-
-  // --- Direct DM chat ---
-  socket.on("chat:dm", (msg) => {
-    const payload = { ...msg, ts: new Date() };
-    saveChat(payload);
-
-    if (msg.toId) io.to(msg.toId).emit("chat:dm", payload);
-    if (msg.fromId) io.to(msg.fromId).emit("chat:dm", payload);
-  });
-
-  // --- Admin broadcast ---
-  socket.on("chat:broadcast", ({ fromId, segment, text }) => {
-    const payload = {
-      fromId,
-      fromRole: "admin",
-      text,
-      ts: new Date(),
-      broadcast: segment || "all",
-    };
-    saveChat(payload);
-
-    const seg = (segment || "all").toLowerCase();
-
-    if (seg === "buyers") {
-      globalThis.online.buyers.forEach((id) =>
-        io.to(id).emit("chat:notice", payload),
-      );
-    } else if (seg === "sellers") {
-      globalThis.online.sellers.forEach((id) =>
-        io.to(id).emit("chat:notice", payload),
-      );
-    } else if (seg === "admins") {
-      io.to("admin-room").emit("chat:notice", payload);
-    } else {
-      io.emit("chat:notice", payload);
-    }
-  });
-
-  // --- Disconnect ---
-  socket.on("disconnect", () => {
-    const { userId, role } = socket.data || {};
-
-    if (userId && role) {
-      if (role === "buyer") globalThis.online.buyers.delete(userId);
-      if (role === "seller") globalThis.online.sellers.delete(userId);
-      if (role === "admin") globalThis.online.admins.delete(userId);
-
-      io.emit("onlineCounts", {
-        buyers: globalThis.online.buyers.size,
-        sellers: globalThis.online.sellers.size,
-        admins: globalThis.online.admins.size,
-      });
-    }
-
-    console.log("❌ Socket disconnected", socket.id);
-  });
-});
+}); // ← io.on("connection") ENDS HERE
 
 // --- Chat history API ---
 app.get("/api/chat/history", (req, res) => {
