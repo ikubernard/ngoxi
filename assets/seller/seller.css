@@ -6348,3 +6348,43 @@ body.dark .seller-payment-empty {
     grid-template-columns: 1fr;
   }
 }
+.seller-message-menu {
+  position: fixed;
+  z-index: 99999;
+
+  min-width: 145px;
+  padding: 6px;
+
+  background: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 12px;
+
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.14);
+
+  overflow: hidden;
+}
+
+.seller-message-menu button {
+  display: block;
+  width: 100%;
+
+  padding: 10px 12px;
+
+  border: 0;
+  border-radius: 8px;
+
+  background: transparent;
+
+  text-align: left;
+  font: inherit;
+
+  cursor: pointer;
+}
+
+.seller-message-menu button:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.seller-message-menu button.danger {
+  color: #d33;
+}

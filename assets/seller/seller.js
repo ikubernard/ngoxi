@@ -4214,6 +4214,310 @@ function renderChatMessages() {
 
   body.scrollTop = body.scrollHeight;
 }
+function getSellerMessageById(messageId) {
+  const chat = findSellerConversation(activeChatId);
+
+  if (!chat) return null;
+
+  return (
+    chat.messages.find(
+      (message) =>
+        String(message._id || message.id || "") === String(messageId),
+    ) || null
+  );
+}
+
+function closeSellerMessageMenu() {
+  document.getElementById("sellerMessageMenu")?.remove();
+}
+
+function openSellerMessageMenu(message, bubble, x, y) {
+  closeSellerMessageMenu();
+
+  if (!message || !bubble) return;
+
+  const messageRole =
+    message.senderRole === "seller" || message.senderRole === "buyer"
+      ? message.senderRole
+      : message.from || "";
+
+  const isMine = messageRole === "seller";
+
+  // -----------------------------------------
+  // EDIT LIMIT: 15 MINUTES
+  // -----------------------------------------
+
+  const EDIT_WINDOW_MS = 15 * 60 * 1000;
+
+  const createdAt = new Date(message.createdAt || message.ts || 0).getTime();
+
+  const canEdit =
+    isMine && createdAt && Date.now() - createdAt <= EDIT_WINDOW_MS;
+
+  const menu = document.createElement("div");
+
+  menu.id = "sellerMessageMenu";
+  menu.className = "seller-message-menu";
+
+  menu.innerHTML = `
+    <button
+      type="button"
+      data-seller-message-action="copy"
+    >
+      Copy
+    </button>
+
+    ${
+      isMine && canEdit
+        ? `
+          <button
+            type="button"
+            data-seller-message-action="edit"
+          >
+            Edit
+          </button>
+        `
+        : ""
+    }
+
+    ${
+      isMine
+        ? `
+          <button
+            type="button"
+            data-seller-message-action="delete"
+            class="danger"
+          >
+            Delete
+          </button>
+        `
+        : ""
+    }
+  `;
+
+  document.body.appendChild(menu);
+
+  menu.dataset.messageId = String(message._id || message.id || "");
+
+  const menuWidth = 150;
+
+  const menuHeight = isMine && canEdit ? 132 : isMine ? 90 : 46;
+
+  menu.style.left = `${Math.min(x, window.innerWidth - menuWidth - 12)}px`;
+
+  menu.style.top = `${Math.min(y, window.innerHeight - menuHeight - 12)}px`;
+}
+async function copySellerMessage(message) {
+  const text = String(message?.text || "");
+
+  if (!text) return;
+
+  try {
+    await navigator.clipboard.writeText(text);
+
+    showToast("Message copied", "success");
+  } catch (error) {
+    console.error("❌ Copy message failed:", error);
+
+    showToast("Could not copy message", "error");
+  }
+}
+async function editSellerMessage(message) {
+  const chat = findSellerConversation(activeChatId);
+
+  if (!chat || !message) return;
+
+  const currentText = String(message.text || "");
+
+  const newText = window.prompt("Edit message", currentText);
+
+  if (newText === null) {
+    return;
+  }
+
+  const cleanText = newText.trim();
+
+  if (!cleanText || cleanText === currentText) {
+    return;
+  }
+
+  const conversationId = chat._id || chat.id;
+
+  const messageId = message._id || message.id;
+
+  if (!conversationId || !messageId) {
+    showToast("Message information is missing", "error");
+    return;
+  }
+
+  try {
+    const response = await authorizedFetch(
+      `${API_BASE}/api/chats/${conversationId}/messages/${messageId}`,
+      {
+        method: "PATCH",
+
+        headers: {
+          "Content-Type": "application/json",
+        },
+
+        body: JSON.stringify({
+          text: cleanText,
+        }),
+      },
+    );
+
+    const data = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      throw new Error(data.error || "Could not edit message");
+    }
+
+    message.text = data.message?.text || cleanText;
+
+    if (data.message?.updatedAt) {
+      message.updatedAt = data.message.updatedAt;
+    }
+
+    renderChatMessages();
+    renderSellerConversationList();
+
+    showToast("Message edited", "success");
+  } catch (error) {
+    console.error("❌ Edit seller message failed:", error);
+
+    showToast(error.message || "Could not edit message", "error");
+  }
+}
+async function deleteSellerMessage(message) {
+  const chat = findSellerConversation(activeChatId);
+
+  if (!chat || !message) return;
+
+  const confirmed = window.confirm("Delete this message?");
+
+  if (!confirmed) {
+    return;
+  }
+
+  const conversationId = chat._id || chat.id;
+
+  const messageId = message._id || message.id;
+
+  if (!conversationId || !messageId) {
+    showToast("Message information is missing", "error");
+    return;
+  }
+
+  try {
+    const response = await authorizedFetch(
+      `${API_BASE}/api/chats/${conversationId}/messages/${messageId}`,
+      {
+        method: "DELETE",
+      },
+    );
+
+    const data = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      throw new Error(data.error || "Could not delete message");
+    }
+
+    chat.messages = chat.messages.filter(
+      (item) => String(item._id || item.id || "") !== String(messageId),
+    );
+
+    renderChatMessages();
+    renderSellerConversationList();
+
+    showToast("Message deleted", "success");
+  } catch (error) {
+    console.error("❌ Delete seller message failed:", error);
+
+    showToast(error.message || "Could not delete message", "error");
+  }
+}
+document.addEventListener("click", async (event) => {
+  const actionButton = event.target.closest(
+    "#sellerMessageMenu [data-seller-message-action]",
+  );
+
+  if (!actionButton) {
+    if (!event.target.closest("#sellerMessageMenu")) {
+      closeSellerMessageMenu();
+    }
+
+    return;
+  }
+
+  const menu = document.getElementById("sellerMessageMenu");
+
+  const messageId = menu?.dataset.messageId;
+
+  const message = getSellerMessageById(messageId);
+
+  const action = actionButton.dataset.sellerMessageAction;
+
+  closeSellerMessageMenu();
+
+  if (!message) return;
+
+  if (action === "copy") {
+    await copySellerMessage(message);
+    return;
+  }
+
+  if (action === "edit") {
+    await editSellerMessage(message);
+    return;
+  }
+
+  if (action === "delete") {
+    await deleteSellerMessage(message);
+  }
+});
+const sellerChatBody = document.getElementById("sellerChatMessages");
+
+sellerChatBody?.addEventListener("contextmenu", (event) => {
+  const bubble = event.target.closest(".bubble[data-message-id]");
+
+  if (!bubble) return;
+
+  event.preventDefault();
+
+  const message = getSellerMessageById(bubble.dataset.messageId);
+
+  if (!message) return;
+
+  openSellerMessageMenu(message, bubble, event.clientX, event.clientY);
+});
+let sellerMessageLongPressTimer = null;
+
+sellerChatBody?.addEventListener("pointerdown", (event) => {
+  const bubble = event.target.closest(".bubble[data-message-id]");
+
+  if (!bubble) return;
+
+  sellerMessageLongPressTimer = setTimeout(() => {
+    const message = getSellerMessageById(bubble.dataset.messageId);
+
+    if (!message) return;
+
+    const rect = bubble.getBoundingClientRect();
+
+    openSellerMessageMenu(
+      message,
+      bubble,
+      rect.left + rect.width / 2,
+      rect.top + 10,
+    );
+  }, 550);
+});
+
+["pointerup", "pointercancel", "pointermove"].forEach((eventName) => {
+  sellerChatBody?.addEventListener(eventName, () => {
+    clearTimeout(sellerMessageLongPressTimer);
+  });
+});
 function addMessage(chatId, from, text) {
   const chat = findSellerConversation(chatId);
   if (!chat) return;
