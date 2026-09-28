@@ -1727,7 +1727,6 @@
 
   function renderActiveConversationMessages() {
     const conversation = getActiveConversation();
-
     const chatBody = document.getElementById("chatBody");
 
     if (!conversation || !chatBody) {
@@ -1738,30 +1737,36 @@
 
     conversation.messages.forEach((message) => {
       const bubble = document.createElement("div");
+
+      // MongoDB message ID
       const messageId = String(message._id || message.id || "");
 
       if (messageId) {
         bubble.dataset.messageId = messageId;
       }
 
-      bubble.dataset.messageRole = messageRole;
+      // Backend senderRole is the source of truth.
+      // message.sender is only a fallback for older messages.
       const messageRole =
         message.senderRole === "buyer" || message.senderRole === "seller"
           ? message.senderRole
           : message.sender;
 
+      bubble.dataset.messageRole = messageRole;
+
       bubble.className =
         messageRole === "buyer" ? "ngx-message buyer" : "ngx-message seller";
-      bubble.innerHTML = `
-        <div class="ngx-message-text">
-          ${escapeHTML(message.text || "")}
-        </div>
 
-        <small>
-          ${formatChatTime(message.createdAt)}
-        </small>
-      `;
-      div.dataset.messageRole = messageRole;
+      bubble.innerHTML = `
+      <div class="ngx-message-text">
+        ${escapeHTML(message.text || "")}
+      </div>
+
+      <small>
+        ${formatChatTime(message.createdAt)}
+      </small>
+    `;
+
       chatBody.appendChild(bubble);
     });
 
