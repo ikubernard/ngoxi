@@ -4147,11 +4147,6 @@ function renderChatMessages() {
 
   chat.messages.forEach((m) => {
     const div = document.createElement("div");
-    const messageId = String(m._id || m.id || "");
-
-    if (messageId) {
-      div.dataset.messageId = messageId;
-    }
 
     const messageRole =
       m.senderRole === "seller" || m.senderRole === "buyer"
@@ -4159,7 +4154,15 @@ function renderChatMessages() {
         : m.from === "seller" || m.from === "buyer"
           ? m.from
           : "";
+
+    const messageId = String(m._id || m.id || "");
+
+    if (messageId) {
+      div.dataset.messageId = messageId;
+    }
+
     div.dataset.messageRole = messageRole;
+
     let cls = "bubble";
 
     if (messageRole === "seller") {

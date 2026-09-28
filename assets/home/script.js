@@ -1773,6 +1773,272 @@
     chatBody.scrollTop = chatBody.scrollHeight;
   }
 
+  function getBuyerMessageById(messageId) {
+    const conversation = getActiveConversation();
+
+    if (!conversation) return null;
+
+    return (
+      conversation.messages.find(
+        (message) =>
+          String(message._id || message.id || "") === String(messageId),
+      ) || null
+    );
+  }
+
+  function closeBuyerMessageMenu() {
+    document.getElementById("ngxMessageMenu")?.remove();
+  }
+
+  function openBuyerMessageMenu(message, bubble, x, y) {
+    closeBuyerMessageMenu();
+
+    if (!message || !bubble) return;
+
+    const messageRole =
+      message.senderRole === "buyer" || message.senderRole === "seller"
+        ? message.senderRole
+        : message.sender;
+
+    const isMine = messageRole === "buyer";
+
+    const menu = document.createElement("div");
+
+    menu.id = "ngxMessageMenu";
+    menu.className = "ngx-message-menu";
+
+    menu.innerHTML = `
+    <button type="button" data-message-action="copy">
+      Copy
+    </button>
+
+    ${
+      isMine
+        ? `
+          <button type="button" data-message-action="edit">
+            Edit
+          </button>
+
+          <button
+            type="button"
+            data-message-action="delete"
+            class="danger"
+          >
+            Delete
+          </button>
+        `
+        : ""
+    }
+  `;
+
+    document.body.appendChild(menu);
+
+    const menuWidth = 150;
+    const menuHeight = isMine ? 132 : 46;
+
+    menu.style.left = `${Math.min(x, window.innerWidth - menuWidth - 12)}px`;
+
+    menu.style.top = `${Math.min(y, window.innerHeight - menuHeight - 12)}px`;
+
+    menu.dataset.messageId = String(message._id || message.id || "");
+  }
+
+  async function copyBuyerMessage(message) {
+    const text = String(message?.text || "");
+
+    if (!text) return;
+
+    try {
+      await navigator.clipboard.writeText(text);
+      toast("Message copied");
+    } catch (error) {
+      console.error("Copy failed:", error);
+      toast("Could not copy message");
+    }
+  }
+
+  async function editBuyerMessage(message) {
+    const conversation = getActiveConversation();
+
+    if (!conversation || !message) return;
+
+    const currentText = String(message.text || "");
+
+    const newText = window.prompt("Edit message", currentText);
+
+    if (newText === null) return;
+
+    const cleanText = newText.trim();
+
+    if (!cleanText || cleanText === currentText) {
+      return;
+    }
+
+    const conversationId = conversation.conversationId || conversation.id;
+
+    const messageId = message._id || message.id;
+
+    try {
+      const response = await fetch(
+        `${API_BASE}/api/chats/${conversationId}/messages/${messageId}`,
+        {
+          method: "PATCH",
+
+          headers: {
+            "Content-Type": "application/json",
+          },
+
+          credentials: "include",
+
+          body: JSON.stringify({
+            text: cleanText,
+          }),
+        },
+      );
+
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(data.error || "Could not edit message");
+      }
+
+      message.text = data.message?.text || cleanText;
+
+      renderActiveConversationMessages();
+      renderConversationList();
+
+      toast("Message edited");
+    } catch (error) {
+      console.error("Edit message failed:", error);
+      toast(error.message || "Could not edit message");
+    }
+  }
+  async function deleteBuyerMessage(message) {
+    const conversation = getActiveConversation();
+
+    if (!conversation || !message) return;
+
+    const confirmed = window.confirm("Delete this message?");
+
+    if (!confirmed) return;
+
+    const conversationId = conversation.conversationId || conversation.id;
+
+    const messageId = message._id || message.id;
+
+    try {
+      const response = await fetch(
+        `${API_BASE}/api/chats/${conversationId}/messages/${messageId}`,
+        {
+          method: "DELETE",
+          credentials: "include",
+        },
+      );
+
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(data.error || "Could not delete message");
+      }
+
+      conversation.messages = conversation.messages.filter(
+        (item) => String(item._id || item.id || "") !== String(messageId),
+      );
+
+      renderActiveConversationMessages();
+      renderConversationList();
+
+      toast("Message deleted");
+    } catch (error) {
+      console.error("Delete message failed:", error);
+      toast(error.message || "Could not delete message");
+    }
+  }
+
+  document.addEventListener("click", async (event) => {
+    const actionButton = event.target.closest(
+      "#ngxMessageMenu [data-message-action]",
+    );
+
+    if (!actionButton) {
+      if (!event.target.closest("#ngxMessageMenu")) {
+        closeBuyerMessageMenu();
+      }
+
+      return;
+    }
+
+    const menu = document.getElementById("ngxMessageMenu");
+
+    const messageId = menu?.dataset.messageId;
+
+    const message = getBuyerMessageById(messageId);
+
+    const action = actionButton.dataset.messageAction;
+
+    closeBuyerMessageMenu();
+
+    if (!message) return;
+
+    if (action === "copy") {
+      await copyBuyerMessage(message);
+      return;
+    }
+
+    if (action === "edit") {
+      await editBuyerMessage(message);
+      return;
+    }
+
+    if (action === "delete") {
+      await deleteBuyerMessage(message);
+    }
+  });
+  const buyerChatBody = document.getElementById("chatBody");
+
+  buyerChatBody?.addEventListener("contextmenu", (event) => {
+    const bubble = event.target.closest(".ngx-message[data-message-id]");
+
+    if (!bubble) return;
+
+    event.preventDefault();
+
+    const message = getBuyerMessageById(bubble.dataset.messageId);
+
+    if (!message) return;
+
+    openBuyerMessageMenu(message, bubble, event.clientX, event.clientY);
+  });
+
+  let buyerMessageLongPressTimer = null;
+
+  buyerChatBody?.addEventListener("pointerdown", (event) => {
+    const bubble = event.target.closest(".ngx-message[data-message-id]");
+
+    if (!bubble) return;
+
+    buyerMessageLongPressTimer = setTimeout(() => {
+      const message = getBuyerMessageById(bubble.dataset.messageId);
+
+      if (!message) return;
+
+      const rect = bubble.getBoundingClientRect();
+
+      openBuyerMessageMenu(
+        message,
+        bubble,
+        rect.left + rect.width / 2,
+        rect.top + 10,
+      );
+    }, 550);
+  });
+
+  ["pointerup", "pointercancel", "pointermove"].forEach((eventName) => {
+    buyerChatBody?.addEventListener(eventName, () => {
+      clearTimeout(buyerMessageLongPressTimer);
+    });
+  });
+
   function openSellerConversation(sellerId) {
     sellerId = String(sellerId);
 
