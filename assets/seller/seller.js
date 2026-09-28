@@ -2547,7 +2547,15 @@ function getSellerConversationOrders() {
     return [];
   }
 
-  return Array.isArray(conversation.orders) ? conversation.orders : [];
+  const orders = Array.isArray(conversation.orders) ? conversation.orders : [];
+
+  return orders.filter((order) => {
+    const status = String(
+      order.mongoStatus || order.orderStatus || order.status || "",
+    ).toLowerCase();
+
+    return status !== "cancelled";
+  });
 }
 
 function getCurrentSellerOrder() {
@@ -4139,8 +4147,19 @@ function renderChatMessages() {
 
   chat.messages.forEach((m) => {
     const div = document.createElement("div");
-    const messageRole = m.senderRole || m.from || "";
+    const messageId = String(m._id || m.id || "");
 
+    if (messageId) {
+      div.dataset.messageId = messageId;
+    }
+
+    const messageRole =
+      m.senderRole === "seller" || m.senderRole === "buyer"
+        ? m.senderRole
+        : m.from === "seller" || m.from === "buyer"
+          ? m.from
+          : "";
+    div.dataset.messageRole = messageRole;
     let cls = "bubble";
 
     if (messageRole === "seller") {
@@ -4450,6 +4469,30 @@ if (dp) {
   const displayName = seller.storeName || seller.name || "Seller";
 
   avatar.textContent = getInitials(displayName);
+}
+
+async function copyChatMessage(text = "") {
+  const value = String(text || "");
+
+  if (!value) return;
+
+  try {
+    await navigator.clipboard.writeText(value);
+  } catch {
+    const textarea = document.createElement("textarea");
+
+    textarea.value = value;
+    textarea.style.position = "fixed";
+    textarea.style.opacity = "0";
+
+    document.body.appendChild(textarea);
+
+    textarea.select();
+
+    document.execCommand("copy");
+
+    textarea.remove();
+  }
 }
 
 /* ---------- Logout ---------- */

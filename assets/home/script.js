@@ -1738,10 +1738,20 @@
 
     conversation.messages.forEach((message) => {
       const bubble = document.createElement("div");
+      const messageId = String(message._id || message.id || "");
+
+      if (messageId) {
+        bubble.dataset.messageId = messageId;
+      }
+
+      bubble.dataset.messageRole = messageRole;
+      const messageRole =
+        message.senderRole === "buyer" || message.senderRole === "seller"
+          ? message.senderRole
+          : message.sender;
 
       bubble.className =
-        message.sender === "buyer" ? "ngx-message buyer" : "ngx-message seller";
-
+        messageRole === "buyer" ? "ngx-message buyer" : "ngx-message seller";
       bubble.innerHTML = `
         <div class="ngx-message-text">
           ${escapeHTML(message.text || "")}
@@ -1751,7 +1761,7 @@
           ${formatChatTime(message.createdAt)}
         </small>
       `;
-
+      div.dataset.messageRole = messageRole;
       chatBody.appendChild(bubble);
     });
 
@@ -2333,6 +2343,29 @@
       });
     }
 
+    async function copyChatMessage(text = "") {
+      const value = String(text || "");
+
+      if (!value) return;
+
+      try {
+        await navigator.clipboard.writeText(value);
+      } catch {
+        const textarea = document.createElement("textarea");
+
+        textarea.value = value;
+        textarea.style.position = "fixed";
+        textarea.style.opacity = "0";
+
+        document.body.appendChild(textarea);
+
+        textarea.select();
+
+        document.execCommand("copy");
+
+        textarea.remove();
+      }
+    }
     // -----------------------------------------
     // MESSAGE RENDERING
     // -----------------------------------------
@@ -4057,14 +4090,21 @@
     });
     transactionCenterAPI = {
       setOrders(orders = []) {
-        transactionOrders = Array.isArray(orders) ? orders : [];
+        const allOrders = Array.isArray(orders) ? orders : [];
+
+        transactionOrders = allOrders.filter((order) => {
+          const status = String(
+            order.orderStatus || order.status || "",
+          ).toLowerCase();
+
+          return status !== "cancelled";
+        });
 
         activeOrderIndex = 0;
         activePaymentMethod = 0;
 
         renderTransactionCenter();
       },
-
       getOrders() {
         return transactionOrders;
       },

@@ -392,4 +392,73 @@ router.delete(
     }
   },
 );
+router.patch(
+  "/:conversationId/messages/:messageId",
+  verifyToken,
+  async (req, res) => {
+    try {
+      const { conversationId, messageId } = req.params;
+
+      const text = String(req.body?.text || "").trim();
+
+      if (!text) {
+        return res.status(400).json({
+          error: "Message cannot be empty",
+        });
+      }
+
+      if (
+        !mongoose.Types.ObjectId.isValid(conversationId) ||
+        !mongoose.Types.ObjectId.isValid(messageId)
+      ) {
+        return res.status(400).json({
+          error: "Invalid conversation or message ID",
+        });
+      }
+
+      const chat = await Chat.findById(conversationId);
+
+      if (!chat) {
+        return res.status(404).json({
+          error: "Conversation not found",
+        });
+      }
+
+      if (!isParticipant(chat, req.user._id)) {
+        return res.status(403).json({
+          error: "You cannot access this conversation",
+        });
+      }
+
+      const message = chat.messages.id(messageId);
+
+      if (!message) {
+        return res.status(404).json({
+          error: "Message not found",
+        });
+      }
+
+      if (String(message.sender) !== String(req.user._id)) {
+        return res.status(403).json({
+          error: "You can only edit your own messages",
+        });
+      }
+
+      message.text = text;
+
+      await chat.save();
+
+      return res.json({
+        success: true,
+        message,
+      });
+    } catch (error) {
+      console.error("❌ Edit message failed:", error);
+
+      return res.status(500).json({
+        error: "Could not edit message",
+      });
+    }
+  },
+);
 export default router;
