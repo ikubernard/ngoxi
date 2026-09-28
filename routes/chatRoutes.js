@@ -443,7 +443,15 @@ router.patch(
           error: "You can only edit your own messages",
         });
       }
+      const EDIT_WINDOW_MS = 15 * 60 * 1000;
 
+      const createdAt = new Date(message.createdAt).getTime();
+
+      if (!createdAt || Date.now() - createdAt > EDIT_WINDOW_MS) {
+        return res.status(403).json({
+          error: "This message can no longer be edited",
+        });
+      }
       message.text = text;
 
       await chat.save();

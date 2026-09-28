@@ -1815,18 +1815,27 @@
     ${
       isMine
         ? `
-          <button type="button" data-message-action="edit">
-            Edit
-          </button>
+      ${
+        canEdit
+          ? `
+            <button
+              type="button"
+              data-message-action="edit"
+            >
+              Edit
+            </button>
+          `
+          : ""
+      }
 
-          <button
-            type="button"
-            data-message-action="delete"
-            class="danger"
-          >
-            Delete
-          </button>
-        `
+      <button
+        type="button"
+        data-message-action="delete"
+        class="danger"
+      >
+        Delete
+      </button>
+    `
         : ""
     }
   `;
