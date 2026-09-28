@@ -1802,6 +1802,17 @@
 
     const isMine = messageRole === "buyer";
 
+    // Edit is allowed only during the first 15 minutes
+    const EDIT_WINDOW_MS = 15 * 60 * 1000;
+
+    const createdAt = new Date(message.createdAt || message.ts || 0).getTime();
+
+    const canEdit =
+      isMine &&
+      Number.isFinite(createdAt) &&
+      createdAt > 0 &&
+      Date.now() - createdAt <= EDIT_WINDOW_MS;
+
     const menu = document.createElement("div");
 
     menu.id = "ngxMessageMenu";
