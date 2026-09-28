@@ -310,5 +310,86 @@ router.post("/:conversationId/messages", verifyToken, async (req, res) => {
     });
   }
 });
+/* =========================================================
+   DELETE MY MESSAGE
 
+   DELETE /api/chats/:conversationId/messages/:messageId
+========================================================= */
+
+router.delete(
+  "/:conversationId/messages/:messageId",
+  verifyToken,
+  async (req, res) => {
+    try {
+      const { conversationId, messageId } = req.params;
+      const userId = req.user?._id;
+
+      if (!userId) {
+        return res.status(401).json({
+          error: "Not authorized",
+        });
+      }
+
+      if (
+        !mongoose.Types.ObjectId.isValid(conversationId) ||
+        !mongoose.Types.ObjectId.isValid(messageId)
+      ) {
+        return res.status(400).json({
+          error: "Invalid conversation or message ID",
+        });
+      }
+
+      const chat = await Chat.findById(conversationId);
+
+      if (!chat) {
+        return res.status(404).json({
+          error: "Conversation not found",
+        });
+      }
+
+      if (!isParticipant(chat, userId)) {
+        return res.status(403).json({
+          error: "You cannot access this conversation",
+        });
+      }
+
+      const message = chat.messages.id(messageId);
+
+      if (!message) {
+        return res.status(404).json({
+          error: "Message not found",
+        });
+      }
+
+      // Only the person who sent the message can delete it.
+      if (String(message.sender) !== String(userId)) {
+        return res.status(403).json({
+          error: "You can only delete your own messages",
+        });
+      }
+
+      message.deleteOne();
+
+      // Recalculate conversation timestamp from newest remaining message.
+      const newestMessage = chat.messages[chat.messages.length - 1];
+
+      chat.lastMessageAt =
+        newestMessage?.createdAt || chat.updatedAt || new Date();
+
+      await chat.save();
+
+      return res.status(200).json({
+        success: true,
+        messageId,
+        conversationId,
+      });
+    } catch (error) {
+      console.error("❌ DELETE chat message failed:", error);
+
+      return res.status(500).json({
+        error: "Could not delete message",
+      });
+    }
+  },
+);
 export default router;
