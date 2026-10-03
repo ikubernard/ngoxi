@@ -3512,6 +3512,160 @@ async function loadSellerConversations() {
     }
   }
 }
+// =====================================================
+// SELLER REALTIME CHAT SYNC
+// =====================================================
+
+const sellerSocket = io(API_BASE, {
+  transports: ["websocket"],
+  withCredentials: true,
+  reconnection: true,
+});
+
+sellerSocket.on("connect", () => {
+  console.log("🟢 Seller realtime connected:", sellerSocket.id);
+});
+
+sellerSocket.on("connect_error", (error) => {
+  console.error("❌ Seller realtime connection failed:", error.message);
+});
+
+function findRealtimeSellerConversation(conversationId) {
+  return (
+    sellerChatState.conversations.find(
+      (conversation) =>
+        String(conversation._id || conversation.id || "") ===
+        String(conversationId || ""),
+    ) || null
+  );
+}
+
+sellerSocket.on("message:created", async ({ conversationId, message }) => {
+  if (!conversationId || !message) return;
+
+  let chat = findRealtimeSellerConversation(conversationId);
+
+  // Conversation was not loaded yet.
+  if (!chat) {
+    await loadSellerConversations();
+    chat = findRealtimeSellerConversation(conversationId);
+
+    if (!chat) return;
+  }
+
+  chat.messages = Array.isArray(chat.messages) ? chat.messages : [];
+
+  const messageId = String(message._id || message.id || "");
+
+  const existingIndex = chat.messages.findIndex(
+    (item) => String(item._id || item.id || "") === messageId,
+  );
+
+  // IMPORTANT:
+  // Preserve the role returned by the backend.
+  const senderRole =
+    message.senderRole === "buyer" || message.senderRole === "seller"
+      ? message.senderRole
+      : "";
+
+  const normalizedMessage = {
+    ...message,
+
+    senderRole,
+
+    from: senderRole,
+
+    text: message.text || "",
+
+    image: message.image || "",
+
+    ts: message.createdAt || Date.now(),
+  };
+
+  // UPSERT instead of push.
+  // Seller receives its own Socket.IO event too.
+  if (existingIndex >= 0) {
+    chat.messages[existingIndex] = {
+      ...chat.messages[existingIndex],
+      ...normalizedMessage,
+    };
+  } else {
+    chat.messages.push(normalizedMessage);
+  }
+
+  chat.lastMessageAt = message.createdAt || new Date().toISOString();
+
+  sellerChatState.activeConversation =
+    String(activeChatId || "") === String(conversationId)
+      ? chat
+      : sellerChatState.activeConversation;
+
+  renderSellerConversationList();
+
+  if (String(activeChatId || "") === String(conversationId)) {
+    renderChatMessages();
+  }
+});
+
+sellerSocket.on("message:updated", ({ conversationId, message }) => {
+  if (!conversationId || !message) return;
+
+  const chat = findRealtimeSellerConversation(conversationId);
+
+  if (!chat) return;
+
+  const messageId = String(message._id || message.id || "");
+
+  const index = chat.messages.findIndex(
+    (item) => String(item._id || item.id || "") === messageId,
+  );
+
+  if (index === -1) return;
+
+  const senderRole =
+    message.senderRole === "buyer" || message.senderRole === "seller"
+      ? message.senderRole
+      : chat.messages[index].senderRole;
+
+  chat.messages[index] = {
+    ...chat.messages[index],
+    ...message,
+
+    senderRole,
+
+    from: senderRole,
+
+    ts: message.createdAt || chat.messages[index].ts || Date.now(),
+  };
+
+  renderSellerConversationList();
+
+  if (String(activeChatId || "") === String(conversationId)) {
+    renderChatMessages();
+  }
+});
+
+sellerSocket.on("message:deleted", ({ conversationId, messageId }) => {
+  if (!conversationId || !messageId) return;
+
+  const chat = findRealtimeSellerConversation(conversationId);
+
+  if (!chat) return;
+
+  chat.messages = chat.messages.filter(
+    (message) => String(message._id || message.id || "") !== String(messageId),
+  );
+
+  const newest = chat.messages[chat.messages.length - 1];
+
+  chat.lastMessageAt = newest?.createdAt || newest?.ts || null;
+
+  renderSellerConversationList();
+
+  if (String(activeChatId || "") === String(conversationId)) {
+    renderChatMessages();
+  }
+});
 
 function formatTime(ts) {
   if (!ts) return "";
