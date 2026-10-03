@@ -1196,6 +1196,117 @@
     state.socket.on("disconnect", () => setStatus("offline"));
     state.socket.on("connect_error", () => setStatus("offline"));
 
+    // =====================================================
+    // REALTIME CHAT SYNC
+    // =====================================================
+
+    state.socket.on("message:created", ({ conversationId, message }) => {
+      if (!conversationId || !message) return;
+
+      const conversation = Array.from(state.chats.conversations.values()).find(
+        (chat) =>
+          String(chat.conversationId || chat.id) === String(conversationId),
+      );
+
+      if (!conversation) {
+        // Conversation may have been created after initial page load.
+        loadConversations();
+        return;
+      }
+
+      const messageId = String(message._id || message.id || "");
+
+      const existingIndex = conversation.messages.findIndex(
+        (item) => String(item._id || item.id || "") === messageId,
+      );
+
+      const normalizedMessage = {
+        ...message,
+        sender: message.senderRole === "seller" ? "seller" : "buyer",
+      };
+
+      // Upsert instead of blindly pushing.
+      // This prevents the sender seeing its own message twice.
+      if (existingIndex >= 0) {
+        conversation.messages[existingIndex] = normalizedMessage;
+      } else {
+        conversation.messages.push(normalizedMessage);
+      }
+
+      conversation.lastMessageAt =
+        message.createdAt || new Date().toISOString();
+
+      renderConversationList();
+
+      if (
+        String(state.chats.activeSellerId) === String(conversation.sellerId)
+      ) {
+        renderActiveConversationMessages();
+      }
+    });
+
+    state.socket.on("message:updated", ({ conversationId, message }) => {
+      if (!conversationId || !message) return;
+
+      const conversation = Array.from(state.chats.conversations.values()).find(
+        (chat) =>
+          String(chat.conversationId || chat.id) === String(conversationId),
+      );
+
+      if (!conversation) return;
+
+      const messageId = String(message._id || message.id || "");
+
+      const index = conversation.messages.findIndex(
+        (item) => String(item._id || item.id || "") === messageId,
+      );
+
+      if (index === -1) return;
+
+      conversation.messages[index] = {
+        ...conversation.messages[index],
+        ...message,
+
+        sender: message.senderRole === "seller" ? "seller" : "buyer",
+      };
+
+      renderConversationList();
+
+      if (
+        String(state.chats.activeSellerId) === String(conversation.sellerId)
+      ) {
+        renderActiveConversationMessages();
+      }
+    });
+
+    state.socket.on("message:deleted", ({ conversationId, messageId }) => {
+      if (!conversationId || !messageId) return;
+
+      const conversation = Array.from(state.chats.conversations.values()).find(
+        (chat) =>
+          String(chat.conversationId || chat.id) === String(conversationId),
+      );
+
+      if (!conversation) return;
+
+      conversation.messages = conversation.messages.filter(
+        (message) =>
+          String(message._id || message.id || "") !== String(messageId),
+      );
+
+      const newestMessage =
+        conversation.messages[conversation.messages.length - 1];
+
+      conversation.lastMessageAt = newestMessage?.createdAt || null;
+
+      renderConversationList();
+
+      if (
+        String(state.chats.activeSellerId) === String(conversation.sellerId)
+      ) {
+        renderActiveConversationMessages();
+      }
+    });
     // Example events; adjust to your server events:
     state.socket.on("system", (msg) =>
       pushChat("system", msg.text || JSON.stringify(msg)),

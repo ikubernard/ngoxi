@@ -166,6 +166,9 @@ const io = new Server(server, {
     credentials: true,
   },
 });
+
+app.set("io", io);
+
 function parseCookieHeader(cookieHeader = "") {
   return cookieHeader.split(";").reduce((cookies, part) => {
     const index = part.indexOf("=");

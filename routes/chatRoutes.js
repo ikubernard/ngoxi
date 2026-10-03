@@ -299,6 +299,25 @@ router.post("/:conversationId/messages", verifyToken, async (req, res) => {
 
     const message = chat.messages[chat.messages.length - 1];
 
+    // ===============================
+    // REALTIME: MESSAGE CREATED
+    // ===============================
+    const io = req.app.get("io");
+
+    const buyerId = String(chat.buyer);
+    const sellerId = String(chat.seller);
+
+    const realtimePayload = {
+      conversationId: String(chat._id),
+      message: message.toObject ? message.toObject() : message,
+    };
+
+    if (io) {
+      io.to(`user:${buyerId}`).emit("message:created", realtimePayload);
+
+      io.to(`user:${sellerId}`).emit("message:created", realtimePayload);
+    }
+
     return res.status(201).json({
       message,
     });
@@ -368,20 +387,38 @@ router.delete(
         });
       }
 
-      message.deleteOne();
+      chat.messages.pull(messageId);
 
-      // Recalculate conversation timestamp from newest remaining message.
+      // Recalculate using the newest remaining message.
       const newestMessage = chat.messages[chat.messages.length - 1];
 
-      chat.lastMessageAt =
-        newestMessage?.createdAt || chat.updatedAt || new Date();
+      chat.lastMessageAt = newestMessage?.createdAt || new Date();
 
       await chat.save();
 
+      // ===============================
+      // REALTIME: MESSAGE DELETED
+      // ===============================
+      const io = req.app.get("io");
+
+      const buyerId = String(chat.buyer);
+      const sellerId = String(chat.seller);
+
+      const realtimePayload = {
+        conversationId: String(chat._id),
+        messageId: String(messageId),
+      };
+
+      if (io) {
+        io.to(`user:${buyerId}`).emit("message:deleted", realtimePayload);
+
+        io.to(`user:${sellerId}`).emit("message:deleted", realtimePayload);
+      }
+
       return res.status(200).json({
         success: true,
-        messageId,
-        conversationId,
+        messageId: String(messageId),
+        conversationId: String(chat._id),
       });
     } catch (error) {
       console.error("❌ DELETE chat message failed:", error);
@@ -455,6 +492,25 @@ router.patch(
       message.text = text;
 
       await chat.save();
+
+      // ===============================
+      // REALTIME: MESSAGE UPDATED
+      // ===============================
+      const io = req.app.get("io");
+
+      const buyerId = String(chat.buyer);
+      const sellerId = String(chat.seller);
+
+      const realtimePayload = {
+        conversationId: String(chat._id),
+        message: message.toObject ? message.toObject() : message,
+      };
+
+      if (io) {
+        io.to(`user:${buyerId}`).emit("message:updated", realtimePayload);
+
+        io.to(`user:${sellerId}`).emit("message:updated", realtimePayload);
+      }
 
       return res.json({
         success: true,
