@@ -13,6 +13,33 @@ import { upload } from "../Utils/multer.js";
 const router = express.Router();
 
 /* =========================================================
+   REALTIME ORDER NOTIFICATIONS
+========================================================= */
+
+function emitOrderEvent(req, eventName, order) {
+  const io = req.app.get("io");
+
+  if (!io || !order) return;
+
+  const buyerId = getMongoId(order.buyer);
+  const sellerId = getMongoId(order.seller);
+
+  const payload = {
+    orderId: getMongoId(order),
+    conversationId: getMongoId(order.conversation),
+    status: order.status,
+    paymentStatus: order.payment?.status || "waiting",
+    event: eventName,
+  };
+
+  const participants = new Set([buyerId, sellerId].filter(Boolean));
+
+  for (const userId of participants) {
+    io.to(`user:${userId}`).emit(eventName, payload);
+  }
+}
+
+/* =========================================================
    HELPERS
 ========================================================= */
 
@@ -367,6 +394,9 @@ router.post("/", verifyToken, async (req, res) => {
       .populate("buyer", "name email buyerProfile")
       .populate("seller", "name storeName sellerProfile")
       .populate("product", "name cover");
+
+    // Notify buyer and seller after successful database creation
+    emitOrderEvent(req, "order:created", order);
 
     return res.status(201).json({
       order: normalizeOrder(order),
