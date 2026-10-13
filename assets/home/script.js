@@ -61,6 +61,12 @@
     },
   };
   let currentUser = null;
+
+  // Realtime order synchronization state
+  let buyerOrdersReady = false;
+  let buyerOrderRefreshRunning = false;
+  let buyerOrderRefreshPending = false;
+  let buyerOrderRefreshNeedsConversations = false;
   // Elements
   const $ = (sel, el = document) => el.querySelector(sel);
   const $$ = (sel, el = document) => Array.from(el.querySelectorAll(sel));
@@ -1192,10 +1198,32 @@
       }
     };
 
-    state.socket.on("connect", () => setStatus("online"));
+    state.socket.on("connect", () => {
+      setStatus("online");
+
+      // Refresh missed order updates after reconnecting.
+      if (buyerOrdersReady) {
+        void refreshBuyerOrdersRealtime(true);
+      }
+    });
+
     state.socket.on("disconnect", () => setStatus("offline"));
+
     state.socket.on("connect_error", () => setStatus("offline"));
 
+    // New order created
+    state.socket.on("order:created", ({ orderId } = {}) => {
+      if (!orderId) return;
+
+      void refreshBuyerOrdersRealtime(true);
+    });
+
+    // Receipt, payment, shipping or cancellation changed
+    state.socket.on("order:updated", ({ orderId } = {}) => {
+      if (!orderId) return;
+
+      void refreshBuyerOrdersRealtime(false);
+    });
     // =====================================================
     // REALTIME CHAT SYNC
     // =====================================================
@@ -2318,6 +2346,55 @@
       console.error("Failed loading buyer orders:", error);
 
       return [];
+    }
+  }
+
+  // =====================================================
+  // BUYER REALTIME ORDER REFRESH
+  // =====================================================
+
+  async function refreshBuyerOrdersRealtime(reloadConversations = false) {
+    buyerOrderRefreshPending = true;
+
+    if (reloadConversations) {
+      buyerOrderRefreshNeedsConversations = true;
+    }
+
+    // Another refresh is already running.
+    // It will pick up the pending notification.
+    if (buyerOrderRefreshRunning) return;
+
+    buyerOrderRefreshRunning = true;
+
+    try {
+      while (buyerOrderRefreshPending) {
+        buyerOrderRefreshPending = false;
+
+        const reloadChats = buyerOrderRefreshNeedsConversations;
+
+        buyerOrderRefreshNeedsConversations = false;
+
+        if (reloadChats) {
+          await loadConversations();
+        }
+
+        // Reload authoritative MongoDB orders.
+        // Existing function also updates the Transaction Center.
+        await loadBuyerOrders();
+
+        if (reloadChats) {
+          const active = getActiveConversation();
+
+          if (active) {
+            renderActiveSellerHeader(active.seller);
+            renderActiveConversationMessages();
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Buyer realtime order refresh failed:", error);
+    } finally {
+      buyerOrderRefreshRunning = false;
     }
   }
   function consumeChatHandoff() {
@@ -3904,6 +3981,10 @@
   ===================================================== */
 
     function renderReceiptDetails(order) {
+      const details = paymentSlide.querySelector(".bank-details");
+
+      if (!details) return;
+
       const orderCancelled =
         order.orderStatus === "cancelled" || order.status === "cancelled";
 
@@ -3922,12 +4003,6 @@
     </small>
   `;
 
-        return;
-      }
-
-      const details = paymentSlide.querySelector(".bank-details");
-
-      if (!details) {
         return;
       }
 
@@ -4508,6 +4583,8 @@
     });
     transactionCenterAPI = {
       setOrders(orders = []) {
+        const selectedOrderId = String(currentOrder()?.id || "");
+
         const allOrders = Array.isArray(orders) ? orders : [];
 
         transactionOrders = allOrders.filter((order) => {
@@ -4518,7 +4595,18 @@
           return status !== "cancelled";
         });
 
-        activeOrderIndex = 0;
+        const selectedIndex = transactionOrders.findIndex(
+          (order) => String(order.id) === selectedOrderId,
+        );
+
+        activeOrderIndex =
+          selectedIndex >= 0
+            ? selectedIndex
+            : Math.min(
+                activeOrderIndex,
+                Math.max(0, transactionOrders.length - 1),
+              );
+
         activePaymentMethod = 0;
 
         renderTransactionCenter();
@@ -4572,6 +4660,7 @@
     await loadConversations();
 
     await loadBuyerOrders();
+    buyerOrdersReady = true;
 
     consumeChatHandoff();
     await loadProducts(1);

@@ -3523,8 +3523,65 @@ const sellerSocket = io(API_BASE, {
   reconnection: true,
 });
 
+// =====================================================
+// SELLER REALTIME ORDER SYNCHRONIZATION
+// =====================================================
+
+let sellerOrdersReady = false;
+let sellerOrderRefreshRunning = false;
+let sellerOrderRefreshPending = false;
+let sellerOrderRefreshNeedsConversations = false;
+
+async function refreshSellerOrdersRealtime(reloadConversations = false) {
+  sellerOrderRefreshPending = true;
+
+  if (reloadConversations) {
+    sellerOrderRefreshNeedsConversations = true;
+  }
+
+  if (sellerOrderRefreshRunning) return;
+
+  sellerOrderRefreshRunning = true;
+
+  try {
+    while (sellerOrderRefreshPending) {
+      sellerOrderRefreshPending = false;
+
+      const reloadChats = sellerOrderRefreshNeedsConversations;
+
+      sellerOrderRefreshNeedsConversations = false;
+
+      if (reloadChats) {
+        await loadSellerConversations();
+      }
+
+      await loadSellerOrders();
+    }
+  } catch (error) {
+    console.error("Seller realtime order refresh failed:", error);
+  } finally {
+    sellerOrderRefreshRunning = false;
+  }
+}
+
 sellerSocket.on("connect", () => {
   console.log("🟢 Seller realtime connected:", sellerSocket.id);
+
+  if (sellerOrdersReady) {
+    void refreshSellerOrdersRealtime(true);
+  }
+});
+
+sellerSocket.on("order:created", ({ orderId } = {}) => {
+  if (!orderId) return;
+
+  void refreshSellerOrdersRealtime(true);
+});
+
+sellerSocket.on("order:updated", ({ orderId } = {}) => {
+  if (!orderId) return;
+
+  void refreshSellerOrdersRealtime(false);
 });
 
 sellerSocket.on("connect_error", (error) => {
@@ -5076,6 +5133,7 @@ async function initDashboard() {
   await loadProductsForHome();
 
   await loadSellerOrders();
+  sellerOrdersReady = true;
 
   animateStatsFromDom();
 

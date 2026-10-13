@@ -589,6 +589,8 @@ router.post(
 
       await order.save();
 
+      emitOrderEvent(req, "order:updated", order);
+
       order = await Order.findById(order._id)
         .populate("buyer", "name email buyerProfile")
         .populate("seller", "name storeName sellerProfile")
@@ -699,6 +701,8 @@ router.patch("/:orderId/payment", verifyToken, async (req, res) => {
     }
 
     await order.save();
+
+    emitOrderEvent(req, "order:updated", order);
 
     order = await Order.findById(order._id)
       .populate("buyer", "name email buyerProfile")
@@ -827,6 +831,8 @@ router.patch("/:orderId/shipping", verifyToken, async (req, res) => {
 
     await order.save();
 
+    emitOrderEvent(req, "order:updated", order);
+
     order = await Order.findById(order._id)
       .populate("buyer", "name email buyerProfile")
       .populate("seller", "name storeName sellerProfile")
@@ -925,6 +931,8 @@ router.patch("/:orderId/cancel", verifyToken, async (req, res) => {
     order.status = "cancelled";
 
     await order.save();
+
+    emitOrderEvent(req, "order:updated", order);
 
     order = await Order.findById(order._id)
       .populate("buyer", "name email buyerProfile")
