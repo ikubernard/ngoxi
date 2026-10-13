@@ -17,7 +17,7 @@ const API_BASE =
     : window.location.origin;
 // Generic remote placeholder (only used if backend sends no image)
 const PLACEHOLDER = "https://via.placeholder.com/400x400?text=NgoXi";
-
+let currentSellerUser = null;
 /* ----------------------------------------------------------
    1) SAFE BOOT: splash + token + expose helpers
    ---------------------------------------------------------- */
@@ -41,6 +41,7 @@ window.addEventListener("load", async () => {
     }
 
     const user = data.user;
+    currentSellerUser = user;
 
     if (!Array.isArray(user?.roles) || !user.roles.includes("seller")) {
       alert("Seller access required.");
@@ -4395,8 +4396,18 @@ function openSellerMessageMenu(message, bubble, x, y) {
       ? message.senderRole
       : message.from || "";
 
-  const isMine = messageRole === "seller";
+  const currentSellerId = String(
+    currentSellerUser?._id || currentSellerUser?.id || "",
+  );
 
+  const messageSenderId = String(
+    message.sender?._id || message.sender?.id || message.sender || "",
+  );
+
+  const isMine =
+    Boolean(currentSellerId) &&
+    Boolean(messageSenderId) &&
+    currentSellerId === messageSenderId;
   // -----------------------------------------
   // EDIT LIMIT: 15 MINUTES
   // -----------------------------------------
@@ -4755,14 +4766,26 @@ async function sendSellerMessage(text) {
 
   chat.messages = Array.isArray(chat.messages) ? chat.messages : [];
 
-  chat.messages.push(message);
+  const messageId = String(message._id || message.id || "");
+
+  const existingIndex = chat.messages.findIndex(
+    (item) => String(item._id || item.id || "") === messageId,
+  );
+
+  if (existingIndex >= 0) {
+    chat.messages[existingIndex] = {
+      ...chat.messages[existingIndex],
+      ...message,
+    };
+  } else {
+    chat.messages.push(message);
+  }
 
   chat.lastMessageAt = message.createdAt || new Date().toISOString();
 
   sellerChatState.activeConversation = chat;
 
   renderChatMessages();
-
   renderSellerConversationList();
 
   return message;

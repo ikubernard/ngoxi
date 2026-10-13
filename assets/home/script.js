@@ -2996,11 +2996,27 @@
 
         const savedMessage = data.message;
 
-        conversation.messages.push({
-          ...savedMessage,
+        const savedMessageId = String(
+          savedMessage?._id || savedMessage?.id || "",
+        );
 
-          sender: "buyer",
-        });
+        const existingIndex = conversation.messages.findIndex(
+          (item) => String(item._id || item.id || "") === savedMessageId,
+        );
+
+        const normalizedSavedMessage = {
+          ...savedMessage,
+          sender: savedMessage.senderRole === "seller" ? "seller" : "buyer",
+        };
+
+        if (existingIndex >= 0) {
+          conversation.messages[existingIndex] = {
+            ...conversation.messages[existingIndex],
+            ...normalizedSavedMessage,
+          };
+        } else {
+          conversation.messages.push(normalizedSavedMessage);
+        }
 
         conversation.lastMessageAt =
           savedMessage?.createdAt || new Date().toISOString();
