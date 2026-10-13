@@ -3531,6 +3531,44 @@ sellerSocket.on("connect_error", (error) => {
   console.error("❌ Seller realtime connection failed:", error.message);
 });
 
+// =====================================================
+// SELLER REALTIME ORDER SYNC
+// =====================================================
+
+async function syncRealtimeSellerOrder({ orderId } = {}) {
+  if (!orderId) return;
+
+  try {
+    // Fetch the authoritative order from MongoDB.
+    const response = await authorizedFetch(
+      `${API_BASE}/api/orders/${encodeURIComponent(orderId)}`,
+    );
+
+    if (!response.ok) {
+      throw new Error(`Order sync failed: ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    if (!data.order) return;
+
+    // Updates existing orders or inserts new ones.
+    // Also refreshes the order list, counters and transaction center.
+    replaceSellerOrder(data.order);
+
+    console.log("📦 Seller order synchronized:", orderId);
+  } catch (error) {
+    console.error("❌ Realtime seller order sync failed:", error);
+  }
+}
+
+// Buyer places a new order.
+sellerSocket.on("order:created", syncRealtimeSellerOrder);
+
+// Receipt, payment, shipping and cancellation updates.
+// The backend will start emitting this in our next patch.
+sellerSocket.on("order:updated", syncRealtimeSellerOrder);
+
 function findRealtimeSellerConversation(conversationId) {
   return (
     sellerChatState.conversations.find(
