@@ -9,8 +9,28 @@ const userSchema = new mongoose.Schema(
     // multiple roles instead of single role
     roles: {
       type: [String],
-      enum: ["seller", "buyer", "admin"],
-      default: ["buyer"], // or seller if you prefer
+      enum: ["seller", "buyer", "admin", "logistics"],
+      default: ["buyer"],
+    },
+
+    // Logistics access is assigned by an administrator.
+    logisticsProfile: {
+      station: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Station",
+        default: null,
+      },
+
+      active: {
+        type: Boolean,
+        default: false,
+      },
+
+      position: {
+        type: String,
+        enum: ["warehouse", "dispatcher", "driver", "supervisor"],
+        default: "warehouse",
+      },
     },
 
     ngoXiPlan: {

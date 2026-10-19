@@ -62,7 +62,6 @@ router.post("/signup", async (req, res) => {
     const email = req.body.email?.trim().toLowerCase();
     const password = req.body.password;
     const role = req.body.role || "buyer";
-    const adminCode = req.body.adminCode;
 
     if (!name || !email || !password) {
       return res.status(400).json({ error: "Missing required fields" });
@@ -73,9 +72,6 @@ router.post("/signup", async (req, res) => {
     }
 
     let user = await User.findOne({ email });
-
-    // ----- ADMIN CHECK (NEW) -----
-    const wantsAdmin = adminCode === "NgoXi_master2025";
 
     if (user) {
       const ok = await bcrypt.compare(password, user.password);
@@ -90,11 +86,6 @@ router.post("/signup", async (req, res) => {
       // merge selected role
       if (!user.roles.includes(role)) {
         user.roles.push(role);
-      }
-
-      // merge admin role if master key is valid
-      if (wantsAdmin && !user.roles.includes("admin")) {
-        user.roles.push("admin");
       }
 
       await user.save();
@@ -120,10 +111,6 @@ router.post("/signup", async (req, res) => {
     // new user
     const hashed = await bcrypt.hash(password, 10);
     const roles = [role];
-
-    if (wantsAdmin && !roles.includes("admin")) {
-      roles.push("admin");
-    }
 
     user = await User.create({
       name,
